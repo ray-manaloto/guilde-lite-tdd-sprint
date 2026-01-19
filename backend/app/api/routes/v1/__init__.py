@@ -13,6 +13,7 @@ from app.api.routes.v1 import ws
 from app.api.routes.v1 import agent
 from app.api.routes.v1 import agent_runs
 from app.api.routes.v1 import tdd_runs
+from app.api.routes.v1 import sprints
 
 v1_router = APIRouter()
 
@@ -48,3 +49,6 @@ v1_router.include_router(agent_runs.router, prefix="/agent-runs", tags=["agent-r
 
 # TDD multi-subagent routes
 v1_router.include_router(tdd_runs.router, prefix="/tdd-runs", tags=["tdd-runs"])
+
+# Sprint planning routes
+v1_router.include_router(sprints.router, prefix="/sprints", tags=["sprints"])

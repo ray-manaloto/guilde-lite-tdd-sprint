@@ -90,6 +90,10 @@ def create_app() -> FastAPI:
             "description": "Example CRUD endpoints demonstrating the API pattern",
         },
         {
+            "name": "sprints",
+            "description": "Sprint planning and work tracking endpoints",
+        },
+        {
             "name": "webhooks",
             "description": "Webhook management - subscribe to events and manage deliveries",
         },

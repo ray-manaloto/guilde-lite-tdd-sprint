@@ -24,6 +24,8 @@ export const API_ROUTES = {
   CHAT: "/chat",
   // TDD Runs
   TDD_RUNS: "/tdd-runs",
+  // Sprints
+  SPRINTS: "/sprints",
 } as const;
 
 // Navigation routes
@@ -34,6 +36,8 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   CHAT: "/chat",
   TDD: "/tdd",
+  SPRINTS: "/sprints",
+  KANBAN: "/kanban",
   PROFILE: "/profile",
   SETTINGS: "/settings",
 } as const;

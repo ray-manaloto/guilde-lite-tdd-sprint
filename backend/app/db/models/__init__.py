@@ -11,6 +11,7 @@ from app.db.models.agent_run import (
     AgentDecision,
     AgentCheckpoint,
 )
+from app.db.models.sprint import Sprint, SprintItem
 
 __all__ = [
     "User",
@@ -22,4 +23,6 @@ __all__ = [
     "AgentCandidate",
     "AgentDecision",
     "AgentCheckpoint",
+    "Sprint",
+    "SprintItem",
 ]

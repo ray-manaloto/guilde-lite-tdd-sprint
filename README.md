@@ -62,6 +62,7 @@ This template gives you all of that out of the box, with **20+ configurable inte
 - **Custom Tools** - Easily extend agent capabilities
 - **Multi-model Support** - OpenAI, Anthropic, and more
 - **Observability** - Logfire for PydanticAI, LangSmith for LangChain
+- **PydanticAI Web UI** - Launch a built-in agent UI for demos and debugging
 
 ### ⚡ Backend (FastAPI)
 
@@ -76,6 +77,7 @@ This template gives you all of that out of the box, with **20+ configurable inte
 - **React 19** + **TypeScript** + **Tailwind CSS v4**
 - **AI Chat Interface** - WebSocket streaming, tool call visualization
 - **Authentication** - HTTP-only cookies, auto-refresh
+- **Sprint Board** - Sprint planning with optional Kanban view
 - **Dark Mode** + **i18n** (optional)
 
 ### 🔌 20+ Enterprise Integrations
@@ -227,6 +229,8 @@ cd backend
 # Server commands
 uv run guilde_lite_tdd_sprint server run --reload     # Start dev server
 uv run guilde_lite_tdd_sprint server routes           # Show all routes
+# Agent commands
+uv run guilde_lite_tdd_sprint agent web --port 8001   # Start PydanticAI web UI
 # Database commands
 uv run guilde_lite_tdd_sprint db migrate -m "message" # Create migration
 uv run guilde_lite_tdd_sprint db upgrade              # Apply migrations
@@ -252,6 +256,7 @@ make create-admin  # Create admin user
 - Docs: http://localhost:8000/docs
 - Admin Panel: http://localhost:8000/admin
 - Frontend: http://localhost:3000
+- PydanticAI Web UI: http://localhost:8001
 
 ---
 
@@ -770,6 +775,7 @@ All commands should be run from the project root directory.
 | Start dev server | `uv run --directory backend guilde_lite_tdd_sprint server run --reload` |
 | Start prod server | `uv run --directory backend guilde_lite_tdd_sprint server run --host 0.0.0.0 --port 8000` |
 | Show routes | `uv run --directory backend guilde_lite_tdd_sprint server routes` |
+| Start PydanticAI web UI | `uv run --directory backend guilde_lite_tdd_sprint agent web --port 8001` |
 
 ### Code Quality
 
@@ -926,6 +932,8 @@ fastapi-fullstack new
 | [Architecture](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/architecture.md) | Repository + Service pattern, layered design |
 | [Frontend](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/frontend.md) | Next.js setup, auth, state management |
 | [AI Agent](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/ai-agent.md) | PydanticAI, tools, WebSocket streaming |
+| [Sprints](docs/sprints.md) | Sprint planning API + web UI |
+| [Project Plan](docs/project-plan.md) | Feature milestones and next steps |
 | [Observability](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/observability.md) | Logfire integration, tracing, metrics |
 | [Deployment](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/deployment.md) | Docker, Kubernetes, production setup |
 | [Development](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/development.md) | Local setup, testing, debugging |

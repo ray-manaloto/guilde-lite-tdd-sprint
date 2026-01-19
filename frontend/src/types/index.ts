@@ -5,4 +5,5 @@
 export * from "./api";
 export * from "./auth";
 export * from "./chat";
+export * from "./sprints";
 export * from "./tdd";

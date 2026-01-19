@@ -71,7 +71,7 @@ Status legend:
 | Capability | Auto-Claude evidence | Port status | Port evidence / notes |
 | --- | --- | --- | --- |
 | Desktop Electron app | `apps/frontend/` | Missing | Port ships a Next.js web UI instead. |
-| Kanban board + agent terminals | `README.md` (Auto-Claude UI section) | Missing | No equivalent UI in port. |
+| Kanban board + agent terminals | `README.md` (Auto-Claude UI section) | Partial | Sprint board exists in Next.js (`frontend/src/app/[locale]/(dashboard)/sprints/page.tsx`). Kanban is a placeholder and agent terminals are missing. |
 | Auto updates + packaging | `README.md`, `scripts/` | Missing | No desktop packaging pipeline. |
 
 ## Analysis, Ideation, Roadmap
@@ -109,5 +109,7 @@ Status legend:
 - The port currently provides a general AI web app scaffold with a TDD-style multi-subagent run,
   but it does not implement Auto-Claude's spec-driven planning, QA loop, worktree isolation, or
   merge automation.
+- Sprint planning UI is now available in the web app, but Kanban and agent terminals remain gaps.
+- PydanticAI Web UI is available for agent demos via CLI; it is not a replacement for Auto-Claude's desktop UX.
 - If full parity is required, the missing capabilities above represent substantial new feature
   work (not configuration changes).

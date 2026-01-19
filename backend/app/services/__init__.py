@@ -15,6 +15,7 @@ from app.services.webhook import WebhookService
 
 from app.services.agent_run import AgentRunService
 from app.services.agent_tdd import AgentTddService
+from app.services.sprint import SprintService
 
 __all__ = [
     "UserService",
@@ -23,4 +24,5 @@ __all__ = [
     "WebhookService",
     "AgentRunService",
     "AgentTddService",
+    "SprintService",
 ]

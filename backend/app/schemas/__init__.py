@@ -40,6 +40,15 @@ from app.schemas.agent_tdd import (
     AgentTddSubagentConfig,
     AgentTddSubagentError,
 )
+from app.schemas.sprint import (
+    SprintCreate,
+    SprintRead,
+    SprintReadWithItems,
+    SprintUpdate,
+    SprintItemCreate,
+    SprintItemRead,
+    SprintItemUpdate,
+)
 
 __all__ = [
     "UserCreate",
@@ -78,4 +87,11 @@ __all__ = [
     "AgentTddRunResult",
     "AgentTddSubagentConfig",
     "AgentTddSubagentError",
+    "SprintCreate",
+    "SprintRead",
+    "SprintReadWithItems",
+    "SprintUpdate",
+    "SprintItemCreate",
+    "SprintItemRead",
+    "SprintItemUpdate",
 ]
