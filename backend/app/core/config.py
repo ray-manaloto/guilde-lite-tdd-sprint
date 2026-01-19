@@ -165,17 +165,31 @@ class Settings(BaseSettings):
     @property
     def LLM_MODEL(self) -> str:
         """Select the active model for the configured provider."""
-        if self.LLM_PROVIDER == "anthropic":
-            return self.ANTHROPIC_MODEL or self.AI_MODEL
-        if self.LLM_PROVIDER == "openrouter":
-            return self.OPENROUTER_MODEL or self.AI_MODEL
-        return self.OPENAI_MODEL or self.AI_MODEL
+        return self.model_for_provider(self.LLM_PROVIDER)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def JUDGE_LLM_MODEL(self) -> str:
         """Select the judge model, falling back to the primary model."""
         return self.JUDGE_MODEL or self.LLM_MODEL
+
+    def model_for_provider(self, provider: str) -> str:
+        """Return the model name for a specific provider."""
+        provider = provider.lower()
+        if provider == "anthropic":
+            return self.ANTHROPIC_MODEL or self.AI_MODEL
+        if provider == "openrouter":
+            return self.OPENROUTER_MODEL or self.AI_MODEL
+        return self.OPENAI_MODEL or self.AI_MODEL
+
+    def api_key_for_provider(self, provider: str) -> str:
+        """Return the API key for a specific provider."""
+        provider = provider.lower()
+        if provider == "anthropic":
+            return self.ANTHROPIC_API_KEY
+        if provider == "openrouter":
+            return self.OPENROUTER_API_KEY
+        return self.OPENAI_API_KEY
 
     # === CORS ===
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8080"]

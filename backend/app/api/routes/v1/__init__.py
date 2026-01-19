@@ -12,6 +12,7 @@ from app.api.routes.v1 import webhooks
 from app.api.routes.v1 import ws
 from app.api.routes.v1 import agent
 from app.api.routes.v1 import agent_runs
+from app.api.routes.v1 import tdd_runs
 
 v1_router = APIRouter()
 
@@ -44,3 +45,6 @@ v1_router.include_router(agent.router, tags=["agent"])
 
 # Agent run checkpointing routes
 v1_router.include_router(agent_runs.router, prefix="/agent-runs", tags=["agent-runs"])
+
+# TDD multi-subagent routes
+v1_router.include_router(tdd_runs.router, prefix="/tdd-runs", tags=["tdd-runs"])

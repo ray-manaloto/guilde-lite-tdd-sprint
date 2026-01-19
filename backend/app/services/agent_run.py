@@ -14,6 +14,7 @@ from app.schemas.agent_run import (
     AgentCheckpointCreate,
     AgentDecisionCreate,
     AgentRunCreate,
+    AgentRunForkCreate,
     AgentRunUpdate,
 )
 
@@ -71,6 +72,60 @@ class AgentRunService:
                 input_payload=input_payload,
                 model_config=model_config,
                 workspace_ref=data.workspace_ref,
+                parent_run_id=data.parent_run_id,
+                parent_checkpoint_id=data.parent_checkpoint_id,
+                fork_label=data.fork_label,
+                fork_reason=data.fork_reason,
+                trace_id=trace_id,
+                span_id=span_id,
+            )
+
+    async def fork_run(
+        self,
+        run_id: UUID,
+        data: AgentRunForkCreate,
+    ) -> AgentRun:
+        parent_run = await self.get_run(run_id)
+        checkpoint_state: dict = {}
+        parent_checkpoint_id = data.checkpoint_id
+        if data.checkpoint_id:
+            checkpoint = await agent_run_repo.get_checkpoint_by_id(self.db, data.checkpoint_id)
+            if not checkpoint or checkpoint.run_id != run_id:
+                raise NotFoundError(
+                    message="Checkpoint not found for run",
+                    details={"run_id": str(run_id), "checkpoint_id": str(data.checkpoint_id)},
+                )
+            checkpoint_state = checkpoint.state or {}
+
+        input_payload = (
+            data.input_payload
+            or checkpoint_state.get("input_payload")
+            or parent_run.input_payload
+        )
+        model_config = (
+            data.model_config
+            or checkpoint_state.get("model_config")
+            or parent_run.model_config
+            or self._default_model_config()
+        )
+        workspace_ref = data.workspace_ref or parent_run.workspace_ref
+
+        with telemetry_span(
+            "agent_run.fork",
+            parent_run_id=str(run_id),
+            parent_checkpoint_id=str(parent_checkpoint_id) if parent_checkpoint_id else None,
+        ) as (trace_id, span_id):
+            return await agent_run_repo.create_run(
+                self.db,
+                user_id=parent_run.user_id,
+                status=data.status,
+                input_payload=input_payload,
+                model_config=model_config,
+                workspace_ref=workspace_ref,
+                parent_run_id=run_id,
+                parent_checkpoint_id=parent_checkpoint_id,
+                fork_label=data.fork_label,
+                fork_reason=data.fork_reason,
                 trace_id=trace_id,
                 span_id=span_id,
             )
@@ -88,7 +143,13 @@ class AgentRunService:
         await self.get_run(run_id)
         provider = data.provider or settings.LLM_PROVIDER
         model_name = data.model_name or settings.LLM_MODEL
-        with telemetry_span("agent_run.candidate", run_id=str(run_id)) as (trace_id, span_id):
+        with telemetry_span(
+            "agent_run.candidate",
+            run_id=str(run_id),
+            agent_name=data.agent_name,
+            provider=provider,
+            model_name=model_name,
+        ) as (trace_id, span_id):
             return await agent_run_repo.create_candidate(
                 self.db,
                 run_id=run_id,
@@ -164,3 +225,12 @@ class AgentRunService:
         await self.get_run(run_id)
         items = await agent_run_repo.list_checkpoints(self.db, run_id)
         return items, len(items)
+
+    async def get_checkpoint(self, checkpoint_id: UUID) -> AgentCheckpoint:
+        checkpoint = await agent_run_repo.get_checkpoint_by_id(self.db, checkpoint_id)
+        if not checkpoint:
+            raise NotFoundError(
+                message="Agent checkpoint not found",
+                details={"checkpoint_id": str(checkpoint_id)},
+            )
+        return checkpoint

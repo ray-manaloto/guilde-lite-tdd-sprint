@@ -25,6 +25,20 @@ class AgentRun(Base, TimestampMixin):
     input_payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     model_config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     workspace_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    parent_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("agent_runs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    parent_checkpoint_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("agent_checkpoints.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    fork_label: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    fork_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     span_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
 

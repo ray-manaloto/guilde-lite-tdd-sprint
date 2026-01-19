@@ -50,8 +50,10 @@ class AssistantAgent:
         model_name: str | None = None,
         temperature: float | None = None,
         system_prompt: str | None = None,
+        llm_provider: str | None = None,
     ):
-        self.model_name = model_name or settings.LLM_MODEL
+        self.llm_provider = (llm_provider or settings.LLM_PROVIDER).lower()
+        self.model_name = model_name or settings.model_for_provider(self.llm_provider)
         self.temperature = temperature or settings.AI_TEMPERATURE
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         self._agent: Agent[Deps, str] | None = None
@@ -72,11 +74,11 @@ class AssistantAgent:
 
     def _build_model(self):
         """Select the provider-specific model implementation."""
-        provider = settings.LLM_PROVIDER
+        provider = self.llm_provider
         if provider == "anthropic":
             return AnthropicModel(
                 self.model_name,
-                api_key=settings.ANTHROPIC_API_KEY,
+                api_key=settings.api_key_for_provider(provider),
             )
         if provider == "openrouter":
             from pydantic_ai.models.openrouter import OpenRouterModel
@@ -84,11 +86,11 @@ class AssistantAgent:
 
             return OpenRouterModel(
                 self.model_name,
-                provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
+                provider=OpenRouterProvider(api_key=settings.api_key_for_provider(provider)),
             )
         return OpenAIChatModel(
             self.model_name,
-            provider=OpenAIProvider(api_key=settings.OPENAI_API_KEY),
+            provider=OpenAIProvider(api_key=settings.api_key_for_provider(provider)),
         )
 
     def _register_tools(self, agent: Agent[Deps, str]) -> None:

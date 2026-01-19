@@ -34,6 +34,7 @@ from app.services.session import SessionService
 from app.services.webhook import WebhookService
 from app.services.item import ItemService
 from app.services.agent_run import AgentRunService
+from app.services.agent_tdd import AgentTddService
 
 
 def get_user_service(db: DBSession) -> UserService:
@@ -72,6 +73,14 @@ def get_agent_run_service(db: DBSession) -> AgentRunService:
 
 
 AgentRunSvc = Annotated[AgentRunService, Depends(get_agent_run_service)]
+
+
+def get_agent_tdd_service(db: DBSession) -> AgentTddService:
+    """Create AgentTddService instance with database session."""
+    return AgentTddService(db)
+
+
+AgentTddSvc = Annotated[AgentTddService, Depends(get_agent_tdd_service)]
 
 # === Authentication Dependencies ===
 

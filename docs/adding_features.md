@@ -111,3 +111,36 @@ uv run alembic upgrade head
 uv run guilde_lite_tdd_sprint db migrate -m "Add items table"
 uv run guilde_lite_tdd_sprint db upgrade
 ```
+
+## Running TDD Multi-Provider Agents
+
+Use the TDD runner to execute multiple subagents (OpenAI + Anthropic) and record
+checkpoints for retries/forks.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/tdd-runs \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Implement feature X",
+    "history": [],
+    "subagents": [
+      {"name": "openai", "provider": "openai", "model_name": "gpt-4o-mini"},
+      {"name": "anthropic", "provider": "anthropic", "model_name": "claude-3-5-sonnet"}
+    ],
+    "fork_label": "baseline"
+  }'
+```
+
+To fork from a checkpoint and retry with new context:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/agent-runs/<run_id>/forks \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "checkpoint_id": "<checkpoint_id>",
+    "fork_label": "retry-with-new-context",
+    "fork_reason": "Adjusting system prompt and tools"
+  }'
+```

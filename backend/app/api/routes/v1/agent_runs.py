@@ -15,6 +15,7 @@ from app.schemas.agent_run import (
     AgentDecisionCreate,
     AgentDecisionRead,
     AgentRunCreate,
+    AgentRunForkCreate,
     AgentRunList,
     AgentRunRead,
     AgentRunUpdate,
@@ -65,6 +66,20 @@ async def update_run(
     current_user: CurrentUser,
 ):
     return await agent_run_service.update_run(run_id, data)
+
+
+@router.post(
+    "/{run_id}/forks",
+    response_model=AgentRunRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def fork_run(
+    run_id: UUID,
+    data: AgentRunForkCreate,
+    agent_run_service: AgentRunSvc,
+    current_user: CurrentUser,
+):
+    return await agent_run_service.fork_run(run_id, data)
 
 
 @router.post(

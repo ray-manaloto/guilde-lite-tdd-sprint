@@ -15,6 +15,10 @@ class AgentRunBase(BaseSchema):
     input_payload: dict[str, Any] = Field(default_factory=dict)
     model_config: dict[str, Any] = Field(default_factory=dict)
     workspace_ref: str | None = Field(default=None, max_length=255)
+    parent_run_id: UUID | None = Field(default=None)
+    parent_checkpoint_id: UUID | None = Field(default=None)
+    fork_label: str | None = Field(default=None, max_length=100)
+    fork_reason: str | None = None
 
 
 class AgentRunCreate(AgentRunBase):
@@ -29,6 +33,8 @@ class AgentRunUpdate(BaseSchema):
 
     status: str | None = Field(default=None, max_length=20)
     workspace_ref: str | None = Field(default=None, max_length=255)
+    fork_label: str | None = Field(default=None, max_length=100)
+    fork_reason: str | None = None
 
 
 class AgentRunRead(AgentRunBase, TimestampSchema):
@@ -38,6 +44,18 @@ class AgentRunRead(AgentRunBase, TimestampSchema):
     user_id: UUID | None = None
     trace_id: str | None = None
     span_id: str | None = None
+
+
+class AgentRunForkCreate(BaseSchema):
+    """Create a forked agent run from a run/checkpoint."""
+
+    checkpoint_id: UUID | None = Field(default=None)
+    status: str = Field(default="pending", max_length=20)
+    input_payload: dict[str, Any] = Field(default_factory=dict)
+    model_config: dict[str, Any] = Field(default_factory=dict)
+    workspace_ref: str | None = Field(default=None, max_length=255)
+    fork_label: str | None = Field(default=None, max_length=100)
+    fork_reason: str | None = None
 
 
 class AgentRunList(BaseSchema):

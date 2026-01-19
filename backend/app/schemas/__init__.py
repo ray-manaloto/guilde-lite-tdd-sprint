@@ -23,6 +23,7 @@ from app.schemas.agent_run import (
     AgentRunRead,
     AgentRunUpdate,
     AgentRunList,
+    AgentRunForkCreate,
     AgentCandidateCreate,
     AgentCandidateRead,
     AgentCandidateList,
@@ -31,6 +32,13 @@ from app.schemas.agent_run import (
     AgentCheckpointCreate,
     AgentCheckpointRead,
     AgentCheckpointList,
+)
+from app.schemas.agent_tdd import (
+    AgentTddJudgeConfig,
+    AgentTddRunCreate,
+    AgentTddRunResult,
+    AgentTddSubagentConfig,
+    AgentTddSubagentError,
 )
 
 __all__ = [
@@ -56,6 +64,7 @@ __all__ = [
     "AgentRunRead",
     "AgentRunUpdate",
     "AgentRunList",
+    "AgentRunForkCreate",
     "AgentCandidateCreate",
     "AgentCandidateRead",
     "AgentCandidateList",
@@ -64,4 +73,9 @@ __all__ = [
     "AgentCheckpointCreate",
     "AgentCheckpointRead",
     "AgentCheckpointList",
+    "AgentTddJudgeConfig",
+    "AgentTddRunCreate",
+    "AgentTddRunResult",
+    "AgentTddSubagentConfig",
+    "AgentTddSubagentError",
 ]
