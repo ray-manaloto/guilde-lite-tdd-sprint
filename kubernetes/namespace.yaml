@@ -1,0 +1,9 @@
+
+# Kubernetes Namespace for guilde_lite_tdd_sprint
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: guilde_lite_tdd_sprint
+  labels:
+    app.kubernetes.io/name: guilde_lite_tdd_sprint
+    app.kubernetes.io/managed-by: kubectl

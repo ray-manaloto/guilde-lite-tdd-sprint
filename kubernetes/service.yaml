@@ -1,0 +1,20 @@
+
+# Service for guilde_lite_tdd_sprint Backend
+apiVersion: v1
+kind: Service
+metadata:
+  name: guilde_lite_tdd_sprint-backend
+  namespace: guilde_lite_tdd_sprint
+  labels:
+    app.kubernetes.io/name: guilde_lite_tdd_sprint
+    app.kubernetes.io/component: backend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: guilde_lite_tdd_sprint
+    app.kubernetes.io/component: backend
