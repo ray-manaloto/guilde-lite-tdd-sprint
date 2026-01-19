@@ -148,19 +148,27 @@ class Settings(BaseSettings):
     S3_BUCKET: str = "guilde_lite_tdd_sprint"
     S3_REGION: str = "us-east-1"
 
-    # === AI Agent (pydantic_ai, openai) ===
+    # === AI Agent (pydantic_ai) ===
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_MODEL: str = ""
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = ""
     AI_MODEL: str = "gpt-4o-mini"
     AI_TEMPERATURE: float = 0.7
     JUDGE_MODEL: str = ""
     AI_FRAMEWORK: str = "pydantic_ai"
-    LLM_PROVIDER: str = "openai"
+    LLM_PROVIDER: Literal["openai", "anthropic", "openrouter"] = "openai"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def LLM_MODEL(self) -> str:
         """Select the active model for the configured provider."""
+        if self.LLM_PROVIDER == "anthropic":
+            return self.ANTHROPIC_MODEL or self.AI_MODEL
+        if self.LLM_PROVIDER == "openrouter":
+            return self.OPENROUTER_MODEL or self.AI_MODEL
         return self.OPENAI_MODEL or self.AI_MODEL
 
     @computed_field  # type: ignore[prop-decorator]

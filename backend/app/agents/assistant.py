@@ -17,6 +17,7 @@ from pydantic_ai.messages import (
 )
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
+from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.settings import ModelSettings
 
 from app.agents.prompts import DEFAULT_SYSTEM_PROMPT
@@ -57,10 +58,7 @@ class AssistantAgent:
 
     def _create_agent(self) -> Agent[Deps, str]:
         """Create and configure the PydanticAI agent."""
-        model = OpenAIChatModel(
-            self.model_name,
-            provider=OpenAIProvider(api_key=settings.OPENAI_API_KEY),
-        )
+        model = self._build_model()
 
         agent = Agent[Deps, str](
             model=model,
@@ -71,6 +69,27 @@ class AssistantAgent:
         self._register_tools(agent)
 
         return agent
+
+    def _build_model(self):
+        """Select the provider-specific model implementation."""
+        provider = settings.LLM_PROVIDER
+        if provider == "anthropic":
+            return AnthropicModel(
+                self.model_name,
+                api_key=settings.ANTHROPIC_API_KEY,
+            )
+        if provider == "openrouter":
+            from pydantic_ai.models.openrouter import OpenRouterModel
+            from pydantic_ai.providers.openrouter import OpenRouterProvider
+
+            return OpenRouterModel(
+                self.model_name,
+                provider=OpenRouterProvider(api_key=settings.OPENROUTER_API_KEY),
+            )
+        return OpenAIChatModel(
+            self.model_name,
+            provider=OpenAIProvider(api_key=settings.OPENAI_API_KEY),
+        )
 
     def _register_tools(self, agent: Agent[Deps, str]) -> None:
         """Register all tools on the agent."""
