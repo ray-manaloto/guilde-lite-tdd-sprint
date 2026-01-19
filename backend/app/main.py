@@ -30,7 +30,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[LifespanState, None]:
     See: https://asgi.readthedocs.io/en/latest/specs/lifespan.html#lifespan-state
     """
     # === Startup ===
-    setup_logfire()
     from app.core.logfire_setup import instrument_asyncpg
 
     instrument_asyncpg()
@@ -140,6 +139,17 @@ A FastAPI project
         lifespan=lifespan,
         default_response_class=ORJSONResponse,
     )
+
+    setup_logfire()
+
+    @app.get("/", include_in_schema=False)
+    async def root() -> dict[str, str]:
+        """Basic landing endpoint for service discovery."""
+        return {
+            "status": "ok",
+            "docs": "/docs" if docs_url else "disabled",
+            "health": f"{settings.API_V1_STR}/health",
+        }
     # Logfire instrumentation
     instrument_app(app)
 

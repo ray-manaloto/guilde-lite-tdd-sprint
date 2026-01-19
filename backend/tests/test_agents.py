@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+from pydantic_ai.models.test import TestModel
 
 from app.agents.assistant import AssistantAgent, Deps, get_agent
 from app.agents.tools.datetime_tool import get_current_datetime
@@ -62,6 +63,7 @@ class TestAssistantAgent:
     @patch("app.agents.assistant.OpenAIChatModel")
     def test_agent_property_creates_agent(self, mock_model, mock_provider):
         """Test agent property creates agent on first access."""
+        mock_model.return_value = TestModel()
         agent = AssistantAgent()
         _ = agent.agent
         assert agent._agent is not None
@@ -72,6 +74,7 @@ class TestAssistantAgent:
     @patch("app.agents.assistant.OpenAIChatModel")
     def test_agent_property_caches_agent(self, mock_model, mock_provider):
         """Test agent property caches the agent instance."""
+        mock_model.return_value = TestModel()
         agent = AssistantAgent()
         agent1 = agent.agent
         agent2 = agent.agent

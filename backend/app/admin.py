@@ -4,7 +4,7 @@ from typing import Any, ClassVar, cast
 
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
-from sqlalchemy import String, inspect
+from sqlalchemy import String, create_engine, inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapper
 from starlette.requests import Request
@@ -292,8 +292,6 @@ def get_sync_engine() -> Engine:
     """Get or create the synchronous engine for SQLAdmin."""
     global _sync_engine
     if _sync_engine is None:
-        from sqlalchemy import create_engine
-
         _sync_engine = create_engine(settings.DATABASE_URL_SYNC, echo=settings.DEBUG)
     return _sync_engine
 

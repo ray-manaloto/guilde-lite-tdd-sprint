@@ -1,8 +1,22 @@
 """Tests for Celery worker tasks."""
 
+from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+
+@contextmanager
+def task_request(task, task_id: str = "test-task-id", retries: int = 0):
+    """Provide a fake Celery request context for bound task execution."""
+    request = MagicMock()
+    request.id = task_id
+    request.retries = retries
+    task.request_stack.push(request)
+    try:
+        yield request
+    finally:
+        task.request_stack.pop()
 
 
 class TestExampleTask:
@@ -12,12 +26,9 @@ class TestExampleTask:
         """Test example_task completes successfully."""
         from app.worker.tasks.examples import example_task
 
-        # Create a mock for self (the task)
-        mock_self = MagicMock()
-        mock_self.request.id = "test-task-id"
-
-        with patch("app.worker.tasks.examples.time.sleep"):
-            result = example_task.run(mock_self, "test message")
+        with task_request(example_task):
+            with patch("app.worker.tasks.examples.time.sleep"):
+                result = example_task.run("test message")
 
         assert result["status"] == "completed"
         assert "test message" in result["message"]
@@ -27,15 +38,12 @@ class TestExampleTask:
         """Test example_task retries on error."""
         from app.worker.tasks.examples import example_task
 
-        mock_self = MagicMock()
-        mock_self.request.id = "test-task-id"
-        mock_self.request.retries = 0
-
-        with patch("app.worker.tasks.examples.time.sleep", side_effect=Exception("Test error")):
-            mock_self.retry = MagicMock(side_effect=Exception("Retry"))
-            with pytest.raises(Exception, match="Retry"):
-                example_task.run(mock_self, "test message")
-            mock_self.retry.assert_called_once()
+        with task_request(example_task, retries=0):
+            with patch("app.worker.tasks.examples.time.sleep", side_effect=Exception("Test error")):
+                with patch.object(example_task, "retry", side_effect=Exception("Retry")) as mock_retry:
+                    with pytest.raises(Exception, match="Retry"):
+                        example_task.run("test message")
+                    mock_retry.assert_called_once()
 
 
 class TestLongRunningTask:
@@ -45,16 +53,15 @@ class TestLongRunningTask:
         """Test long_running_task completes with progress."""
         from app.worker.tasks.examples import long_running_task
 
-        mock_self = MagicMock()
-        mock_self.request.id = "test-task-id"
-
-        with patch("app.worker.tasks.examples.time.sleep"):
-            result = long_running_task.run(mock_self, duration=3)
+        with task_request(long_running_task):
+            with patch("app.worker.tasks.examples.time.sleep"):
+                with patch.object(long_running_task, "update_state") as mock_update_state:
+                    result = long_running_task.run(duration=3)
 
         assert result["status"] == "completed"
         assert result["duration"] == 3
         # Check progress updates were made
-        assert mock_self.update_state.call_count == 3
+        assert mock_update_state.call_count == 3
 
 
 class TestSendEmailTask:

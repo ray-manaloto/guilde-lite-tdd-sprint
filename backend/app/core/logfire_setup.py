@@ -11,7 +11,7 @@ def setup_logfire() -> None:
         token=settings.LOGFIRE_TOKEN,
         service_name=settings.LOGFIRE_SERVICE_NAME,
         environment=settings.LOGFIRE_ENVIRONMENT,
-        send_to_logfire="if-token-present",
+        send_to_logfire=settings.LOGFIRE_SEND_TO_LOGFIRE,
     )
 
 

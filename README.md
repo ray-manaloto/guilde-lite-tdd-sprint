@@ -375,6 +375,17 @@ fastapi-fullstack create my_app --ai-agent --ai-framework langchain --llm-provid
 | **PydanticAI** | ✓ | ✓ | ✓ |
 | **LangChain** | ✓ | ✓ | - |
 
+### Model Configuration
+
+Set provider-specific model names in `.env`:
+
+```bash
+# OpenAI example
+OPENAI_MODEL=gpt-4o-mini
+# Optional: override judge model (must match the provider)
+JUDGE_MODEL=
+```
+
 ### PydanticAI Integration
 
 Type-safe agents with full dependency injection:
@@ -523,6 +534,13 @@ fastapi-fullstack new
 #   ✓ Instrument Redis
 #   ✓ Instrument Celery
 #   ✓ Instrument HTTPX
+```
+
+Optional override (keeps template default if unset):
+
+```bash
+# .env
+LOGFIRE_SEND_TO_LOGFIRE=if-token-present  # true|false|if-token-present
 ```
 
 ### Usage

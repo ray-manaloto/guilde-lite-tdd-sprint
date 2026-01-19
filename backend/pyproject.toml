@@ -103,6 +103,7 @@ disallow_any_generics = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = ["error"]
 
 [tool.fastapi-fullstack]
 generator_version = "0.1.14"

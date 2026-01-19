@@ -37,7 +37,21 @@ class Settings(BaseSettings):
     LOGFIRE_TOKEN: str | None = None
     LOGFIRE_SERVICE_NAME: str = "guilde_lite_tdd_sprint"
     LOGFIRE_ENVIRONMENT: str = "development"
+    LOGFIRE_SEND_TO_LOGFIRE: bool | Literal["if-token-present"] = "if-token-present"
     TELEMETRY_FILE: str | None = None
+
+    @field_validator("LOGFIRE_SEND_TO_LOGFIRE", mode="before")
+    @classmethod
+    def normalize_logfire_send_to_logfire(cls, v: str | bool | None):
+        if isinstance(v, str):
+            normalized = v.strip().lower()
+            if normalized in {"true", "1", "yes", "on", "always"}:
+                return True
+            if normalized in {"false", "0", "no", "off", "never"}:
+                return False
+            if normalized in {"if-token-present", "if_token_present"}:
+                return "if-token-present"
+        return v
 
     # === Database (PostgreSQL async) ===
     POSTGRES_HOST: str = "localhost"

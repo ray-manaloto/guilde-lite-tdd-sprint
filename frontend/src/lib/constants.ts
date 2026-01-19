@@ -22,6 +22,8 @@ export const API_ROUTES = {
 
   // Chat (AI Agent)
   CHAT: "/chat",
+  // TDD Runs
+  TDD_RUNS: "/tdd-runs",
 } as const;
 
 // Navigation routes
@@ -31,6 +33,7 @@ export const ROUTES = {
   REGISTER: "/register",
   DASHBOARD: "/dashboard",
   CHAT: "/chat",
+  TDD: "/tdd",
   PROFILE: "/profile",
   SETTINGS: "/settings",
 } as const;

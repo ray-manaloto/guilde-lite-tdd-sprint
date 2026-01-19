@@ -154,7 +154,4 @@ async def readiness_check(
 
     Deprecated: Use /health/ready instead.
     """
-    return await readiness_probe(
-        db=db,
-        redis=redis,
-    )
+    return await readiness_probe(db=db, redis=redis)
