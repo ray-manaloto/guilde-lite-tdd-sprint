@@ -51,6 +51,7 @@ class AgentRun(Base, TimestampMixin):
         "AgentCheckpoint",
         back_populates="run",
         cascade="all, delete-orphan",
+        foreign_keys="AgentCheckpoint.run_id",
     )
     decision: Mapped["AgentDecision | None"] = relationship(
         "AgentDecision",
@@ -130,4 +131,8 @@ class AgentCheckpoint(Base, TimestampMixin):
     trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     span_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
-    run: Mapped["AgentRun"] = relationship("AgentRun", back_populates="checkpoints")
+    run: Mapped["AgentRun"] = relationship(
+        "AgentRun",
+        back_populates="checkpoints",
+        foreign_keys=[run_id],
+    )

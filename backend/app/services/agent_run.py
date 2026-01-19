@@ -62,7 +62,7 @@ class AgentRunService:
         self,
         data: AgentRunCreate,
     ) -> AgentRun:
-        model_config = data.model_config or self._default_model_config()
+        model_config = data.model_config_data or self._default_model_config()
         input_payload = data.input_payload or {}
         with telemetry_span("agent_run.create", status=data.status) as (trace_id, span_id):
             return await agent_run_repo.create_run(
@@ -103,7 +103,7 @@ class AgentRunService:
             or parent_run.input_payload
         )
         model_config = (
-            data.model_config
+            data.model_config_data
             or checkpoint_state.get("model_config")
             or parent_run.model_config
             or self._default_model_config()
