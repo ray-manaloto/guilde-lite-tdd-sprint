@@ -110,3 +110,8 @@ node_modules/
 frontend/.next/
 frontend/out/
 frontend/.turbo/
+
+# Telemetry
+telemetry/
+backend/telemetry/
+*.jsonl

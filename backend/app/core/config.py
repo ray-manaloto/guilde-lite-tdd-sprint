@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     LOGFIRE_TOKEN: str | None = None
     LOGFIRE_SERVICE_NAME: str = "guilde_lite_tdd_sprint"
     LOGFIRE_ENVIRONMENT: str = "development"
+    TELEMETRY_FILE: str | None = None
 
     # === Database (PostgreSQL async) ===
     POSTGRES_HOST: str = "localhost"
