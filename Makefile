@@ -5,6 +5,7 @@ install:
 	uv sync --directory backend --dev
 	@if git rev-parse --git-dir > /dev/null 2>&1; then \
 		uv run --directory backend pre-commit install; \
+		uv run --directory backend pre-commit install --hook-type pre-push; \
 	else \
 		echo "⚠️  Not a git repository - skipping pre-commit install"; \
 		echo "   Run 'git init && make install' to set up pre-commit hooks"; \
