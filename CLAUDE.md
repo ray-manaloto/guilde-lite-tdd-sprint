@@ -12,8 +12,8 @@
 # Backend
 cd backend
 uv run uvicorn app.main:app --reload --port 8000
-pytest
-ruff check . --fix && ruff format .
+uv run pytest
+uv run ruff check . --fix && uv run ruff format .
 
 # Database
 uv run alembic upgrade head
@@ -22,7 +22,7 @@ uv run alembic revision --autogenerate -m "Description"
 # Frontend
 cd frontend
 bun dev
-bun test
+bun run test
 
 # Docker
 docker compose up -d

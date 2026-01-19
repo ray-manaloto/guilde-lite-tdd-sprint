@@ -6,28 +6,28 @@
 cd backend
 
 # Run all tests
-pytest
+uv run pytest
 
 # Run with coverage
-pytest --cov=app --cov-report=term-missing
+uv run pytest --cov=app --cov-report=term-missing
 
 # Run specific test file
-pytest tests/api/test_health.py -v
+uv run pytest tests/api/test_health.py -v
 
 # Run specific test
-pytest tests/api/test_health.py::test_health_check -v
+uv run pytest tests/api/test_health.py::test_health_check -v
 
 # Run only unit tests
-pytest tests/unit/
+uv run pytest tests/unit/
 
 # Run only integration tests
-pytest tests/integration/
+uv run pytest tests/integration/
 
 # Run with verbose output
-pytest -v
+uv run pytest -v
 
 # Stop on first failure
-pytest -x
+uv run pytest -x
 ```
 
 ## Test Structure
@@ -98,16 +98,19 @@ def test_protected_endpoint(auth_client):
 cd frontend
 
 # Run unit tests
-bun test
+bun run test
 
 # Run with watch mode
-bun test --watch
+bun run test
+
+# Run unit tests once
+bun run test:run
 
 # Run E2E tests
-bun test:e2e
+bun run test:e2e
 
 # Run E2E in headed mode (see browser)
-bun test:e2e --headed
+bun run test:e2e:headed
 ```
 
 ## Test Database
