@@ -192,13 +192,19 @@ A FastAPI project
     # Rate limiting
     # Note: slowapi requires app.state.limiter - this is a library requirement,
     # not suitable for lifespan state pattern which is for request-scoped access
+    from collections.abc import Callable
+    from typing import cast
+
     from slowapi import _rate_limit_exceeded_handler
     from slowapi.errors import RateLimitExceeded
+    from starlette.requests import Request
+    from starlette.responses import Response
 
     from app.core.rate_limit import limiter
 
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    handler = cast(Callable[[Request, Exception], Response], _rate_limit_exceeded_handler)
+    app.add_exception_handler(RateLimitExceeded, handler)
 
     # Session middleware (for admin authentication and/or OAuth)
     from starlette.middleware.sessions import SessionMiddleware

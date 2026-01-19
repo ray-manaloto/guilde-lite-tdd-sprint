@@ -1,12 +1,12 @@
 """SQLAdmin configuration with automatic model discovery."""
 
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from sqlalchemy import String, inspect
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Mapper
 from starlette.requests import Request
 
 from app.core.config import settings
@@ -69,7 +69,7 @@ def get_model_columns(model: type) -> list[str]:
     Returns:
         List of column names.
     """
-    mapper = inspect(model)
+    mapper: Mapper[Any] = inspect(model)
     return [column.key for column in mapper.columns]
 
 
@@ -82,7 +82,7 @@ def get_searchable_columns(model: type) -> list[str]:
     Returns:
         List of searchable column names.
     """
-    mapper = inspect(model)
+    mapper: Mapper[Any] = inspect(model)
     searchable = []
     for column in mapper.columns:
         # Include String columns that are not sensitive
@@ -102,7 +102,7 @@ def get_sortable_columns(model: type) -> list[str]:
     Returns:
         List of sortable column names.
     """
-    mapper = inspect(model)
+    mapper: Mapper[Any] = inspect(model)
     return [column.key for column in mapper.columns]
 
 
@@ -242,7 +242,7 @@ def create_model_admin(
         exec_body,
     )
 
-    return admin_class  # type: ignore[return-value]
+    return cast(type[ModelView], admin_class)
 
 
 def register_models_auto(
@@ -319,7 +319,12 @@ class AdminAuth(AuthenticationBackend):
         with DBSession(get_sync_engine()) as session:
             user = session.query(User).filter(User.email == email).first()
 
-            if user and verify_password(str(password), user.hashed_password) and user.is_superuser:
+            if (
+                user
+                and user.hashed_password
+                and verify_password(str(password), user.hashed_password)
+                and user.is_superuser
+            ):
                 # Store user info in session
                 request.session["admin_user_id"] = str(user.id)
                 request.session["admin_email"] = user.email

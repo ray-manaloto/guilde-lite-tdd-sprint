@@ -6,12 +6,12 @@ from uuid import UUID
 from pydantic import Field
 
 from app.schemas.agent_run import (
+    AgentCandidateRead,
     AgentCheckpointRead,
     AgentDecisionRead,
     AgentRunForkCreate,
     AgentRunRead,
 )
-from app.schemas.agent_run import AgentCandidateRead
 from app.schemas.base import BaseSchema
 
 

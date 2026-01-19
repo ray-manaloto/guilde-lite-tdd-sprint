@@ -166,7 +166,7 @@ class AgentTddService:
                 user_id=user_id,
                 status="pending",
                 input_payload=input_payload,
-                model_config=model_config,
+                model_config_data=model_config,
                 workspace_ref=data.workspace_ref,
                 fork_label=data.fork_label,
                 fork_reason=data.fork_reason,
@@ -198,7 +198,7 @@ class AgentTddService:
         subagent_results: list[_SubagentResult] = []
         subagent_errors: list[AgentTddSubagentError] = []
         for cfg, result in zip(subagents, results, strict=False):
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 subagent_errors.append(
                     AgentTddSubagentError(
                         agent_name=cfg.name,

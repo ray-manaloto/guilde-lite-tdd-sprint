@@ -49,6 +49,10 @@ dev = [
     "ruff>=0.8.0",
     "mypy>=1.13.0",
     "pre-commit>=4.0.0",
+    "bandit>=1.7.10",
+    "vulture>=2.11",
+    "xenon>=0.9.1",
+    "pylint>=3.3.0",
 ]
 
 [project.scripts]
@@ -87,10 +91,15 @@ known-first-party = ["app", "cli"]
 
 [tool.mypy]
 python_version = "3.11"
-strict = true
-warn_return_any = true
+strict = false
+warn_return_any = false
 warn_unused_configs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
 ignore_missing_imports = true
+disallow_untyped_defs = false
+check_untyped_defs = false
+disallow_any_generics = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

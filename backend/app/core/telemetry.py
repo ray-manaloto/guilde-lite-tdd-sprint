@@ -26,7 +26,6 @@ def get_trace_context() -> tuple[str | None, str | None]:
     return f"{ctx.trace_id:032x}", f"{ctx.span_id:016x}"
 
 
-@contextmanager
 def _write_telemetry_record(
     name: str,
     attrs: dict[str, Any],
@@ -59,6 +58,7 @@ def _write_telemetry_record(
         return
 
 
+@contextmanager
 def telemetry_span(name: str, **attrs) -> Iterator[tuple[str | None, str | None]]:
     """Create a Logfire span when available and return trace context."""
     start = time.monotonic()

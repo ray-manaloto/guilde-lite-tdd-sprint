@@ -29,6 +29,10 @@ lint:
 	uv run --directory backend ruff check app tests cli
 	uv run --directory backend ruff format app tests cli --check
 	uv run --directory backend mypy app
+	uv run --directory backend bandit -q -r app cli -x tests -s B311,B104,B404,B603,B607
+	uv run --directory backend vulture app cli --min-confidence 80 --ignore-names cls,allowed_tags
+	uv run --directory backend xenon --max-absolute D --max-modules C --max-average B app cli
+	uv run --directory backend pylint --disable=all --enable=similarities --min-similarity-lines=20 app cli
 
 # === Testing ===
 test:

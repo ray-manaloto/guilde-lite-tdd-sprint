@@ -36,7 +36,10 @@ async def list_runs(
         skip=skip,
         limit=limit,
     )
-    return AgentRunList(items=items, total=total)
+    return AgentRunList(
+        items=[AgentRunRead.model_validate(item) for item in items],
+        total=total,
+    )
 
 
 @router.post("", response_model=AgentRunRead, status_code=status.HTTP_201_CREATED)
@@ -103,7 +106,10 @@ async def list_candidates(
     current_user: CurrentUser,
 ):
     items, total = await agent_run_service.list_candidates(run_id)
-    return AgentCandidateList(items=items, total=total)
+    return AgentCandidateList(
+        items=[AgentCandidateRead.model_validate(item) for item in items],
+        total=total,
+    )
 
 
 @router.post(
@@ -150,4 +156,7 @@ async def list_checkpoints(
     current_user: CurrentUser,
 ):
     items, total = await agent_run_service.list_checkpoints(run_id)
-    return AgentCheckpointList(items=items, total=total)
+    return AgentCheckpointList(
+        items=[AgentCheckpointRead.model_validate(item) for item in items],
+        total=total,
+    )

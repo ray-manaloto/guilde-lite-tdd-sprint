@@ -35,7 +35,7 @@ class WebhookRead(BaseModel):
     is_active: bool
     description: str | None
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None
 
 
 class WebhookDeliveryRead(BaseModel):

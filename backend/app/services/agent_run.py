@@ -98,9 +98,7 @@ class AgentRunService:
             checkpoint_state = checkpoint.state or {}
 
         input_payload = (
-            data.input_payload
-            or checkpoint_state.get("input_payload")
-            or parent_run.input_payload
+            data.input_payload or checkpoint_state.get("input_payload") or parent_run.input_payload
         )
         model_config = (
             data.model_config_data
