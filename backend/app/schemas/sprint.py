@@ -12,6 +12,7 @@ from app.schemas.base import BaseSchema, TimestampSchema
 class SprintBase(BaseSchema):
     """Base sprint schema with shared fields."""
 
+    spec_id: UUID | None = Field(default=None, description="Linked spec ID")
     name: str = Field(max_length=255, description="Sprint name")
     goal: str | None = Field(default=None, description="Sprint goal")
     status: SprintStatus = Field(default=SprintStatus.PLANNED)
@@ -22,6 +23,7 @@ class SprintBase(BaseSchema):
 class SprintCreate(BaseSchema):
     """Schema for creating a sprint."""
 
+    spec_id: UUID | None = Field(default=None)
     name: str = Field(max_length=255)
     goal: str | None = Field(default=None)
     status: SprintStatus = Field(default=SprintStatus.PLANNED)
@@ -32,6 +34,7 @@ class SprintCreate(BaseSchema):
 class SprintUpdate(BaseSchema):
     """Schema for updating a sprint."""
 
+    spec_id: UUID | None = Field(default=None)
     name: str | None = Field(default=None, max_length=255)
     goal: str | None = Field(default=None)
     status: SprintStatus | None = Field(default=None)

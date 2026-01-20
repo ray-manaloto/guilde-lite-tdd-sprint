@@ -98,6 +98,17 @@ class TestAssistantAgent:
         with pytest.raises(ValueError, match="openai-responses"):
             _ = agent.agent
 
+    @patch("app.agents.assistant.AnthropicModel")
+    def test_agent_strips_anthropic_prefix(self, mock_model):
+        """Test Anthropic prefix is normalized before model creation."""
+        mock_model.return_value = TestModel()
+        agent = AssistantAgent(
+            model_name="anthropic:claude-opus-4-5-20251101",
+            llm_provider="anthropic",
+        )
+        _ = agent.agent
+        assert mock_model.call_args.args[0] == "claude-opus-4-5-20251101"
+
 
 class TestGetAgent:
     """Tests for get_agent factory function."""

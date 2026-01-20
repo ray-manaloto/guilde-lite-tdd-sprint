@@ -42,6 +42,7 @@ class MockSprint:
     def __init__(
         self,
         id=None,
+        spec_id=None,
         name="Sprint Alpha",
         goal=None,
         status=SprintStatus.PLANNED,
@@ -50,6 +51,7 @@ class MockSprint:
         items=None,
     ):
         self.id = id or uuid4()
+        self.spec_id = spec_id
         self.name = name
         self.goal = goal
         self.status = status

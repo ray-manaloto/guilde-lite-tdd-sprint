@@ -130,6 +130,13 @@ valid LLM credentials:
 E2E_ALLOW_LLM=true bun run test:e2e
 ```
 
+The sprint planning interview can also call LLMs. To stub those questions during
+E2E runs, set the backend env var before starting the API:
+
+```bash
+PLANNING_INTERVIEW_MODE=stub uv run --directory backend uvicorn app.main:app --reload
+```
+
 Example E2E test:
 ```ts
 import { test, expect } from "@playwright/test";
@@ -162,6 +169,27 @@ Notes:
 - Reads `OPENAI_API_KEY` and `OPENAI_MODEL` from repo `.env` if not set in the shell.
 - `OPENAI_MODEL` must use `openai-responses:<model>`; the prefix is stripped for the SDK call.
 - `openai:<model>` (chat) is intentionally unsupported in this repo.
+- This script makes a paid API call.
+
+### API Key Requirements (OpenAI + Anthropic)
+
+- Use project-level keys with full model access for the providers you enable.
+- OpenAI keys must allow Responses API usage for the configured models.
+- Anthropic keys must allow Messages API usage for the configured models.
+
+## LLM Smoke Test (Anthropic SDK)
+
+Use the Anthropic Python SDK directly to validate the configured Anthropic key/model
+without PydanticAI.
+
+```bash
+cd backend
+uv run python scripts/anthropic_sdk_smoke.py
+```
+
+Notes:
+- Reads `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` from repo `.env` if not set in the shell.
+- If `ANTHROPIC_MODEL` starts with `anthropic:`, the prefix is stripped before the SDK call.
 - This script makes a paid API call.
 
 ## PydanticAI OpenAI Models List
@@ -211,10 +239,19 @@ PydanticAI routing note:
 ## Skills & Browser Automation Helpers
 
 - **agent-browser**: CLI-driven browser automation that can complement Playwright for smoke checks
-  or reproducing UI bugs interactively. See:
+  or reproducing UI bugs interactively. The backend agent exposes this tool by default and
+  allows all URLs (no allowlist). See:
   - https://github.com/vercel-labs/agent-browser
   - https://github.com/vercel-labs/agent-browser/blob/main/skills/agent-browser/SKILL.md
   - https://agent-browser.dev/
+  Config:
+  - `AGENT_BROWSER_ENABLED=true|false`
+  - `AGENT_BROWSER_TIMEOUT_SECONDS=60`
+- **http-fetch**: Direct HTTP fetch tool for link access when a browser tool is unavailable.
+  The agent can call this to retrieve page text (allow-all URLs, no allowlist). Config:
+  - `HTTP_FETCH_ENABLED=true|false`
+  - `HTTP_FETCH_TIMEOUT_SECONDS=15`
+  - `HTTP_FETCH_MAX_CHARS=12000`
 - **Codex skills**: Use local `skills/testing-automation` for repeatable validation workflow.
   References:
   - https://developers.openai.com/codex/skills/

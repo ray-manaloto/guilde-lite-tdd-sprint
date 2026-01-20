@@ -166,8 +166,11 @@ class Settings(BaseSettings):
     # === AI Agent (pydantic_ai) ===
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = ""
+    OPENAI_BASE_URL: str | None = None
+    OPENAI_ORG: str | None = None
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = ""
+    ANTHROPIC_BASE_URL: str | None = None
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_MODEL: str = ""
     AI_MODEL: str = "gpt-4o-mini"
@@ -175,6 +178,12 @@ class Settings(BaseSettings):
     JUDGE_MODEL: str = ""
     AI_FRAMEWORK: str = "pydantic_ai"
     LLM_PROVIDER: Literal["openai", "anthropic", "openrouter"] = "openai"
+    PLANNING_INTERVIEW_MODE: Literal["live", "stub"] = "live"
+    AGENT_BROWSER_ENABLED: bool = True
+    AGENT_BROWSER_TIMEOUT_SECONDS: int = 60
+    HTTP_FETCH_ENABLED: bool = True
+    HTTP_FETCH_TIMEOUT_SECONDS: int = 15
+    HTTP_FETCH_MAX_CHARS: int = 12000
 
     @model_validator(mode="after")
     def validate_llm_provider_settings(self):  # type: ignore[override]

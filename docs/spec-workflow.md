@@ -46,12 +46,24 @@ The assessment returns:
 
 Note: phase list expands later to include research + critique.
 
+## Planning Interview (Ralph Playbook)
+
+For sprint prompts, we run a Ralph-style planning interview before moving into
+implementation planning. The interview uses an AskUserQuestion-style tool to
+collect clarifying questions (JTBD, edge cases, acceptance criteria).
+
+Artifacts:
+- `artifacts.assessment` stores complexity signals.
+- `artifacts.planning` stores `{status, questions, answers, metadata}`.
+
 ## API (Phase 1)
 
 - `GET /api/v1/specs` list specs (optional status filter)
 - `POST /api/v1/specs` create spec draft
 - `GET /api/v1/specs/{spec_id}` fetch spec
 - `POST /api/v1/specs/{spec_id}/validate` validate spec
+- `POST /api/v1/specs/planning` create spec draft + generate interview questions
+- `POST /api/v1/specs/{spec_id}/planning/answers` store interview answers
 
 ## CLI
 

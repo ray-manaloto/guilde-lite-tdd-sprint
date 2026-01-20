@@ -5,6 +5,8 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label }
 import { apiClient } from "@/lib/api-client";
 import type {
   PaginatedResponse,
+  SpecPlanningQuestion,
+  SpecPlanningResponse,
   Sprint,
   SprintCreate,
   SprintItem,
@@ -60,7 +62,17 @@ export default function SprintsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isCreatingItem, setIsCreatingItem] = useState(false);
 
+  const [planningPrompt, setPlanningPrompt] = useState("");
+  const [planningQuestions, setPlanningQuestions] = useState<SpecPlanningQuestion[]>([]);
+  const [planningAnswers, setPlanningAnswers] = useState<string[]>([]);
+  const [planningSpecId, setPlanningSpecId] = useState<string | null>(null);
+  const [planningStatus, setPlanningStatus] = useState<"idle" | "questions" | "answered">("idle");
+  const [planningError, setPlanningError] = useState<string | null>(null);
+  const [isPlanning, setIsPlanning] = useState(false);
+  const [isSavingAnswers, setIsSavingAnswers] = useState(false);
+
   const [draftSprint, setDraftSprint] = useState<SprintCreate>({
+    spec_id: null,
     name: "",
     goal: "",
     status: "planned",
@@ -75,6 +87,12 @@ export default function SprintsPage() {
     priority: 2,
     estimate_points: undefined,
   });
+
+  const planningReady = planningStatus === "answered";
+  const planningAnswersComplete =
+    planningQuestions.length > 0 &&
+    planningAnswers.length === planningQuestions.length &&
+    planningAnswers.every((answer) => answer.trim().length > 0);
 
   const loadSprints = async () => {
     setLoading(true);
@@ -121,6 +139,11 @@ export default function SprintsPage() {
     event.preventDefault();
     setCreateError(null);
 
+    if (!planningReady) {
+      setCreateError("Complete the planning interview before creating a sprint.");
+      return;
+    }
+
     if (!draftSprint.name?.trim()) {
       setCreateError("Sprint name is required.");
       return;
@@ -131,14 +154,20 @@ export default function SprintsPage() {
       const payload: SprintCreate = {
         name: draftSprint.name.trim(),
         goal: draftSprint.goal?.trim() || undefined,
+        spec_id: draftSprint.spec_id || undefined,
         status: draftSprint.status,
         start_date: draftSprint.start_date || undefined,
         end_date: draftSprint.end_date || undefined,
       };
       const created = await apiClient.post<SprintWithItems>("/sprints", payload);
-      setDraftSprint({ name: "", goal: "", status: "planned", start_date: "", end_date: "" });
+      setDraftSprint({ spec_id: null, name: "", goal: "", status: "planned", start_date: "", end_date: "" });
       setSprints((prev) => [created, ...prev]);
       setSelectedSprintId(created.id);
+      setPlanningPrompt("");
+      setPlanningQuestions([]);
+      setPlanningAnswers([]);
+      setPlanningSpecId(null);
+      setPlanningStatus("idle");
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Failed to create sprint.");
     } finally {
@@ -186,6 +215,69 @@ export default function SprintsPage() {
       setItemError(err instanceof Error ? err.message : "Failed to create sprint item.");
     } finally {
       setIsCreatingItem(false);
+    }
+  };
+
+  const handleStartPlanning = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPlanningError(null);
+
+    if (!planningPrompt.trim()) {
+      setPlanningError("Provide a sprint prompt to start the interview.");
+      return;
+    }
+
+    setIsPlanning(true);
+    try {
+      const data = await apiClient.post<SpecPlanningResponse>("/specs/planning", {
+        task: planningPrompt.trim(),
+      });
+      setPlanningSpecId(data.spec.id);
+      setPlanningQuestions(data.planning.questions || []);
+      setPlanningAnswers(new Array(data.planning.questions.length).fill(""));
+      setPlanningStatus("questions");
+      setDraftSprint((prev) => ({
+        ...prev,
+        goal: prev.goal?.trim() ? prev.goal : planningPrompt.trim(),
+        spec_id: data.spec.id,
+      }));
+    } catch (err) {
+      setPlanningError(err instanceof Error ? err.message : "Failed to start planning interview.");
+    } finally {
+      setIsPlanning(false);
+    }
+  };
+
+  const handleSaveAnswers = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPlanningError(null);
+
+    if (!planningSpecId) {
+      setPlanningError("Start the planning interview first.");
+      return;
+    }
+
+    if (!planningAnswersComplete) {
+      setPlanningError("Answer every planning question before saving.");
+      return;
+    }
+
+    setIsSavingAnswers(true);
+    try {
+      const answersPayload = planningQuestions.map((question, index) => ({
+        question: question.question,
+        answer: planningAnswers[index].trim(),
+      }));
+      const data = await apiClient.post<SpecPlanningResponse>(
+        `/specs/${planningSpecId}/planning/answers`,
+        { answers: answersPayload }
+      );
+      setPlanningStatus("answered");
+      setPlanningQuestions(data.planning.questions || planningQuestions);
+    } catch (err) {
+      setPlanningError(err instanceof Error ? err.message : "Failed to save planning answers.");
+    } finally {
+      setIsSavingAnswers(false);
     }
   };
 
@@ -268,6 +360,84 @@ export default function SprintsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
+                <Target className="h-5 w-5" /> Sprint planning interview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form className="space-y-4" onSubmit={handleStartPlanning}>
+                <div className="space-y-2">
+                  <Label htmlFor="planning-prompt">Sprint prompt</Label>
+                  <textarea
+                    id="planning-prompt"
+                    className="min-h-[90px] w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm"
+                    value={planningPrompt}
+                    onChange={(event) => setPlanningPrompt(event.target.value)}
+                    placeholder="Describe the sprint outcomes you want to achieve..."
+                  />
+                </div>
+                <Button type="submit" disabled={isPlanning}>
+                  {isPlanning ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Starting interview
+                    </span>
+                  ) : (
+                    "Start planning interview"
+                  )}
+                </Button>
+              </form>
+
+              {planningQuestions.length > 0 && (
+                <form className="space-y-4" onSubmit={handleSaveAnswers}>
+                  <div className="space-y-3">
+                    <p className="text-xs font-medium uppercase text-muted-foreground">
+                      Clarifying questions
+                    </p>
+                    {planningQuestions.map((question, index) => (
+                      <div key={`${question.question}-${index}`} className="space-y-2">
+                        <p className="text-sm font-medium">{question.question}</p>
+                        {question.rationale && (
+                          <p className="text-xs text-muted-foreground">{question.rationale}</p>
+                        )}
+                        <Input
+                          id={`planning-answer-${index}`}
+                          value={planningAnswers[index] || ""}
+                          onChange={(event) =>
+                            setPlanningAnswers((prev) => {
+                              const next = [...prev];
+                              next[index] = event.target.value;
+                              return next;
+                            })
+                          }
+                          placeholder="Your answer"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <Button type="submit" disabled={isSavingAnswers || !planningAnswersComplete}>
+                    {isSavingAnswers ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Saving answers
+                      </span>
+                    ) : (
+                      "Save answers"
+                    )}
+                  </Button>
+                </form>
+              )}
+
+              {planningStatus === "answered" && (
+                <p className="text-sm text-muted-foreground">
+                  Planning interview complete. You can create the sprint now.
+                </p>
+              )}
+
+              {planningError && <p className="text-sm text-destructive">{planningError}</p>}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Plus className="h-5 w-5" /> New Sprint
               </CardTitle>
             </CardHeader>
@@ -340,8 +510,13 @@ export default function SprintsPage() {
                     ))}
                   </select>
                 </div>
+                {!planningReady && (
+                  <p className="text-xs text-muted-foreground">
+                    Complete the planning interview before creating this sprint.
+                  </p>
+                )}
                 {createError && <p className="text-sm text-destructive">{createError}</p>}
-                <Button type="submit" disabled={isCreating} className="w-full">
+                <Button type="submit" disabled={isCreating || !planningReady} className="w-full">
                   {isCreating ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" /> Creating

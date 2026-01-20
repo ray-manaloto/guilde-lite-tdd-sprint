@@ -36,6 +36,11 @@ class Sprint(Base, TimestampMixin):
     __tablename__ = "sprints"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    spec_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("specs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     goal: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[SprintStatus] = mapped_column(

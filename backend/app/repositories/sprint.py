@@ -43,6 +43,7 @@ async def get_multi(
 async def create(
     db: AsyncSession,
     *,
+    spec_id: UUID | None = None,
     name: str,
     goal: str | None = None,
     status: SprintStatus = SprintStatus.PLANNED,
@@ -51,6 +52,7 @@ async def create(
 ) -> Sprint:
     """Create a new sprint."""
     sprint = Sprint(
+        spec_id=spec_id,
         name=name,
         goal=goal,
         status=status,

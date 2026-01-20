@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError, ValidationError
 from app.db.models.sprint import Sprint, SprintItem
-from app.repositories import sprint_repo, sprint_item_repo
+from app.repositories import spec_repo, sprint_repo, sprint_item_repo
 from app.schemas.sprint import (
     SprintCreate,
     SprintItemCreate,
@@ -57,8 +57,13 @@ class SprintService:
     async def create(self, sprint_in: SprintCreate) -> Sprint:
         """Create a new sprint."""
         self._validate_dates(sprint_in.start_date, sprint_in.end_date)
+        if sprint_in.spec_id:
+            spec = await spec_repo.get_by_id(self.db, sprint_in.spec_id)
+            if not spec:
+                raise NotFoundError(message="Spec not found", details={"spec_id": str(sprint_in.spec_id)})
         return await sprint_repo.create(
             self.db,
+            spec_id=sprint_in.spec_id,
             name=sprint_in.name,
             goal=sprint_in.goal,
             status=sprint_in.status,
@@ -74,6 +79,11 @@ class SprintService:
         """
         sprint = await self.get_by_id(sprint_id)
         update_data = sprint_in.model_dump(exclude_unset=True)
+        spec_id = update_data.get("spec_id")
+        if spec_id:
+            spec = await spec_repo.get_by_id(self.db, spec_id)
+            if not spec:
+                raise NotFoundError(message="Spec not found", details={"spec_id": str(spec_id)})
         start_date = update_data.get("start_date", sprint.start_date)
         end_date = update_data.get("end_date", sprint.end_date)
         self._validate_dates(start_date, end_date)

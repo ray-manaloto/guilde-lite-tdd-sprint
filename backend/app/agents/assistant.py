@@ -21,7 +21,7 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.settings import ModelSettings
 
 from app.agents.prompts import DEFAULT_SYSTEM_PROMPT
-from app.agents.tools import get_current_datetime
+from app.agents.tools import fetch_url_content, get_current_datetime, run_agent_browser
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -76,8 +76,9 @@ class AssistantAgent:
         """Select the provider-specific model implementation."""
         provider = self.llm_provider
         if provider == "anthropic":
+            model_name = self._normalize_anthropic_model(self.model_name)
             return AnthropicModel(
-                self.model_name,
+                model_name,
                 api_key=settings.api_key_for_provider(provider),
             )
         if provider == "openrouter":
@@ -101,6 +102,13 @@ class AssistantAgent:
             raise ValueError("OpenAI chat models are disabled; use openai-responses:<model>.")
         raise ValueError("OpenAI models must use openai-responses:<model>.")
 
+    @staticmethod
+    def _normalize_anthropic_model(model_name: str) -> str:
+        """Normalize Anthropic model strings for SDK usage."""
+        if model_name.startswith("anthropic:"):
+            return model_name.split(":", 1)[1]
+        return model_name
+
     def _register_tools(self, agent: Agent[Deps, str]) -> None:
         """Register all tools on the agent."""
 
@@ -111,6 +119,24 @@ class AssistantAgent:
             Use this tool when you need to know the current date or time.
             """
             return get_current_datetime()
+
+        if settings.AGENT_BROWSER_ENABLED:
+
+            @agent.tool
+            async def agent_browser(ctx: RunContext[Deps], command: str) -> str:
+                """Run an agent-browser command for live web interactions."""
+                return run_agent_browser(command, settings.AGENT_BROWSER_TIMEOUT_SECONDS)
+
+        if settings.HTTP_FETCH_ENABLED:
+
+            @agent.tool
+            async def http_fetch(ctx: RunContext[Deps], url: str) -> str:
+                """Fetch a URL over HTTP and return the page text."""
+                return fetch_url_content(
+                    url,
+                    timeout_seconds=settings.HTTP_FETCH_TIMEOUT_SECONDS,
+                    max_chars=settings.HTTP_FETCH_MAX_CHARS,
+                )
 
     @property
     def agent(self) -> Agent[Deps, str]:

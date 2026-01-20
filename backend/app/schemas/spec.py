@@ -29,6 +29,43 @@ class SpecRead(BaseSchema, TimestampSchema):
     artifacts: dict[str, Any] = Field(default_factory=dict)
 
 
+class SpecPlanningQuestion(BaseSchema):
+    """Planning interview question."""
+
+    question: str
+    rationale: str | None = None
+
+
+class SpecPlanningAnswer(BaseSchema):
+    """Planning interview answer."""
+
+    question: str
+    answer: str
+
+
+class SpecPlanningRead(BaseSchema):
+    """Planning interview payload stored in artifacts."""
+
+    status: str
+    questions: list[SpecPlanningQuestion] = Field(default_factory=list)
+    answers: list[SpecPlanningAnswer] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class SpecPlanningCreate(BaseSchema):
+    """Request schema for planning interview creation."""
+
+    title: str | None = Field(default=None, max_length=255)
+    task: str = Field(min_length=1)
+    max_questions: int = Field(default=5, ge=1, le=10)
+
+
+class SpecPlanningAnswers(BaseSchema):
+    """Request schema for planning interview answers."""
+
+    answers: list[SpecPlanningAnswer] = Field(default_factory=list)
+
+
 class SpecValidationRead(BaseSchema):
     """Schema for spec validation results."""
 
@@ -42,3 +79,10 @@ class SpecValidationResponse(BaseSchema):
 
     spec: SpecRead
     validation: SpecValidationRead
+
+
+class SpecPlanningResponse(BaseSchema):
+    """Response schema for planning interview endpoints."""
+
+    spec: SpecRead
+    planning: SpecPlanningRead

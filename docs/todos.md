@@ -21,6 +21,10 @@
 - [x] Run OpenAI model permutation test for gpt-5.2-codex.
 - [x] Standardize on OpenAI Responses API model naming (openai-responses prefix).
 - [x] Enforce openai-responses prefix for OpenAI model selection (settings + agent).
+- [x] Add direct OpenAI + Anthropic SDK clients with smoke tests (responses API).
+- [x] Document API key requirements/scopes for OpenAI + Anthropic usage.
+- [x] Add agent-browser tool integration tests (allow-all URL policy).
+- [x] Add HTTP fetch tool for link access (allow-all URL policy).
 
 ## Skills & Automation
 
@@ -33,6 +37,8 @@
 - [ ] Document how to use skills for smoke/regression testing.
 - [x] Add AI-research-SKILLs marketplace install script + validation.
 - [x] Document AI-research-SKILLs marketplace usage for Codex.
+- [x] Document agent-browser tool usage (default-on browser access).
+- [x] Document HTTP fetch tool usage (default-on URL access).
 
 ## Spec Workflow (Auto-Claude Port)
 
@@ -40,3 +46,6 @@
 - [x] Implement complexity assessment + phase selection.
 - [x] Implement spec creation + validation endpoints.
 - [x] Add CLI entrypoint for spec runs.
+- [x] Add Ralph playbook planning interview (AskUserQuestion tool) for sprint prompts.
+- [x] Add spec planning endpoints (questions + answers) with artifacts storage.
+- [x] Enforce planning interview before sprint creation in UI.

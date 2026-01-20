@@ -1,6 +1,7 @@
 """Integration tests for sprint services."""
 
 from datetime import date, timedelta
+from uuid import uuid4
 
 import pytest
 
@@ -51,3 +52,16 @@ async def test_sprint_lifecycle(db_session):
     await service.delete(sprint.id)
     with pytest.raises(NotFoundError):
         await service.get_by_id(sprint.id)
+
+
+@pytest.mark.anyio
+async def test_sprint_create_with_missing_spec(db_session):
+    """Creating a sprint with an unknown spec should fail."""
+    service = SprintService(db_session)
+    with pytest.raises(NotFoundError):
+        await service.create(
+            SprintCreate(
+                name="Spec-linked sprint",
+                spec_id=uuid4(),
+            )
+        )

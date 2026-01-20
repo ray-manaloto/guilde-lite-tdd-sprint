@@ -3,6 +3,7 @@ export type SprintItemStatus = "todo" | "in_progress" | "blocked" | "done";
 
 export interface Sprint {
   id: string;
+  spec_id?: string | null;
   name: string;
   goal?: string | null;
   status: SprintStatus;
@@ -29,6 +30,7 @@ export interface SprintWithItems extends Sprint {
 }
 
 export interface SprintCreate {
+  spec_id?: string | null;
   name: string;
   goal?: string | null;
   status?: SprintStatus;
@@ -37,6 +39,7 @@ export interface SprintCreate {
 }
 
 export interface SprintUpdate {
+  spec_id?: string | null;
   name?: string;
   goal?: string | null;
   status?: SprintStatus;

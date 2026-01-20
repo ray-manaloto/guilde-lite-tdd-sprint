@@ -47,7 +47,31 @@ def mock_spec() -> MockSpec:
 def mock_spec_service(mock_spec: MockSpec) -> MagicMock:
     service = MagicMock()
     service.create = AsyncMock(return_value=mock_spec)
+    service.create_with_planning = AsyncMock(
+        return_value=(
+            mock_spec,
+            {
+                "status": "needs_answers",
+                "questions": [
+                    {"question": "Who is the primary user?", "rationale": "Clarify audience."}
+                ],
+                "answers": [],
+                "metadata": {"provider": "openai", "model_name": "openai-responses:test"},
+            },
+        )
+    )
     service.get_by_id = AsyncMock(return_value=mock_spec)
+    service.save_planning_answers = AsyncMock(
+        return_value=(
+            mock_spec,
+            {
+                "status": "answered",
+                "questions": [{"question": "Who is the primary user?"}],
+                "answers": [{"question": "Who is the primary user?", "answer": "Team leads"}],
+                "metadata": {"provider": "openai"},
+            },
+        )
+    )
     service.validate = AsyncMock(return_value=(mock_spec, {"valid": True, "errors": [], "warnings": []}))
     return service
 
@@ -123,3 +147,29 @@ async def test_validate_spec_success(
     assert response.status_code == 200
     data = response.json()
     assert data["validation"]["valid"] is True
+
+
+@pytest.mark.anyio
+async def test_create_spec_planning_success(client_with_mock_service: AsyncClient):
+    response = await client_with_mock_service.post(
+        f"{settings.API_V1_STR}/specs/planning",
+        json={"task": "Plan sprint outcomes"},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["planning"]["status"] == "needs_answers"
+    assert data["planning"]["questions"]
+
+
+@pytest.mark.anyio
+async def test_save_planning_answers_success(
+    client_with_mock_service: AsyncClient,
+    mock_spec: MockSpec,
+):
+    response = await client_with_mock_service.post(
+        f"{settings.API_V1_STR}/specs/{mock_spec.id}/planning/answers",
+        json={"answers": [{"question": "Who is the primary user?", "answer": "Team leads"}]},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["planning"]["status"] == "answered"

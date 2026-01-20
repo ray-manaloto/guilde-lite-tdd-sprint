@@ -12,9 +12,9 @@ Status legend:
 
 | Capability | Auto-Claude evidence | Port status | Port evidence / notes |
 | --- | --- | --- | --- |
-| Spec creation (interactive) | `guides/CLI-USAGE.md`, `apps/backend/runners/spec_runner.py` | Missing | No spec runner or spec storage in port. |
-| Spec complexity tiers | `guides/CLI-USAGE.md`, `apps/backend/spec/complexity.py` | Missing | No complexity assessment logic. |
-| Spec validation checkpoints | `apps/backend/spec/validate_spec.py` | Missing | No spec validation pipeline. |
+| Spec creation (interactive) | `guides/CLI-USAGE.md`, `apps/backend/runners/spec_runner.py` | Partial | Spec draft API + CLI exist; planning interview still pending. |
+| Spec complexity tiers | `guides/CLI-USAGE.md`, `apps/backend/spec/complexity.py` | Partial | Heuristic complexity tiers exist; needs richer signals. |
+| Spec validation checkpoints | `apps/backend/spec/validate_spec.py` | Partial | Basic validation endpoint exists; no QA loop yet. |
 | Implementation plan + phases | `apps/backend/implementation_plan/`, `apps/backend/spec/phases.py` | Missing | No implementation plan model or phase runner. |
 | Follow-up planning | `apps/backend/agents/planner.py`, `apps/backend/cli/followup_commands.py` | Missing | No follow-up planner or CLI. |
 

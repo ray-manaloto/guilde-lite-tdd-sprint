@@ -12,8 +12,10 @@
 2. PydanticAI Web UI integration (done)
 3. Testing automation + validation gates (in progress)
 4. Codex skills for test automation (in progress)
-5. Kanban board parity (planned)
-6. Auto-Claude workflow parity (planned)
+5. Agent-browser + SDK parity (OpenAI/Anthropic) (in progress)
+6. Kanban board parity (planned)
+7. Ralph playbook agentic loop (planning + build) (planned)
+8. Auto-Claude workflow parity (planned)
 
 ## Current Sprint (Foundation)
 
@@ -30,7 +32,14 @@
 - [ ] Integration test matrix + coverage for auth/sprints/chat
 - [ ] CI: run backend tests + Playwright smoke
 - [x] Install agent-browser + agent-skills (project scope)
+- [x] Integrate agent-browser tool (default on, allow all URLs)
+- [x] Add direct OpenAI + Anthropic SDK clients (response API) with smoke tests
+- [x] Document SDK usage + required scopes for API keys
+- [x] Add HTTP fetch tool for link access (allow all URLs)
 - [ ] Resolve add-skill + dev3000 skill paths for project scope
+- [x] Ralph playbook interview step for sprint prompts (AskUserQuestion)
+- [x] Sprint planning session storage + APIs (questions/answers)
+- [x] Sprint UI planning interview + enforce before create
 - [ ] Kanban board implementation (optional)
 - [ ] Agent terminals / live run dashboard
 
@@ -45,7 +54,9 @@
 
 - Integration test matrix + CI gating
 - Logfire log review + provider/model validation
-- Agent-browser skill install + usage doc
+- Agent-browser tool integration + usage doc (done)
+- OpenAI/Anthropic SDK usage doc + smoke tests (done)
+- HTTP fetch tool for link access (done)
 - Spec workflow API + CLI entrypoints
 - Kanban board UX + drag/drop
 - Sprint metrics (velocity, burndown)

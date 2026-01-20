@@ -5,10 +5,11 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import BadRequestError, NotFoundError, ValidationError
 from app.db.models.spec import Spec, SpecComplexity, SpecStatus
+from app.agents.ralph_planner import run_planning_interview
 from app.repositories import spec_repo
-from app.schemas.spec import SpecCreate
+from app.schemas.spec import SpecCreate, SpecPlanningAnswer
 
 
 @dataclass
@@ -177,3 +178,83 @@ class SpecService:
             update_data={"artifacts": artifacts, "status": status},
         )
         return updated, validation
+
+    async def create_with_planning(
+        self,
+        spec_in: SpecCreate,
+        *,
+        max_questions: int = 5,
+    ) -> tuple[Spec, dict]:
+        """Create a spec and run the planning interview."""
+        spec = await self.create(spec_in)
+        updated, planning = await self.start_planning(spec.id, max_questions=max_questions)
+        return updated, planning
+
+    async def start_planning(
+        self,
+        spec_id: UUID,
+        *,
+        max_questions: int = 5,
+    ) -> tuple[Spec, dict]:
+        """Generate planning interview questions and store them."""
+        spec = await self.get_by_id(spec_id)
+        if not spec.task or not spec.task.strip():
+            raise ValidationError(message="Spec task is required for planning.")
+
+        try:
+            interview = await run_planning_interview(spec.task, max_questions=max_questions)
+        except ValueError as exc:
+            raise ValidationError(message=str(exc)) from exc
+        planning = {
+            "status": "needs_answers",
+            "questions": interview.questions,
+            "answers": [],
+            "metadata": interview.metadata,
+        }
+
+        artifacts = dict(spec.artifacts or {})
+        artifacts["planning"] = planning
+
+        updated = await spec_repo.update(
+            self.db,
+            db_spec=spec,
+            update_data={"artifacts": artifacts},
+        )
+        return updated, planning
+
+    async def save_planning_answers(
+        self,
+        spec_id: UUID,
+        answers: list[SpecPlanningAnswer],
+    ) -> tuple[Spec, dict]:
+        """Store planning interview answers for a spec."""
+        spec = await self.get_by_id(spec_id)
+        artifacts = dict(spec.artifacts or {})
+        planning = dict(artifacts.get("planning") or {})
+        questions = planning.get("questions") or []
+        if not questions:
+            raise BadRequestError(message="Planning interview has not been started.")
+        if not answers:
+            raise ValidationError(message="Planning answers are required.")
+
+        normalized = []
+        for answer in answers:
+            question = answer.question.strip()
+            response = answer.answer.strip()
+            if not question or not response:
+                raise ValidationError(message="Planning answers cannot be empty.")
+            normalized.append({"question": question, "answer": response})
+
+        if len(normalized) < len(questions):
+            raise ValidationError(message="All planning questions must be answered.")
+
+        planning["answers"] = normalized
+        planning["status"] = "answered"
+        artifacts["planning"] = planning
+
+        updated = await spec_repo.update(
+            self.db,
+            db_spec=spec,
+            update_data={"artifacts": artifacts},
+        )
+        return updated, planning

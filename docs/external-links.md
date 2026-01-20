@@ -31,6 +31,11 @@ This project references the following external resources and related projects.
 
 - https://github.com/pydantic/logfire-mcp
 
+## Agentic Loop (Ralph)
+
+- https://github.com/ClaytonFarr/ralph-playbook
+- https://github.com/ClaytonFarr/ralph-playbook#use-claudes-askuserquestiontool-for-planning
+
 ## Claude Diary
 
 - https://github.com/rlancemartin/claude-diary

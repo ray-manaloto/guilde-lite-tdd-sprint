@@ -389,6 +389,10 @@ Set provider-specific model names in `.env` (OpenAI uses the Responses API):
 ```bash
 # OpenAI example
 OPENAI_MODEL=openai-responses:gpt-5.2-codex
+# Anthropic example (optional `anthropic:` prefix)
+ANTHROPIC_MODEL=anthropic:claude-opus-4-5-20251101
+# Provider selection
+LLM_PROVIDER=openai
 # Optional: override judge model (must match the provider)
 JUDGE_MODEL=
 ```
@@ -417,6 +421,17 @@ async def search_database(ctx: RunContext[Deps], query: str) -> list[dict]:
     # Access user context and database via ctx.deps
     ...
 ```
+
+### Built-in Tools
+
+- `current_datetime`: returns the current date/time.
+- `http_fetch`: fetches URL content (default on, allow-all URLs). Configure with:
+  - `HTTP_FETCH_ENABLED=true|false`
+  - `HTTP_FETCH_TIMEOUT_SECONDS=15`
+  - `HTTP_FETCH_MAX_CHARS=12000`
+- `agent_browser`: browser automation via CLI (optional; requires the CLI in PATH). Configure with:
+  - `AGENT_BROWSER_ENABLED=true|false`
+  - `AGENT_BROWSER_TIMEOUT_SECONDS=60`
 
 ### LangChain Integration
 
