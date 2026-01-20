@@ -56,6 +56,27 @@ Artifacts:
 - `artifacts.assessment` stores complexity signals.
 - `artifacts.planning` stores `{status, questions, answers, metadata}`.
 
+### Dual-Subagent + Judge
+
+When `DUAL_SUBAGENT_ENABLED=true`, the planning interview runs two agents and a
+judge:
+
+- OpenAI agent uses `OPENAI_MODEL`
+- Anthropic agent uses `ANTHROPIC_MODEL`
+- Judge uses `JUDGE_MODEL` (must start with `openai-responses:`)
+
+The judge scores helpfulness and correctness, then selects the best candidate.
+Selection is stored in `artifacts.planning.metadata.selected_candidate`.
+
+### Telemetry
+
+Planning metadata includes model names and Logfire trace IDs/URLs for the
+agents and judge. The UI renders this data in the Sprint planning panel and the
+Sprint Focus panel when a sprint is linked to the spec.
+
+For Logfire links, configure `LOGFIRE_TRACE_URL_TEMPLATE` in `backend/.env` and
+see `backend/docs/observability.md` for setup details.
+
 ## API (Phase 1)
 
 - `GET /api/v1/specs` list specs (optional status filter)

@@ -41,7 +41,8 @@ test.describe("AI Chat", () => {
       await input.fill("Hello from Playwright");
       await sendButton.click();
 
-      await expect(page.getByText("Hello from Playwright")).toBeVisible();
+      const userMessage = page.getByTestId("chat-message-user").last();
+      await expect(userMessage).toContainText("Hello from Playwright");
     });
 
     test("should reset the conversation", async ({ page }) => {
@@ -53,10 +54,11 @@ test.describe("AI Chat", () => {
       await input.fill("Reset me");
       await page.getByRole("button", { name: /send message/i }).click();
 
-      await expect(page.getByText("Reset me")).toBeVisible();
+      const message = page.getByTestId("chat-message-user").last();
+      await expect(message).toContainText("Reset me");
       await page.getByRole("button", { name: /reset/i }).click();
 
-      await expect(page.getByText("Reset me")).toBeHidden();
+      await expect(message).toBeHidden();
       await expect(page.getByText(/ai assistant/i)).toBeVisible();
     });
   });

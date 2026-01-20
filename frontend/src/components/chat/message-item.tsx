@@ -23,6 +23,7 @@ export function MessageItem({ message, groupPosition }: MessageItemProps) {
         isGrouped ? "py-2 sm:py-3" : "py-3 sm:py-4",
         isUser && "flex-row-reverse"
       )}
+      data-testid={`chat-message-${message.role}`}
     >
       {/* Timeline connector line for grouped messages */}
       {isGrouped && !isUser && (

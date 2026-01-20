@@ -127,10 +127,13 @@ chat response when the template is configured.
 ## Sprint Planning Telemetry
 
 The sprint planning interview stores telemetry metadata in the planning
-response. When dual-subagent mode is enabled, the UI can show:
+response and persists it in spec artifacts. When dual-subagent mode is enabled,
+the UI can show:
 
 - Judge trace link + selected model
 - Per-subagent trace links for OpenAI + Anthropic
+- Sprint history telemetry when a sprint is linked to a spec (`spec_id`)
+  (visible in the Sprint Focus panel)
 
 ### Background Tasks
 
