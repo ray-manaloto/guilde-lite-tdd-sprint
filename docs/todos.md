@@ -13,6 +13,7 @@
 - [x] Install and review agent-browser skill for UI automation (project scope).
 - [x] Install agent-skills set (react-best-practices, web-design-guidelines, vercel-deploy-claimable).
 - [x] Add automated validation for required skills (script + pytest).
+- [x] Add CLI wrapper skills for add-skill, dev3000, and claude-diary.
 - [ ] Review dev3000 and add-skill repos for reusable testing skills (path check).
 - [x] Package `skills/testing-automation` for Codex usage.
 - [ ] Document how to use skills for smoke/regression testing.

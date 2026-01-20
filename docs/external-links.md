@@ -26,3 +26,9 @@ This project references the following external resources and related projects.
 - https://developers.openai.com/codex/skills/
 - https://developers.openai.com/codex/skills/create-skill/
 - https://agentskills.io/
+
+## Claude Diary
+
+- https://github.com/rlancemartin/claude-diary
+- https://rlancemartin.github.io/2025/12/01/claude_diary/
+- https://arxiv.org/pdf/2309.02427

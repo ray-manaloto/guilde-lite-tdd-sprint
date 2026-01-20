@@ -23,6 +23,7 @@
 - [x] Playwright smoke suite aligned to auth/home/sprints UI
 - [x] Codex testing-automation skill (local + package)
 - [x] Skill validation checks (script + pytest)
+- [x] CLI wrapper skills (add-skill, dev3000, claude-diary)
 - [ ] Integration test matrix + coverage for auth/sprints/chat
 - [ ] CI: run backend tests + Playwright smoke
 - [x] Install agent-browser + agent-skills (project scope)

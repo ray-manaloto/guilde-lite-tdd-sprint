@@ -9,6 +9,9 @@ This repo tracks Codex skills used for testing automation and browser validation
 - `skills/react-best-practices` — UI best practices skill (from vercel-labs/agent-skills).
 - `skills/web-design-guidelines` — Design guidance skill (from vercel-labs/agent-skills).
 - `skills/vercel-deploy-claimable` — Deployment claim skill (from vercel-labs/agent-skills).
+- `skills/add-skill-cli` — CLI usage wrapper for vercel-labs/add-skill.
+- `skills/dev3000-cli` — CLI usage wrapper for vercel-labs/dev3000.
+- `skills/claude-diary` — Workflow notes for claude-diary.
 
 ### Package the local skill
 
