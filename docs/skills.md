@@ -13,6 +13,9 @@ This repo tracks Codex skills used for testing automation and browser validation
 - `skills/dev3000-cli` — CLI usage wrapper for vercel-labs/dev3000.
 - `skills/claude-diary` — Workflow notes for claude-diary.
 
+These CLI wrapper skills include reference docs and runnable scripts under each
+skill's `scripts/` directory.
+
 ### Package the local skill
 
 ```bash

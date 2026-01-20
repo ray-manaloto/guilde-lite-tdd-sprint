@@ -12,8 +12,10 @@ Use this skill when you need to run or automate local developer workflows using
 
 ## Workflow
 
-1. Review upstream docs for installation and available commands.
-2. Run the CLI from the repo root so any generated files stay in this project.
+1. Use the helper scripts in `scripts/` to install or run dev3000:
+   - `scripts/install-dev3000.sh`
+   - `scripts/run-dev3000.sh`
+2. Run from the repo root so generated files stay in this project.
 3. Document any new commands or conventions in `docs/skills.md`.
 
 ## References

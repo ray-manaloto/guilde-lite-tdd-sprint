@@ -12,10 +12,12 @@ structure using the `vercel-labs/add-skill` CLI.
 
 ## Workflow
 
-1. Open the upstream README for the authoritative CLI usage.
+1. Use the helper scripts in `scripts/` to list or install skills:
+   - `scripts/list-agent-skills.sh`
+   - `scripts/install-agent-skills.sh`
 2. Run the CLI from the repo root so generated files land in `skills/`.
-3. Validate the generated skill using `scripts/check-skills.sh` and the
-   `backend/tests/test_skill_installation.py` test.
+3. Validate with `scripts/check-skills.sh` and
+   `uv run --directory backend pytest tests/test_skill_installation.py`.
 
 ## References
 

@@ -12,8 +12,8 @@ summaries using the `claude-diary` tool.
 
 ## Workflow
 
-1. Review upstream docs for setup and required inputs.
-2. Run the tool against the target session or logs.
+1. Use `scripts/install-claude-diary.sh` to install commands/hooks and settings.
+2. Run `/diary` and `/reflect` in Claude Code as needed.
 3. Store outputs in the agreed repo location and link them in docs if needed.
 
 ## References
