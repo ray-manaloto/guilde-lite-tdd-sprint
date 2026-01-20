@@ -68,6 +68,9 @@ export default function SprintsPage() {
   const [planningSpecId, setPlanningSpecId] = useState<string | null>(null);
   const [planningStatus, setPlanningStatus] = useState<"idle" | "questions" | "answered">("idle");
   const [planningError, setPlanningError] = useState<string | null>(null);
+  const [planningMetadata, setPlanningMetadata] = useState<
+    SpecPlanningResponse["planning"]["metadata"] | null
+  >(null);
   const [isPlanning, setIsPlanning] = useState(false);
   const [isSavingAnswers, setIsSavingAnswers] = useState(false);
 
@@ -168,6 +171,7 @@ export default function SprintsPage() {
       setPlanningAnswers([]);
       setPlanningSpecId(null);
       setPlanningStatus("idle");
+      setPlanningMetadata(null);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Failed to create sprint.");
     } finally {
@@ -234,6 +238,7 @@ export default function SprintsPage() {
       });
       setPlanningSpecId(data.spec.id);
       setPlanningQuestions(data.planning.questions || []);
+      setPlanningMetadata(data.planning.metadata || null);
       setPlanningAnswers(new Array(data.planning.questions.length).fill(""));
       setPlanningStatus("questions");
       setDraftSprint((prev) => ({
@@ -274,6 +279,7 @@ export default function SprintsPage() {
       );
       setPlanningStatus("answered");
       setPlanningQuestions(data.planning.questions || planningQuestions);
+      setPlanningMetadata(data.planning.metadata || planningMetadata);
     } catch (err) {
       setPlanningError(err instanceof Error ? err.message : "Failed to save planning answers.");
     } finally {
@@ -424,6 +430,97 @@ export default function SprintsPage() {
                   </Button>
                 </form>
               )}
+
+              {planningMetadata &&
+                (planningMetadata.candidates?.length ||
+                  planningMetadata.judge ||
+                  planningMetadata.selected_candidate) && (
+                  <div
+                    className="space-y-3 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground"
+                    data-testid="planning-telemetry"
+                  >
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">
+                      Telemetry
+                    </p>
+                    {planningMetadata.selected_candidate && (
+                      <p className="text-sm" data-testid="planning-telemetry-selected">
+                        Judge selected{" "}
+                        <span className="font-medium text-foreground">
+                          {planningMetadata.selected_candidate.provider || "agent"}
+                          {planningMetadata.selected_candidate.model_name
+                            ? ` (${planningMetadata.selected_candidate.model_name})`
+                            : ""}
+                        </span>
+                      </p>
+                    )}
+                    {planningMetadata.judge && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>
+                          Judge{" "}
+                          {planningMetadata.judge.model_name
+                            ? `(${planningMetadata.judge.model_name})`
+                            : ""}
+                        </span>
+                        {planningMetadata.judge.trace_url ? (
+                          <a
+                            className="underline decoration-dashed underline-offset-2 hover:text-foreground"
+                            href={planningMetadata.judge.trace_url}
+                            rel="noreferrer"
+                            target="_blank"
+                            data-testid="planning-telemetry-judge-link"
+                            data-trace-id={planningMetadata.judge.trace_id || undefined}
+                          >
+                            Logfire
+                          </a>
+                        ) : planningMetadata.judge.trace_id ? (
+                          <span
+                            data-testid="planning-telemetry-judge-trace"
+                            data-trace-id={planningMetadata.judge.trace_id}
+                          >
+                            Trace: {planningMetadata.judge.trace_id}
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
+                    {planningMetadata.candidates?.length ? (
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">
+                          Subagents
+                        </p>
+                        {planningMetadata.candidates.map((candidate, index) => (
+                          <div
+                            key={`${candidate.provider || "agent"}-${index}`}
+                            className="flex flex-wrap items-center gap-2"
+                          >
+                            <span>
+                              {candidate.provider || "agent"}
+                              {candidate.model_name ? ` (${candidate.model_name})` : ""}
+                            </span>
+                            {candidate.trace_url ? (
+                              <a
+                                className="underline decoration-dashed underline-offset-2 hover:text-foreground"
+                                href={candidate.trace_url}
+                                rel="noreferrer"
+                                target="_blank"
+                                data-testid={`planning-telemetry-agent-${candidate.provider || `agent-${index}`}-link`}
+                                data-trace-id={candidate.trace_id || undefined}
+                              >
+                                Logfire
+                              </a>
+                            ) : candidate.trace_id ? (
+                              <span
+                                data-testid={`planning-telemetry-agent-${candidate.provider || `agent-${index}`}-trace`}
+                                data-trace-id={candidate.trace_id}
+                              >
+                                Trace: {candidate.trace_id}
+                              </span>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
 
               {planningStatus === "answered" && (
                 <p className="text-sm text-muted-foreground">

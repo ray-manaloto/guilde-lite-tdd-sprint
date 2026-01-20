@@ -111,6 +111,27 @@ uv run logfire projects use guilde-lite
 If `LOGFIRE_TOKEN` is set in `.env`, it overrides the CLI token and must be a
 **write token** for the target project. A **read token** is only for logfire-mcp.
 
+## Chat Trace Links
+
+To show Logfire trace links in chat messages, set a trace URL template in the
+backend `.env`:
+
+```
+LOGFIRE_TRACE_URL_TEMPLATE=<paste a trace URL and replace the trace id with {trace_id}>
+```
+
+Tip: open a trace in the Logfire UI, copy the URL, and replace the specific
+trace id segment with `{trace_id}`. The backend will emit `trace_url` for each
+chat response when the template is configured.
+
+## Sprint Planning Telemetry
+
+The sprint planning interview stores telemetry metadata in the planning
+response. When dual-subagent mode is enabled, the UI can show:
+
+- Judge trace link + selected model
+- Per-subagent trace links for OpenAI + Anthropic
+
 ### Background Tasks
 
 #### Celery

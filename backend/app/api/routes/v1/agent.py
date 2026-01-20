@@ -24,6 +24,8 @@ from pydantic_ai.messages import (
 
 from app.agents.assistant import Deps, get_agent
 from app.core.config import settings
+from app.core.logfire_links import build_logfire_payload
+from app.core.telemetry import get_trace_context
 from app.db.session import get_db_context
 from app.schemas.agent_tdd import AgentTddJudgeConfig, AgentTddRunCreate, AgentTddSubagentConfig
 from app.services.agent_tdd import AgentTddService
@@ -82,6 +84,23 @@ def build_message_history(history: list[dict[str, str]]) -> list[ModelRequest | 
             model_history.append(ModelRequest(parts=[SystemPromptPart(content=msg["content"])]))
 
     return model_history
+
+
+def resolve_logfire_payload(
+    trace_id: str | None,
+) -> dict[str, str] | None:
+    return build_logfire_payload(trace_id)
+
+
+def resolve_candidate_trace_id(candidate) -> str | None:
+    if not candidate:
+        return None
+    metrics = candidate.metrics or {}
+    if isinstance(metrics, dict):
+        trace_id = metrics.get("trace_id")
+        if isinstance(trace_id, str):
+            return trace_id
+    return None
 
 
 @router.websocket("/ws/agent")
@@ -186,6 +205,13 @@ async def agent_websocket(
                             "candidate_id": str(selected_candidate.id),
                         }
 
+                    selected_trace_id = resolve_candidate_trace_id(selected_candidate)
+                    if not selected_trace_id and result.decision:
+                        selected_trace_id = result.decision.trace_id
+                    if not selected_trace_id:
+                        selected_trace_id = result.run.trace_id
+                    logfire_payload = resolve_logfire_payload(selected_trace_id)
+
                     if not chosen_output:
                         await manager.send_event(
                             websocket,
@@ -203,6 +229,7 @@ async def agent_websocket(
                                 if result.decision
                                 else None,
                                 "selected_candidate": selected_meta,
+                                "logfire": logfire_payload,
                             },
                         )
                 else:
@@ -302,10 +329,15 @@ async def agent_websocket(
                                             )
 
                             elif Agent.is_end_node(node) and agent_run.result is not None:
+                                trace_id, _ = get_trace_context()
+                                logfire_payload = resolve_logfire_payload(trace_id)
                                 await manager.send_event(
                                     websocket,
                                     "final_result",
-                                    {"output": agent_run.result.output},
+                                    {
+                                        "output": agent_run.result.output,
+                                        "logfire": logfire_payload,
+                                    },
                                 )
 
                     if agent_run.result:

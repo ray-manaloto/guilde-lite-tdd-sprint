@@ -239,7 +239,7 @@ class AgentTddService:
             agent_name=cfg.name,
             provider=cfg.provider,
             model_name=model_name,
-        ):
+        ) as (trace_id, span_id):
             try:
                 output, tool_events, _ = await agent.run(data.message, data.history)
                 tool_calls = self._serialize_tool_events(tool_events)
@@ -250,6 +250,10 @@ class AgentTddService:
                     "history_length": len(data.history or []),
                     "message_length": len(data.message or ""),
                 }
+                if trace_id:
+                    metrics["trace_id"] = trace_id
+                if span_id:
+                    metrics["span_id"] = span_id
                 return _SubagentResult(
                     agent_name=cfg.name,
                     provider=cfg.provider,
@@ -266,6 +270,10 @@ class AgentTddService:
                     "history_length": len(data.history or []),
                     "message_length": len(data.message or ""),
                 }
+                if trace_id:
+                    metrics["trace_id"] = trace_id
+                if span_id:
+                    metrics["span_id"] = span_id
                 return _SubagentResult(
                     agent_name=cfg.name,
                     provider=cfg.provider,

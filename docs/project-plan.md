@@ -40,6 +40,8 @@
 - [x] Ralph playbook interview step for sprint prompts (AskUserQuestion)
 - [x] Sprint planning session storage + APIs (questions/answers)
 - [x] Sprint UI planning interview + enforce before create
+- [x] Add Logfire trace links to chat messages (WS payload + UI)
+- [x] Add sprint planning telemetry panel (judge + subagent trace links, chosen model)
 - [ ] Route all user prompts through dual-subagent + judge workflow (OpenAI + Anthropic)
 - [ ] Persist subagent outputs + judge decision (DB + telemetry)
 - [x] Record history + chosen model metadata per checkpoint/event
@@ -56,6 +58,7 @@
 ## Next Up
 
 - Integration test matrix + CI gating
+- Fix spec planning proxy endpoints for UI + Playwright telemetry stability
 - Logfire log review + provider/model validation
 - Agent-browser tool integration + usage doc (done)
 - OpenAI/Anthropic SDK usage doc + smoke tests (done)

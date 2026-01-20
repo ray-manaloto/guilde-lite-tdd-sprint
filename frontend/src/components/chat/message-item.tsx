@@ -85,6 +85,23 @@ export function MessageItem({ message, groupPosition }: MessageItemProps) {
           </div>
         )}
 
+        {!isUser && !message.isStreaming && message.logfire && (
+          <div className="text-xs text-muted-foreground">
+            {message.logfire.traceUrl ? (
+              <a
+                className="underline decoration-dashed underline-offset-2 hover:text-foreground"
+                href={message.logfire.traceUrl}
+                rel="noreferrer"
+                target="_blank"
+              >
+                View Logfire trace
+              </a>
+            ) : message.logfire.traceId ? (
+              <span>Logfire trace: {message.logfire.traceId}</span>
+            ) : null}
+          </div>
+        )}
+
         {message.toolCalls && message.toolCalls.length > 0 && (
           <div className="w-full space-y-2">
             {message.toolCalls.map((toolCall) => (

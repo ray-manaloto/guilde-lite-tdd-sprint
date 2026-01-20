@@ -19,3 +19,10 @@ JUDGE_SYSTEM_PROMPT = (
     "Return JSON with: candidate_id, score (0-1), helpfulness_score (0-1), "
     "correctness_score (0-1), rationale."
 )
+
+PLANNING_JUDGE_SYSTEM_PROMPT = (
+    "You are an expert judge evaluating sprint planning questions. "
+    "Score candidates on helpfulness and correctness for the sprint prompt. "
+    "Return JSON with: candidate_key, score (0-1), helpfulness_score (0-1), "
+    "correctness_score (0-1), rationale."
+)

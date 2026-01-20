@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     LOGFIRE_SERVICE_NAME: str = "guilde_lite_tdd_sprint"
     LOGFIRE_ENVIRONMENT: str = "development"
     LOGFIRE_SEND_TO_LOGFIRE: bool | Literal["if-token-present"] = "if-token-present"
+    LOGFIRE_TRACE_URL_TEMPLATE: str | None = None
     TELEMETRY_FILE: str | None = None
 
     @field_validator("LOGFIRE_SEND_TO_LOGFIRE", mode="before")

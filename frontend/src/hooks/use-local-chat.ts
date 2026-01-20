@@ -223,18 +223,30 @@ export function useLocalChat() {
 
         case "final_result": {
           if (currentMessageId) {
-            const { output } = wsEvent.data as { output: string };
+            const { output, logfire } = wsEvent.data as {
+              output: string;
+              logfire?: { trace_id?: string; span_id?: string; trace_url?: string };
+            };
+            const logfireInfo = logfire
+              ? {
+                  traceId: logfire.trace_id,
+                  spanId: logfire.span_id,
+                  traceUrl: logfire.trace_url,
+                }
+              : undefined;
             // For CrewAI, replace content with final output if it exists
             if (output) {
               updateMessage(currentMessageId, (msg) => ({
                 ...msg,
                 content: msg.content || output,
                 isStreaming: false,
+                logfire: logfireInfo ?? msg.logfire,
               }));
             } else {
               updateMessage(currentMessageId, (msg) => ({
                 ...msg,
                 isStreaming: false,
+                logfire: logfireInfo ?? msg.logfire,
               }));
             }
           }

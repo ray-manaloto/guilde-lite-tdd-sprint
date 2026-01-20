@@ -33,6 +33,24 @@ uv run pytest -v
 uv run pytest -x
 ```
 
+## Local Dev Services
+
+Use the dev control script to start/stop backend API, agent web, and frontend
+from one command:
+
+```bash
+./scripts/devctl.sh start
+./scripts/devctl.sh status
+./scripts/devctl.sh stop
+```
+
+If `tmux` is installed, the script runs services inside a tmux session
+(default: `guilde-lite-dev`). Attach to a service window with:
+
+```bash
+./scripts/devctl.sh logs frontend
+```
+
 ## Test Structure
 
 ```
@@ -136,6 +154,27 @@ E2E runs, set the backend env var before starting the API:
 ```bash
 PLANNING_INTERVIEW_MODE=stub uv run --directory backend uvicorn app.main:app --reload
 ```
+
+### Logfire Validation (Sprint Telemetry)
+
+The sprint planning telemetry panel has a Playwright validation that can query
+Logfire and confirm the trace IDs resolve. Enable it only when you have valid
+Logfire read access and want to validate telemetry links:
+
+```bash
+export PLAYWRIGHT_LOGFIRE_VALIDATION=true
+export LOGFIRE_READ_TOKEN=...
+export LOGFIRE_TRACE_URL_TEMPLATE="https://logfire.pydantic.dev/.../{trace_id}..."
+export LOGFIRE_SERVICE_NAME=guilde_lite_tdd_sprint
+```
+
+The Playwright test will:
+- Start a sprint planning interview (requires real LLM keys).
+- Read the judge + subagent trace links from the UI.
+- Query Logfire using the read token to validate the trace IDs exist.
+
+If `LOGFIRE_TRACE_URL_TEMPLATE` is not set, the test will fall back to trace IDs
+rendered in the telemetry panel (if available).
 
 Example E2E test:
 ```ts
