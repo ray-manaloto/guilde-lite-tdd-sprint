@@ -121,7 +121,11 @@ test.describe("Sprint Board", () => {
 
     const telemetryPanel = page.getByTestId("planning-telemetry");
     await expect(telemetryPanel).toBeVisible();
-    await expect(page.getByTestId("planning-telemetry-selected")).toBeVisible();
+    await expect(
+      page.getByTestId("planning-telemetry-selected").or(
+        page.getByTestId("planning-telemetry-model")
+      )
+    ).toBeVisible();
 
     const judgeLink = page.getByTestId("planning-telemetry-judge-link");
     const judgeTrace = page.getByTestId("planning-telemetry-judge-trace");

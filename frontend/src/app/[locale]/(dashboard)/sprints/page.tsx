@@ -434,7 +434,11 @@ export default function SprintsPage() {
               {planningMetadata &&
                 (planningMetadata.candidates?.length ||
                   planningMetadata.judge ||
-                  planningMetadata.selected_candidate) && (
+                  planningMetadata.selected_candidate ||
+                  planningMetadata.provider ||
+                  planningMetadata.model_name ||
+                  planningMetadata.trace_id ||
+                  planningMetadata.trace_url) && (
                   <div
                     className="space-y-3 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground"
                     data-testid="planning-telemetry"
@@ -442,7 +446,7 @@ export default function SprintsPage() {
                     <p className="text-xs font-semibold uppercase text-muted-foreground">
                       Telemetry
                     </p>
-                    {planningMetadata.selected_candidate && (
+                    {planningMetadata.selected_candidate ? (
                       <p className="text-sm" data-testid="planning-telemetry-selected">
                         Judge selected{" "}
                         <span className="font-medium text-foreground">
@@ -452,7 +456,34 @@ export default function SprintsPage() {
                             : ""}
                         </span>
                       </p>
-                    )}
+                    ) : planningMetadata.provider || planningMetadata.model_name ? (
+                      <p className="text-sm" data-testid="planning-telemetry-model">
+                        Model{" "}
+                        <span className="font-medium text-foreground">
+                          {planningMetadata.provider || "agent"}
+                          {planningMetadata.model_name ? ` (${planningMetadata.model_name})` : ""}
+                        </span>
+                      </p>
+                    ) : null}
+                    {planningMetadata.trace_url ? (
+                      <a
+                        className="underline decoration-dashed underline-offset-2 hover:text-foreground"
+                        href={planningMetadata.trace_url}
+                        rel="noreferrer"
+                        target="_blank"
+                        data-testid="planning-telemetry-trace-link"
+                        data-trace-id={planningMetadata.trace_id || undefined}
+                      >
+                        Planning trace
+                      </a>
+                    ) : planningMetadata.trace_id ? (
+                      <span
+                        data-testid="planning-telemetry-trace"
+                        data-trace-id={planningMetadata.trace_id}
+                      >
+                        Trace: {planningMetadata.trace_id}
+                      </span>
+                    ) : null}
                     {planningMetadata.judge && (
                       <div className="flex flex-wrap items-center gap-2">
                         <span>
