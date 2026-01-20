@@ -49,6 +49,12 @@ from app.schemas.sprint import (
     SprintItemRead,
     SprintItemUpdate,
 )
+from app.schemas.spec import (
+    SpecCreate,
+    SpecRead,
+    SpecValidationRead,
+    SpecValidationResponse,
+)
 
 __all__ = [
     "UserCreate",
@@ -94,4 +100,8 @@ __all__ = [
     "SprintItemCreate",
     "SprintItemRead",
     "SprintItemUpdate",
+    "SpecCreate",
+    "SpecRead",
+    "SpecValidationRead",
+    "SpecValidationResponse",
 ]

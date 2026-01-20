@@ -16,6 +16,7 @@ from app.services.webhook import WebhookService
 from app.services.agent_run import AgentRunService
 from app.services.agent_tdd import AgentTddService
 from app.services.sprint import SprintService
+from app.services.spec import SpecService
 
 __all__ = [
     "UserService",
@@ -25,4 +26,5 @@ __all__ = [
     "AgentRunService",
     "AgentTddService",
     "SprintService",
+    "SpecService",
 ]

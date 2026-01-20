@@ -34,6 +34,7 @@ from app.services.session import SessionService
 from app.services.webhook import WebhookService
 from app.services.item import ItemService
 from app.services.sprint import SprintService
+from app.services.spec import SpecService
 from app.services.agent_run import AgentRunService
 from app.services.agent_tdd import AgentTddService
 
@@ -74,6 +75,14 @@ def get_sprint_service(db: DBSession) -> SprintService:
 
 
 SprintSvc = Annotated[SprintService, Depends(get_sprint_service)]
+
+
+def get_spec_service(db: DBSession) -> SpecService:
+    """Create SpecService instance with database session."""
+    return SpecService(db)
+
+
+SpecSvc = Annotated[SpecService, Depends(get_spec_service)]
 
 
 def get_agent_run_service(db: DBSession) -> AgentRunService:

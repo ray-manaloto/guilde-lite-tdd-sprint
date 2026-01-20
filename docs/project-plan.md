@@ -24,6 +24,7 @@
 - [x] Codex testing-automation skill (local + package)
 - [x] Skill validation checks (script + pytest)
 - [x] CLI wrapper skills (add-skill, dev3000, claude-diary)
+- [x] Spec-driven workflow (spec draft, complexity, phases, validation)
 - [ ] Integration test matrix + coverage for auth/sprints/chat
 - [ ] CI: run backend tests + Playwright smoke
 - [x] Install agent-browser + agent-skills (project scope)
@@ -42,6 +43,7 @@
 
 - Integration test matrix + CI gating
 - Agent-browser skill install + usage doc
+- Spec workflow API + CLI entrypoints
 - Kanban board UX + drag/drop
 - Sprint metrics (velocity, burndown)
 - Auto-Claude spec runner + phase tracking
