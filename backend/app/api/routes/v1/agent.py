@@ -199,7 +199,7 @@ async def agent_websocket(
                             "final_result",
                             {
                                 "output": chosen_output,
-                                "decision": result.decision.model_dump()
+                                "decision": result.decision.model_dump(mode="json")
                                 if result.decision
                                 else None,
                                 "selected_candidate": selected_meta,
