@@ -5,6 +5,10 @@ This repo tracks Codex skills used for testing automation and browser validation
 ## Local Skills (in-repo)
 
 - `skills/testing-automation` — Workflow guidance for automated testing (unit + integration + Playwright).
+- `skills/agent-browser` — Browser automation skill (installed from vercel-labs/agent-browser).
+- `skills/react-best-practices` — UI best practices skill (from vercel-labs/agent-skills).
+- `skills/web-design-guidelines` — Design guidance skill (from vercel-labs/agent-skills).
+- `skills/vercel-deploy-claimable` — Deployment claim skill (from vercel-labs/agent-skills).
 
 ### Package the local skill
 
@@ -17,21 +21,39 @@ Install the resulting `.skill` file via Codex, then restart Codex.
 
 ## External Skills To Install
 
-Use the skill installer to add these to Codex (requires network access):
+Use the skill installer to add these at project scope (requires network access):
 
 ```bash
-/Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+python /Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
   --repo vercel-labs/agent-browser \
-  --path skills/agent-browser
+  --path skills/agent-browser \
+  --dest /Users/rmanaloto/dev/github/ray-manaloto/guilde-lite-tdd-sprint/skills
 
-/Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+python /Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
   --repo vercel-labs/agent-skills \
   --path skills/react-best-practices \
   --path skills/web-design-guidelines \
-  --path skills/claude.ai/vercel-deploy-claimable
+  --path skills/claude.ai/vercel-deploy-claimable \
+  --dest /Users/rmanaloto/dev/github/ray-manaloto/guilde-lite-tdd-sprint/skills
+
+python /Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+  --repo vercel-labs/add-skill \
+  --path skills/add-skill \
+  --dest /Users/rmanaloto/dev/github/ray-manaloto/guilde-lite-tdd-sprint/skills
 ```
 
-Restart Codex after installing new skills.
+Note: `vercel-labs/add-skill` does not currently expose a `skills/` directory. If
+the repo layout changes, update the path above.
+
+Restart Codex after installing new skills so they are discovered.
+
+## Validation
+
+Required skills are tracked in `skills/required-skills.txt`.
+
+```bash
+scripts/check-skills.sh
+```
 
 ## References
 

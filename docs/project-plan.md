@@ -22,9 +22,11 @@
 - [x] PydanticAI Web UI CLI entrypoint
 - [x] Playwright smoke suite aligned to auth/home/sprints UI
 - [x] Codex testing-automation skill (local + package)
+- [x] Skill validation checks (script + pytest)
 - [ ] Integration test matrix + coverage for auth/sprints/chat
 - [ ] CI: run backend tests + Playwright smoke
-- [ ] Install agent-browser + agent-skills + add-skill + dev3000 in Codex
+- [x] Install agent-browser + agent-skills (project scope)
+- [ ] Resolve add-skill + dev3000 skill paths for project scope
 - [ ] Kanban board implementation (optional)
 - [ ] Agent terminals / live run dashboard
 
