@@ -30,6 +30,7 @@ const resolveEnv = (key: string) => process.env[key] ?? fileEnv[key];
 
 const logfireTemplate = resolveEnv("LOGFIRE_TRACE_URL_TEMPLATE");
 const shouldValidateLogfire = process.env.PLAYWRIGHT_LOGFIRE_VALIDATION === "true";
+const allowLlm = process.env.E2E_ALLOW_LLM === "true";
 const backendDir = path.resolve(process.cwd(), "../backend");
 const PLANNING_WAIT_TIMEOUT = 90000;
 const openaiModel = resolveEnv("OPENAI_MODEL");
@@ -139,6 +140,57 @@ test.describe("Sprint Board", () => {
     await sprintGoalInput.fill("Playwright smoke test");
     await page.getByRole("button", { name: /create sprint/i }).click();
     await expect(page.getByRole("button", { name: new RegExp(sprintName) })).toBeVisible();
+  });
+
+  test("browser-agent sprint flow builds hello world python project", async ({ page }) => {
+    if (shouldValidateLogfire) {
+      test.skip(true, "Covered by full workflow Logfire validation test.");
+    }
+    if (!allowLlm) {
+      test.skip(true, "E2E_ALLOW_LLM not enabled");
+    }
+    test.setTimeout(180000);
+    const sprintName = `Hello World Sprint ${Date.now()}`;
+
+    await page.goto("/sprints");
+    await expect(page.getByRole("heading", { name: /sprint board/i })).toBeVisible();
+
+    const planningPromptInput = page.locator("#planning-prompt");
+    const sprintNameInput = page.locator("#sprint-name");
+    const sprintGoalInput = page.locator("#sprint-goal");
+
+    await planningPromptInput.scrollIntoViewIfNeeded();
+    await planningPromptInput.click();
+    await planningPromptInput.fill("Build a Python project that prints hello world.");
+    await expect(planningPromptInput).toHaveValue(
+      "Build a Python project that prints hello world."
+    );
+    await page.getByRole("button", { name: /start planning interview/i }).click();
+    await expect(page.locator("#planning-answer-0")).toBeVisible({ timeout: PLANNING_WAIT_TIMEOUT });
+
+    const answerInputs = page.locator("[id^='planning-answer-']");
+    const answerCount = await answerInputs.count();
+    for (let i = 0; i < answerCount; i += 1) {
+      await answerInputs.nth(i).fill("Answer for hello world sprint");
+    }
+    await page.getByRole("button", { name: /save answers/i }).click();
+    await expect(page.getByText(/planning interview complete/i)).toBeVisible();
+
+    await sprintNameInput.fill("");
+    await sprintNameInput.click();
+    await sprintNameInput.type(sprintName);
+    await expect(sprintNameInput).toHaveValue(sprintName);
+    await sprintGoalInput.fill("Build a minimal Python hello world project");
+    await page.getByRole("button", { name: /create sprint/i }).click();
+    await expect(page.getByRole("button", { name: new RegExp(sprintName) })).toBeVisible();
+
+    const sprintTelemetry = page.getByTestId("sprint-telemetry");
+    await expect(sprintTelemetry).toBeVisible();
+    await expect(sprintTelemetry).toContainText(/openai/i);
+    await expect(sprintTelemetry).toContainText(/anthropic/i);
+    if (judgeModel) {
+      await expect(sprintTelemetry).toContainText(judgeModel);
+    }
   });
 
   test("planning telemetry links validate in Logfire", async ({ page }) => {
