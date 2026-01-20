@@ -35,13 +35,20 @@ async def list_sprints(
     return await paginate(db, query)
 
 
+from fastapi import APIRouter, status, BackgroundTasks
+from app.runners.phase_runner import PhaseRunner
+
 @router.post("", response_model=SprintRead, status_code=status.HTTP_201_CREATED)
 async def create_sprint(
     sprint_in: SprintCreate,
     sprint_service: SprintSvc,
+    background_tasks: BackgroundTasks,
 ):
-    """Create a sprint."""
-    return await sprint_service.create(sprint_in)
+    """Create a sprint and trigger automated phase runner."""
+    sprint = await sprint_service.create(sprint_in)
+    await sprint_service.db.commit() # Force commit so background task can see it
+    background_tasks.add_task(PhaseRunner.start, sprint.id)
+    return sprint
 
 
 @router.get("/{sprint_id}", response_model=SprintReadWithItems)
