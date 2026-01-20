@@ -9,6 +9,12 @@
 - [ ] Wire CI to run backend tests + Playwright smoke (LLM-gated).
 - [ ] Add validation checklist to PR template or docs.
 - [x] Validate Logfire token with logfire-mcp workflow.
+- [ ] Review Logfire logs for LLM provider/model usage (OpenAI/Anthropic).
+- [ ] Confirm OpenAI/Anthropic keys + models match env + docs.
+- [ ] Configure logfire-mcp client/server (no secrets in repo) and run initial trace query.
+- [ ] Resolve OpenAI model access error (openai-responses:gpt-5.2-codex 404) and re-verify logs.
+- [x] Verify upstream PydanticAI version pins in referenced repos (template, deepagents, Auto-Claude).
+- [x] Add OpenAI SDK smoke test script (uses .env OPENAI_API_KEY + OPENAI_MODEL).
 
 ## Skills & Automation
 

@@ -148,6 +148,21 @@ If you want to point to a running frontend server instead of starting one:
 PLAYWRIGHT_BASE_URL=http://localhost:3000 bun run test:e2e
 ```
 
+## LLM Smoke Test (OpenAI SDK)
+
+Use the OpenAI Python SDK directly to validate the configured OpenAI key/model
+without PydanticAI. This mirrors the OpenAI agents SDK usage patterns.
+
+```bash
+cd backend
+uv run python scripts/openai_sdk_smoke.py
+```
+
+Notes:
+- Reads `OPENAI_API_KEY` and `OPENAI_MODEL` from repo `.env` if not set in the shell.
+- If `OPENAI_MODEL` starts with `openai-responses:`, the prefix is stripped for the SDK call.
+- This script makes a paid API call.
+
 ## Skills & Browser Automation Helpers
 
 - **agent-browser**: CLI-driven browser automation that can complement Playwright for smoke checks

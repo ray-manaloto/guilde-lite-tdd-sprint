@@ -25,6 +25,8 @@
 - [x] Skill validation checks (script + pytest)
 - [x] CLI wrapper skills (add-skill, dev3000, claude-diary)
 - [x] Spec-driven workflow (spec draft, complexity, phases, validation)
+- [ ] Review Logfire logs for auth/LLM usage (OpenAI/Anthropic)
+- [ ] Verify provider/model selection matches env + docs
 - [ ] Integration test matrix + coverage for auth/sprints/chat
 - [ ] CI: run backend tests + Playwright smoke
 - [x] Install agent-browser + agent-skills (project scope)
@@ -42,6 +44,7 @@
 ## Next Up
 
 - Integration test matrix + CI gating
+- Logfire log review + provider/model validation
 - Agent-browser skill install + usage doc
 - Spec workflow API + CLI entrypoints
 - Kanban board UX + drag/drop

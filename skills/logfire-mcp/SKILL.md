@@ -13,8 +13,8 @@ Pydantic Logfire MCP server.
 ## Workflow
 
 1. Verify local Logfire envs with `scripts/check-logfire-env.sh` (no secrets printed).
-2. Create a Logfire **read token** and export it as `LOGFIRE_READ_TOKEN`.
-3. Start the MCP server with `scripts/run-logfire-mcp.sh`.
+2. Create a Logfire **read token** and set `LOGFIRE_READ_TOKEN` (repo `.env` or shell).
+3. Start the MCP server with `scripts/run-logfire-mcp.sh` (reads `.env` if not set).
 4. Use your MCP client to query recent errors or spans and confirm ingestion.
 
 ## Notes

@@ -15,3 +15,11 @@ This summarizes how the port aligns with the referenced frameworks/templates.
 
 - Deepagents integration is a future decision; currently we rely on PydanticAI.
 - Auto-Claude parity remains an ongoing roadmap item.
+- Upstream PydanticAI version pins for the referenced frameworks are summarized below.
+
+## Upstream PydanticAI Versions (Checked)
+
+- full-stack-fastapi-nextjs-llm-template: `pydantic-ai>=0.0.39` (template backend), `pydantic-ai-slim[anthropic/openrouter]>=0.0.39`.
+- pydantic-deepagents: `pydantic-ai-slim>=0.1.0` (plus pydantic-ai-backend/todo).
+- pydantic-ai: dynamic versioning in `pyproject.toml` (pins slim extras to the same version at release).
+- Auto-Claude: no `pydantic-ai` dependency (uses `claude-agent-sdk`).

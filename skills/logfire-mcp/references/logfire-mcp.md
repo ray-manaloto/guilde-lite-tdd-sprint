@@ -16,11 +16,14 @@ https://logfire.pydantic.dev/-/redirect/latest-project/settings/read-tokens
 LOGFIRE_READ_TOKEN=YOUR_READ_TOKEN uvx logfire-mcp@latest
 ```
 
-Using a `.env` in the working directory:
+Using a repo `.env`:
 
 ```bash
 LOGFIRE_READ_TOKEN=pylf_v1_us_...
 ```
+
+The helper script `scripts/run-logfire-mcp.sh` will read this value if the
+environment variable is not already set.
 
 Or pass flags:
 
