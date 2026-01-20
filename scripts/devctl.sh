@@ -20,25 +20,40 @@ if [[ -z "${frontend_cmd}" ]]; then
 fi
 
 declare -a SERVICES=("backend" "agent-web" "frontend")
-declare -A SERVICE_DIRS
-declare -A SERVICE_CMDS
-declare -A SERVICE_PORTS
-declare -A SERVICE_MATCH
 
-SERVICE_DIRS["backend"]="${ROOT_DIR}/backend"
-SERVICE_CMDS["backend"]="uv run uvicorn app.main:app --reload --port ${BACKEND_PORT}"
-SERVICE_PORTS["backend"]="${BACKEND_PORT}"
-SERVICE_MATCH["backend"]="uvicorn app.main:app"
+# Function to get service properties to replace associative arrays (Bash 3.2 compat)
+get_service_dir() {
+  case "$1" in
+    "backend") echo "${ROOT_DIR}/backend" ;;
+    "agent-web") echo "${ROOT_DIR}/backend" ;;
+    "frontend") echo "${ROOT_DIR}/frontend" ;;
+  esac
+}
 
-SERVICE_DIRS["agent-web"]="${ROOT_DIR}/backend"
-SERVICE_CMDS["agent-web"]="uv run guilde_lite_tdd_sprint agent web --port ${AGENT_WEB_PORT}"
-SERVICE_PORTS["agent-web"]="${AGENT_WEB_PORT}"
-SERVICE_MATCH["agent-web"]="guilde_lite_tdd_sprint"
 
-SERVICE_DIRS["frontend"]="${ROOT_DIR}/frontend"
-SERVICE_CMDS["frontend"]="${frontend_cmd}"
-SERVICE_PORTS["frontend"]="${FRONTEND_PORT}"
-SERVICE_MATCH["frontend"]="next"
+get_service_cmd() {
+  case "$1" in
+    "backend") echo "uv run uvicorn app.main:app --reload --port ${BACKEND_PORT}" ;;
+    "agent-web") echo "uv run guilde_lite_tdd_sprint agent web --port ${AGENT_WEB_PORT}" ;;
+    "frontend") echo "node ./node_modules/next/dist/bin/next dev -p ${FRONTEND_PORT}" ;;
+  esac
+}
+
+get_service_port() {
+  case "$1" in
+    "backend") echo "${BACKEND_PORT}" ;;
+    "agent-web") echo "${AGENT_WEB_PORT}" ;;
+    "frontend") echo "${FRONTEND_PORT}" ;;
+  esac
+}
+
+get_service_match() {
+  case "$1" in
+    "backend") echo "uvicorn app.main:app" ;;
+    "agent-web") echo "guilde_lite_tdd_sprint" ;;
+    "frontend") echo "next" ;;
+  esac
+}
 
 TMUX_SESSION="${TMUX_SESSION:-guilde-lite-dev}"
 
@@ -85,10 +100,15 @@ start_service() {
   local log_path
   local dir
   local cmd
+  local port
+  local match
+  
   pid_path="$(pid_file "${name}")"
   log_path="$(log_file "${name}")"
-  dir="${SERVICE_DIRS[${name}]}"
-  cmd="${SERVICE_CMDS[${name}]}"
+  dir="$(get_service_dir "${name}")"
+  cmd="$(get_service_cmd "${name}")"
+  port="$(get_service_port "${name}")"
+  match="$(get_service_match "${name}")"
 
   if [[ -f "${pid_path}" ]]; then
     local pid
@@ -101,9 +121,9 @@ start_service() {
   fi
 
   local port_pid
-  port_pid="$(find_pid_on_port "${SERVICE_PORTS[${name}]}" "${SERVICE_MATCH[${name}]}" || true)"
+  port_pid="$(find_pid_on_port "${port}" "${match}" || true)"
   if [[ -n "${port_pid}" ]]; then
-    echo "${name}: running on port ${SERVICE_PORTS[${name}]} (pid ${port_pid})"
+    echo "${name}: running on port ${port} (pid ${port_pid})"
     return 0
   fi
 
@@ -122,16 +142,22 @@ start_service() {
     rm -f "${pid_path}"
     return 1
   fi
-  echo "${name}: started (pid ${new_pid}) on port ${SERVICE_PORTS[${name}]}"
+  echo "${name}: started (pid ${new_pid}) on port ${port}"
 }
 
 stop_service() {
   local name="$1"
   local pid_path
+  local port
+  local match
+  
   pid_path="$(pid_file "${name}")"
+  port="$(get_service_port "${name}")"
+  match="$(get_service_match "${name}")"
+  
   if [[ ! -f "${pid_path}" ]]; then
     local port_pid
-    port_pid="$(find_pid_on_port "${SERVICE_PORTS[${name}]}" "${SERVICE_MATCH[${name}]}" || true)"
+    port_pid="$(find_pid_on_port "${port}" "${match}" || true)"
     if [[ -n "${port_pid}" ]]; then
       kill "${port_pid}" >/dev/null 2>&1 || true
       echo "${name}: stopped unmanaged process (pid ${port_pid})"
@@ -145,7 +171,7 @@ stop_service() {
   pid="$(cat "${pid_path}")"
   if ! is_running "${pid}"; then
     local port_pid
-    port_pid="$(find_pid_on_port "${SERVICE_PORTS[${name}]}" "${SERVICE_MATCH[${name}]}" || true)"
+    port_pid="$(find_pid_on_port "${port}" "${match}" || true)"
     if [[ -n "${port_pid}" ]]; then
       kill "${port_pid}" >/dev/null 2>&1 || true
       echo "${name}: stopped unmanaged process (pid ${port_pid})"
@@ -176,20 +202,26 @@ stop_service() {
 status_service() {
   local name="$1"
   local pid_path
+  local port
+  local match
+
   pid_path="$(pid_file "${name}")"
+  port="$(get_service_port "${name}")"
+  match="$(get_service_match "${name}")"
+  
   if [[ -f "${pid_path}" ]]; then
     local pid
     pid="$(cat "${pid_path}")"
     if is_running "${pid}"; then
-      echo "${name}: running (pid ${pid}) port ${SERVICE_PORTS[${name}]} log $(log_file "${name}")"
+      echo "${name}: running (pid ${pid}) port ${port} log $(log_file "${name}")"
       return 0
     fi
     rm -f "${pid_path}"
   fi
   local port_pid
-  port_pid="$(find_pid_on_port "${SERVICE_PORTS[${name}]}" "${SERVICE_MATCH[${name}]}" || true)"
+  port_pid="$(find_pid_on_port "${port}" "${match}" || true)"
   if [[ -n "${port_pid}" ]]; then
-    echo "${name}: running (pid ${port_pid}) port ${SERVICE_PORTS[${name}]} (unmanaged)"
+    echo "${name}: running (pid ${port_pid}) port ${port} (unmanaged)"
     return 0
   fi
   echo "${name}: stopped"
@@ -223,16 +255,29 @@ tmux_session_exists() {
 }
 
 tmux_start() {
+  local backend_dir backend_cmd
+  local agent_dir agent_cmd
+  local frontend_dir frontend_cmd
+  
+  backend_dir="$(get_service_dir "backend")"
+  backend_cmd="$(get_service_cmd "backend")"
+  
+  agent_dir="$(get_service_dir "agent-web")"
+  agent_cmd="$(get_service_cmd "agent-web")"
+  
+  frontend_dir="$(get_service_dir "frontend")"
+  frontend_cmd="$(get_service_cmd "frontend")"
+
   if tmux_session_exists; then
     echo "tmux session '${TMUX_SESSION}' already running"
     return 0
   fi
   tmux new-session -d -s "${TMUX_SESSION}" -n backend \
-    "cd ${SERVICE_DIRS[backend]} && ${SERVICE_CMDS[backend]}"
+    "cd ${backend_dir} && ${backend_cmd}"
   tmux new-window -t "${TMUX_SESSION}" -n agent-web \
-    "cd ${SERVICE_DIRS[agent-web]} && ${SERVICE_CMDS[agent-web]}"
+    "cd ${agent_dir} && ${agent_cmd}"
   tmux new-window -t "${TMUX_SESSION}" -n frontend \
-    "cd ${SERVICE_DIRS[frontend]} && ${SERVICE_CMDS[frontend]}"
+    "cd ${frontend_dir} && ${frontend_cmd}"
   tmux select-window -t "${TMUX_SESSION}:backend"
   echo "tmux session '${TMUX_SESSION}' started"
 }
