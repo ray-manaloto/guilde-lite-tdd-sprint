@@ -153,6 +153,7 @@ async def agent_websocket(
                         result = await service.execute(payload, user_id=None)
 
                     chosen_output = None
+                    selected_candidate = None
                     for candidate in result.candidates:
                         await manager.send_event(
                             websocket,
@@ -169,10 +170,21 @@ async def agent_websocket(
                         for candidate in result.candidates:
                             if candidate.id == result.decision.candidate_id:
                                 chosen_output = candidate.output
+                                selected_candidate = candidate
                                 break
 
                     if not chosen_output and result.candidates:
                         chosen_output = result.candidates[0].output
+                        selected_candidate = result.candidates[0]
+
+                    selected_meta = None
+                    if selected_candidate:
+                        selected_meta = {
+                            "agent_name": selected_candidate.agent_name,
+                            "provider": selected_candidate.provider,
+                            "model_name": selected_candidate.model_name,
+                            "candidate_id": str(selected_candidate.id),
+                        }
 
                     if not chosen_output:
                         await manager.send_event(
@@ -190,6 +202,7 @@ async def agent_websocket(
                                 "decision": result.decision.model_dump()
                                 if result.decision
                                 else None,
+                                "selected_candidate": selected_meta,
                             },
                         )
                 else:

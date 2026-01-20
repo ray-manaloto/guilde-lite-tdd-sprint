@@ -133,6 +133,13 @@ class AgentRunService:
         update_data = data.model_dump(exclude_unset=True)
         return await agent_run_repo.update_run(self.db, db_run=run, update_data=update_data)
 
+    def _merge_checkpoint_state(self, run: AgentRun, state: dict | None) -> dict:
+        """Ensure checkpoint state includes input payload + model config."""
+        merged = dict(state or {})
+        merged.setdefault("input_payload", run.input_payload)
+        merged.setdefault("model_config", run.model_config or self._default_model_config())
+        return merged
+
     async def add_candidate(
         self,
         run_id: UUID,
@@ -173,7 +180,12 @@ class AgentRunService:
     ) -> AgentDecision:
         await self.get_run(run_id)
         model_name = data.model_name or settings.JUDGE_LLM_MODEL
-        with telemetry_span("agent_run.decision", run_id=str(run_id)) as (trace_id, span_id):
+        with telemetry_span(
+            "agent_run.decision",
+            run_id=str(run_id),
+            candidate_id=str(data.candidate_id) if data.candidate_id else None,
+            judge_model_name=model_name,
+        ) as (trace_id, span_id):
             existing = await agent_run_repo.get_decision_by_run(self.db, run_id)
             if existing:
                 update_data = data.model_dump(exclude_unset=True)
@@ -204,9 +216,7 @@ class AgentRunService:
         data: AgentCheckpointCreate,
     ) -> AgentCheckpoint:
         run = await self.get_run(run_id)
-        state = data.state or {}
-        state.setdefault("input_payload", run.input_payload)
-        state.setdefault("model_config", run.model_config or self._default_model_config())
+        state = self._merge_checkpoint_state(run, data.state)
         with telemetry_span("agent_run.checkpoint", run_id=str(run_id)) as (trace_id, span_id):
             return await agent_run_repo.create_checkpoint(
                 self.db,

@@ -42,6 +42,7 @@
 - [x] Sprint UI planning interview + enforce before create
 - [ ] Route all user prompts through dual-subagent + judge workflow (OpenAI + Anthropic)
 - [ ] Persist subagent outputs + judge decision (DB + telemetry)
+- [x] Record history + chosen model metadata per checkpoint/event
 - [ ] Kanban board implementation (optional)
 - [ ] Agent terminals / live run dashboard
 
@@ -60,6 +61,7 @@
 - OpenAI/Anthropic SDK usage doc + smoke tests (done)
 - HTTP fetch tool for link access (done)
 - Dual-subagent + judge workflow for all prompts
+- Checkpoint-level history + chosen model metadata (done)
 - Spec workflow API + CLI entrypoints
 - Kanban board UX + drag/drop
 - Sprint metrics (velocity, burndown)

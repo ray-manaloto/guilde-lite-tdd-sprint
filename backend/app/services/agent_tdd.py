@@ -110,17 +110,13 @@ class AgentTddService:
 
         decision = await self._run_judge(data, candidates)
         if decision is not None:
+            decision_state = self._build_decision_state(decision, candidates)
             await self.run_service.add_checkpoint(
                 run.id,
                 AgentCheckpointCreate(
                     sequence=sequence,
                     label="decision",
-                    state={
-                        "decision_id": str(decision.id),
-                        "candidate_id": str(decision.candidate_id)
-                        if decision.candidate_id
-                        else None,
-                    },
+                    state=decision_state,
                 ),
             )
             sequence += 1
@@ -251,6 +247,8 @@ class AgentTddService:
                     "duration_ms": int((time.monotonic() - started_at) * 1000),
                     "tool_call_count": len(tool_calls.get("events", [])),
                     "status": "ok",
+                    "history_length": len(data.history or []),
+                    "message_length": len(data.message or ""),
                 }
                 return _SubagentResult(
                     agent_name=cfg.name,
@@ -265,6 +263,8 @@ class AgentTddService:
                     "duration_ms": int((time.monotonic() - started_at) * 1000),
                     "status": "error",
                     "error": str(exc),
+                    "history_length": len(data.history or []),
+                    "message_length": len(data.message or ""),
                 }
                 return _SubagentResult(
                     agent_name=cfg.name,
@@ -392,3 +392,29 @@ class AgentTddService:
             "score": data.get("score"),
             "rationale": rationale,
         }
+
+    @staticmethod
+    def _build_decision_state(decision, candidates) -> dict[str, Any]:
+        selected = None
+        if decision and decision.candidate_id:
+            for candidate in candidates:
+                if candidate.id == decision.candidate_id:
+                    selected = candidate
+                    break
+
+        state: dict[str, Any] = {
+            "decision_id": str(decision.id) if decision else None,
+            "candidate_id": str(decision.candidate_id) if decision else None,
+            "judge_model_name": decision.model_name if decision else None,
+            "score": decision.score if decision else None,
+            "rationale": decision.rationale if decision else None,
+        }
+
+        if selected:
+            state["selected_candidate"] = {
+                "agent_name": selected.agent_name,
+                "provider": selected.provider,
+                "model_name": selected.model_name,
+            }
+
+        return state
