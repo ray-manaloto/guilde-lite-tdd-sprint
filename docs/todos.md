@@ -8,6 +8,7 @@
 - [ ] Add tests for spec workflow (complexity + API endpoints).
 - [ ] Wire CI to run backend tests + Playwright smoke (LLM-gated).
 - [ ] Add validation checklist to PR template or docs.
+- [ ] Validate Logfire token with logfire-mcp workflow.
 
 ## Skills & Automation
 

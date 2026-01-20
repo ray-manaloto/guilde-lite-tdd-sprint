@@ -2,6 +2,7 @@ agent-browser
 add-skill-cli
 claude-diary
 dev3000-cli
+logfire-mcp
 react-best-practices
 testing-automation
 vercel-deploy-claimable

@@ -27,6 +27,10 @@ This project references the following external resources and related projects.
 - https://developers.openai.com/codex/skills/create-skill/
 - https://agentskills.io/
 
+## Observability
+
+- https://github.com/pydantic/logfire-mcp
+
 ## Claude Diary
 
 - https://github.com/rlancemartin/claude-diary

@@ -12,6 +12,7 @@ This repo tracks Codex skills used for testing automation and browser validation
 - `skills/add-skill-cli` — CLI usage wrapper for vercel-labs/add-skill.
 - `skills/dev3000-cli` — CLI usage wrapper for vercel-labs/dev3000.
 - `skills/claude-diary` — Workflow notes for claude-diary.
+- `skills/logfire-mcp` — Logfire MCP workflow for debugging Logfire token issues.
 
 These CLI wrapper skills include reference docs and runnable scripts under each
 skill's `scripts/` directory.
