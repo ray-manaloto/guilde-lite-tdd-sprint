@@ -42,6 +42,8 @@
 - [ ] Persist subagent outputs + judge rationale in agent run records.
 - [ ] Emit telemetry spans for subagent runs + judge selection.
 - [ ] Add tests for judge selection + dual-subagent orchestration.
+- [x] Store chosen model metadata in decision checkpoints and WS payloads.
+- [x] Verify history is present in checkpoints for all prompt runs.
 - [x] Document HTTP fetch tool usage (default-on URL access).
 
 ## Spec Workflow (Auto-Claude Port)

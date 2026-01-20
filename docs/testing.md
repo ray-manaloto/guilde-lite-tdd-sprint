@@ -279,6 +279,7 @@ PydanticAI routing note:
 - **Agents**: OpenAI + Anthropic subagents run per prompt, judge chooses, decision stored.
   Requires `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `JUDGE_MODEL`, and
   `DUAL_SUBAGENT_ENABLED=true` in `.env`.
+  Validate checkpoints include input history and decision metadata for the chosen model.
 
 ## Frontend Tests
 

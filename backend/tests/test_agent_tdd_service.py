@@ -49,3 +49,27 @@ def test_parse_judge_output_formats_rationale():
     assert parsed["score"] == 0.8
     assert "helpfulness=0.9" in parsed["rationale"]
     assert "correctness=0.7" in parsed["rationale"]
+
+
+def test_build_decision_state_includes_selected_candidate():
+    """Decision state should include selected candidate metadata."""
+    candidate_id = uuid4()
+    decision = SimpleNamespace(
+        id=uuid4(),
+        candidate_id=candidate_id,
+        model_name="openai-responses:gpt-5.2-codex",
+        score=0.9,
+        rationale="good",
+    )
+    candidates = [
+        SimpleNamespace(
+            id=candidate_id,
+            agent_name="openai",
+            provider="openai",
+            model_name="openai-responses:gpt-5.2-codex",
+        )
+    ]
+
+    state = AgentTddService._build_decision_state(decision, candidates)
+    assert state["candidate_id"] == str(candidate_id)
+    assert state["selected_candidate"]["model_name"] == "openai-responses:gpt-5.2-codex"
