@@ -1,0 +1,466 @@
+{
+  "installed": [
+    {
+      "dest": "ai-research-model-architecture-litgpt",
+      "plugin": "model-architecture",
+      "skill": "litgpt",
+      "source": "01-model-architecture/litgpt"
+    },
+    {
+      "dest": "ai-research-model-architecture-mamba",
+      "plugin": "model-architecture",
+      "skill": "mamba",
+      "source": "01-model-architecture/mamba"
+    },
+    {
+      "dest": "ai-research-model-architecture-nanogpt",
+      "plugin": "model-architecture",
+      "skill": "nanogpt",
+      "source": "01-model-architecture/nanogpt"
+    },
+    {
+      "dest": "ai-research-model-architecture-rwkv",
+      "plugin": "model-architecture",
+      "skill": "rwkv",
+      "source": "01-model-architecture/rwkv"
+    },
+    {
+      "dest": "ai-research-tokenization-huggingface-tokenizers",
+      "plugin": "tokenization",
+      "skill": "huggingface-tokenizers",
+      "source": "02-tokenization/huggingface-tokenizers"
+    },
+    {
+      "dest": "ai-research-tokenization-sentencepiece",
+      "plugin": "tokenization",
+      "skill": "sentencepiece",
+      "source": "02-tokenization/sentencepiece"
+    },
+    {
+      "dest": "ai-research-fine-tuning-axolotl",
+      "plugin": "fine-tuning",
+      "skill": "axolotl",
+      "source": "03-fine-tuning/axolotl"
+    },
+    {
+      "dest": "ai-research-fine-tuning-llama-factory",
+      "plugin": "fine-tuning",
+      "skill": "llama-factory",
+      "source": "03-fine-tuning/llama-factory"
+    },
+    {
+      "dest": "ai-research-fine-tuning-peft",
+      "plugin": "fine-tuning",
+      "skill": "peft",
+      "source": "03-fine-tuning/peft"
+    },
+    {
+      "dest": "ai-research-fine-tuning-unsloth",
+      "plugin": "fine-tuning",
+      "skill": "unsloth",
+      "source": "03-fine-tuning/unsloth"
+    },
+    {
+      "dest": "ai-research-mechanistic-interpretability-nnsight",
+      "plugin": "mechanistic-interpretability",
+      "skill": "nnsight",
+      "source": "04-mechanistic-interpretability/nnsight"
+    },
+    {
+      "dest": "ai-research-mechanistic-interpretability-pyvene",
+      "plugin": "mechanistic-interpretability",
+      "skill": "pyvene",
+      "source": "04-mechanistic-interpretability/pyvene"
+    },
+    {
+      "dest": "ai-research-mechanistic-interpretability-saelens",
+      "plugin": "mechanistic-interpretability",
+      "skill": "saelens",
+      "source": "04-mechanistic-interpretability/saelens"
+    },
+    {
+      "dest": "ai-research-mechanistic-interpretability-transformer-lens",
+      "plugin": "mechanistic-interpretability",
+      "skill": "transformer-lens",
+      "source": "04-mechanistic-interpretability/transformer-lens"
+    },
+    {
+      "dest": "ai-research-data-processing-nemo-curator",
+      "plugin": "data-processing",
+      "skill": "nemo-curator",
+      "source": "05-data-processing/nemo-curator"
+    },
+    {
+      "dest": "ai-research-data-processing-ray-data",
+      "plugin": "data-processing",
+      "skill": "ray-data",
+      "source": "05-data-processing/ray-data"
+    },
+    {
+      "dest": "ai-research-post-training-grpo-rl-training",
+      "plugin": "post-training",
+      "skill": "grpo-rl-training",
+      "source": "06-post-training/grpo-rl-training"
+    },
+    {
+      "dest": "ai-research-post-training-openrlhf",
+      "plugin": "post-training",
+      "skill": "openrlhf",
+      "source": "06-post-training/openrlhf"
+    },
+    {
+      "dest": "ai-research-post-training-simpo",
+      "plugin": "post-training",
+      "skill": "simpo",
+      "source": "06-post-training/simpo"
+    },
+    {
+      "dest": "ai-research-post-training-trl-fine-tuning",
+      "plugin": "post-training",
+      "skill": "trl-fine-tuning",
+      "source": "06-post-training/trl-fine-tuning"
+    },
+    {
+      "dest": "ai-research-safety-alignment-constitutional-ai",
+      "plugin": "safety-alignment",
+      "skill": "constitutional-ai",
+      "source": "07-safety-alignment/constitutional-ai"
+    },
+    {
+      "dest": "ai-research-safety-alignment-llamaguard",
+      "plugin": "safety-alignment",
+      "skill": "llamaguard",
+      "source": "07-safety-alignment/llamaguard"
+    },
+    {
+      "dest": "ai-research-safety-alignment-nemo-guardrails",
+      "plugin": "safety-alignment",
+      "skill": "nemo-guardrails",
+      "source": "07-safety-alignment/nemo-guardrails"
+    },
+    {
+      "dest": "ai-research-distributed-training-accelerate",
+      "plugin": "distributed-training",
+      "skill": "accelerate",
+      "source": "08-distributed-training/accelerate"
+    },
+    {
+      "dest": "ai-research-distributed-training-deepspeed",
+      "plugin": "distributed-training",
+      "skill": "deepspeed",
+      "source": "08-distributed-training/deepspeed"
+    },
+    {
+      "dest": "ai-research-distributed-training-megatron-core",
+      "plugin": "distributed-training",
+      "skill": "megatron-core",
+      "source": "08-distributed-training/megatron-core"
+    },
+    {
+      "dest": "ai-research-distributed-training-pytorch-fsdp",
+      "plugin": "distributed-training",
+      "skill": "pytorch-fsdp",
+      "source": "08-distributed-training/pytorch-fsdp"
+    },
+    {
+      "dest": "ai-research-distributed-training-pytorch-lightning",
+      "plugin": "distributed-training",
+      "skill": "pytorch-lightning",
+      "source": "08-distributed-training/pytorch-lightning"
+    },
+    {
+      "dest": "ai-research-distributed-training-ray-train",
+      "plugin": "distributed-training",
+      "skill": "ray-train",
+      "source": "08-distributed-training/ray-train"
+    },
+    {
+      "dest": "ai-research-infrastructure-lambda-labs",
+      "plugin": "infrastructure",
+      "skill": "lambda-labs",
+      "source": "09-infrastructure/lambda-labs"
+    },
+    {
+      "dest": "ai-research-infrastructure-modal",
+      "plugin": "infrastructure",
+      "skill": "modal",
+      "source": "09-infrastructure/modal"
+    },
+    {
+      "dest": "ai-research-infrastructure-skypilot",
+      "plugin": "infrastructure",
+      "skill": "skypilot",
+      "source": "09-infrastructure/skypilot"
+    },
+    {
+      "dest": "ai-research-optimization-awq",
+      "plugin": "optimization",
+      "skill": "awq",
+      "source": "10-optimization/awq"
+    },
+    {
+      "dest": "ai-research-optimization-bitsandbytes",
+      "plugin": "optimization",
+      "skill": "bitsandbytes",
+      "source": "10-optimization/bitsandbytes"
+    },
+    {
+      "dest": "ai-research-optimization-flash-attention",
+      "plugin": "optimization",
+      "skill": "flash-attention",
+      "source": "10-optimization/flash-attention"
+    },
+    {
+      "dest": "ai-research-optimization-gguf",
+      "plugin": "optimization",
+      "skill": "gguf",
+      "source": "10-optimization/gguf"
+    },
+    {
+      "dest": "ai-research-optimization-gptq",
+      "plugin": "optimization",
+      "skill": "gptq",
+      "source": "10-optimization/gptq"
+    },
+    {
+      "dest": "ai-research-optimization-hqq",
+      "plugin": "optimization",
+      "skill": "hqq",
+      "source": "10-optimization/hqq"
+    },
+    {
+      "dest": "ai-research-evaluation-bigcode-evaluation-harness",
+      "plugin": "evaluation",
+      "skill": "bigcode-evaluation-harness",
+      "source": "11-evaluation/bigcode-evaluation-harness"
+    },
+    {
+      "dest": "ai-research-evaluation-lm-evaluation-harness",
+      "plugin": "evaluation",
+      "skill": "lm-evaluation-harness",
+      "source": "11-evaluation/lm-evaluation-harness"
+    },
+    {
+      "dest": "ai-research-evaluation-nemo-evaluator",
+      "plugin": "evaluation",
+      "skill": "nemo-evaluator",
+      "source": "11-evaluation/nemo-evaluator"
+    },
+    {
+      "dest": "ai-research-inference-serving-llama-cpp",
+      "plugin": "inference-serving",
+      "skill": "llama-cpp",
+      "source": "12-inference-serving/llama-cpp"
+    },
+    {
+      "dest": "ai-research-inference-serving-sglang",
+      "plugin": "inference-serving",
+      "skill": "sglang",
+      "source": "12-inference-serving/sglang"
+    },
+    {
+      "dest": "ai-research-inference-serving-tensorrt-llm",
+      "plugin": "inference-serving",
+      "skill": "tensorrt-llm",
+      "source": "12-inference-serving/tensorrt-llm"
+    },
+    {
+      "dest": "ai-research-inference-serving-vllm",
+      "plugin": "inference-serving",
+      "skill": "vllm",
+      "source": "12-inference-serving/vllm"
+    },
+    {
+      "dest": "ai-research-mlops-mlflow",
+      "plugin": "mlops",
+      "skill": "mlflow",
+      "source": "13-mlops/mlflow"
+    },
+    {
+      "dest": "ai-research-mlops-tensorboard",
+      "plugin": "mlops",
+      "skill": "tensorboard",
+      "source": "13-mlops/tensorboard"
+    },
+    {
+      "dest": "ai-research-mlops-weights-and-biases",
+      "plugin": "mlops",
+      "skill": "weights-and-biases",
+      "source": "13-mlops/weights-and-biases"
+    },
+    {
+      "dest": "ai-research-agents-autogpt",
+      "plugin": "agents",
+      "skill": "autogpt",
+      "source": "14-agents/autogpt"
+    },
+    {
+      "dest": "ai-research-agents-crewai",
+      "plugin": "agents",
+      "skill": "crewai",
+      "source": "14-agents/crewai"
+    },
+    {
+      "dest": "ai-research-agents-langchain",
+      "plugin": "agents",
+      "skill": "langchain",
+      "source": "14-agents/langchain"
+    },
+    {
+      "dest": "ai-research-agents-llamaindex",
+      "plugin": "agents",
+      "skill": "llamaindex",
+      "source": "14-agents/llamaindex"
+    },
+    {
+      "dest": "ai-research-rag-chroma",
+      "plugin": "rag",
+      "skill": "chroma",
+      "source": "15-rag/chroma"
+    },
+    {
+      "dest": "ai-research-rag-faiss",
+      "plugin": "rag",
+      "skill": "faiss",
+      "source": "15-rag/faiss"
+    },
+    {
+      "dest": "ai-research-rag-pinecone",
+      "plugin": "rag",
+      "skill": "pinecone",
+      "source": "15-rag/pinecone"
+    },
+    {
+      "dest": "ai-research-rag-qdrant",
+      "plugin": "rag",
+      "skill": "qdrant",
+      "source": "15-rag/qdrant"
+    },
+    {
+      "dest": "ai-research-rag-sentence-transformers",
+      "plugin": "rag",
+      "skill": "sentence-transformers",
+      "source": "15-rag/sentence-transformers"
+    },
+    {
+      "dest": "ai-research-prompt-engineering-dspy",
+      "plugin": "prompt-engineering",
+      "skill": "dspy",
+      "source": "16-prompt-engineering/dspy"
+    },
+    {
+      "dest": "ai-research-prompt-engineering-guidance",
+      "plugin": "prompt-engineering",
+      "skill": "guidance",
+      "source": "16-prompt-engineering/guidance"
+    },
+    {
+      "dest": "ai-research-prompt-engineering-instructor",
+      "plugin": "prompt-engineering",
+      "skill": "instructor",
+      "source": "16-prompt-engineering/instructor"
+    },
+    {
+      "dest": "ai-research-prompt-engineering-outlines",
+      "plugin": "prompt-engineering",
+      "skill": "outlines",
+      "source": "16-prompt-engineering/outlines"
+    },
+    {
+      "dest": "ai-research-observability-langsmith",
+      "plugin": "observability",
+      "skill": "langsmith",
+      "source": "17-observability/langsmith"
+    },
+    {
+      "dest": "ai-research-observability-phoenix",
+      "plugin": "observability",
+      "skill": "phoenix",
+      "source": "17-observability/phoenix"
+    },
+    {
+      "dest": "ai-research-multimodal-audiocraft",
+      "plugin": "multimodal",
+      "skill": "audiocraft",
+      "source": "18-multimodal/audiocraft"
+    },
+    {
+      "dest": "ai-research-multimodal-blip-2",
+      "plugin": "multimodal",
+      "skill": "blip-2",
+      "source": "18-multimodal/blip-2"
+    },
+    {
+      "dest": "ai-research-multimodal-clip",
+      "plugin": "multimodal",
+      "skill": "clip",
+      "source": "18-multimodal/clip"
+    },
+    {
+      "dest": "ai-research-multimodal-llava",
+      "plugin": "multimodal",
+      "skill": "llava",
+      "source": "18-multimodal/llava"
+    },
+    {
+      "dest": "ai-research-multimodal-segment-anything",
+      "plugin": "multimodal",
+      "skill": "segment-anything",
+      "source": "18-multimodal/segment-anything"
+    },
+    {
+      "dest": "ai-research-multimodal-stable-diffusion",
+      "plugin": "multimodal",
+      "skill": "stable-diffusion",
+      "source": "18-multimodal/stable-diffusion"
+    },
+    {
+      "dest": "ai-research-multimodal-whisper",
+      "plugin": "multimodal",
+      "skill": "whisper",
+      "source": "18-multimodal/whisper"
+    },
+    {
+      "dest": "ai-research-emerging-techniques-knowledge-distillation",
+      "plugin": "emerging-techniques",
+      "skill": "knowledge-distillation",
+      "source": "19-emerging-techniques/knowledge-distillation"
+    },
+    {
+      "dest": "ai-research-emerging-techniques-long-context",
+      "plugin": "emerging-techniques",
+      "skill": "long-context",
+      "source": "19-emerging-techniques/long-context"
+    },
+    {
+      "dest": "ai-research-emerging-techniques-model-merging",
+      "plugin": "emerging-techniques",
+      "skill": "model-merging",
+      "source": "19-emerging-techniques/model-merging"
+    },
+    {
+      "dest": "ai-research-emerging-techniques-model-pruning",
+      "plugin": "emerging-techniques",
+      "skill": "model-pruning",
+      "source": "19-emerging-techniques/model-pruning"
+    },
+    {
+      "dest": "ai-research-emerging-techniques-moe-training",
+      "plugin": "emerging-techniques",
+      "skill": "moe-training",
+      "source": "19-emerging-techniques/moe-training"
+    },
+    {
+      "dest": "ai-research-emerging-techniques-speculative-decoding",
+      "plugin": "emerging-techniques",
+      "skill": "speculative-decoding",
+      "source": "19-emerging-techniques/speculative-decoding"
+    }
+  ],
+  "installed_at": "2026-01-20T12:35:07.508306+00:00",
+  "installed_count": 76,
+  "marketplace": "ai-research-skills",
+  "source_ref": "main",
+  "source_repo": "https://github.com/zechenzhangAGI/AI-research-SKILLs",
+  "version": "1.0.0"
+}

@@ -221,6 +221,9 @@ PydanticAI routing note:
   - https://developers.openai.com/codex/skills/create-skill/
   - https://github.com/openai/skills
   - https://agentskills.io/
+- **AI Research Skills marketplace**: install + validate with:
+  - `scripts/install-ai-research-skills.sh`
+  - `scripts/validate-ai-research-skills.sh`
 
 ## Test Coverage Expectations (Required)
 

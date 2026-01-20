@@ -31,6 +31,8 @@
 - [ ] Review dev3000 and add-skill repos for reusable testing skills (path check).
 - [x] Package `skills/testing-automation` for Codex usage.
 - [ ] Document how to use skills for smoke/regression testing.
+- [x] Add AI-research-SKILLs marketplace install script + validation.
+- [x] Document AI-research-SKILLs marketplace usage for Codex.
 
 ## Spec Workflow (Auto-Claude Port)
 
