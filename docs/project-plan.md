@@ -40,6 +40,8 @@
 - [x] Ralph playbook interview step for sprint prompts (AskUserQuestion)
 - [x] Sprint planning session storage + APIs (questions/answers)
 - [x] Sprint UI planning interview + enforce before create
+- [ ] Route all user prompts through dual-subagent + judge workflow (OpenAI + Anthropic)
+- [ ] Persist subagent outputs + judge decision (DB + telemetry)
 - [ ] Kanban board implementation (optional)
 - [ ] Agent terminals / live run dashboard
 
@@ -57,6 +59,7 @@
 - Agent-browser tool integration + usage doc (done)
 - OpenAI/Anthropic SDK usage doc + smoke tests (done)
 - HTTP fetch tool for link access (done)
+- Dual-subagent + judge workflow for all prompts
 - Spec workflow API + CLI entrypoints
 - Kanban board UX + drag/drop
 - Sprint metrics (velocity, burndown)

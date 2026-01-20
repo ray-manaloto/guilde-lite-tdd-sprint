@@ -10,6 +10,7 @@ from typing import Any
 from uuid import UUID
 
 from app.agents.assistant import AssistantAgent
+from app.agents.prompts import JUDGE_SYSTEM_PROMPT
 from app.core.config import settings
 from app.core.telemetry import telemetry_span
 from app.schemas.agent_run import (
@@ -51,6 +52,7 @@ class AgentTddService:
         *,
         user_id: UUID | None,
     ) -> AgentTddRunResult:
+        settings.validate_dual_subagent_settings()
         run = await self._resolve_run(data, user_id=user_id)
         run = await self.run_service.update_run(run.id, AgentRunUpdate(status="running"))
 
@@ -179,13 +181,13 @@ class AgentTddService:
     ) -> list[AgentTddSubagentConfig]:
         if subagents:
             return subagents
+        if settings.DUAL_SUBAGENT_ENABLED:
+            return [
+                AgentTddSubagentConfig(name="openai", provider="openai"),
+                AgentTddSubagentConfig(name="anthropic", provider="anthropic"),
+            ]
         default_provider = settings.LLM_PROVIDER
-        return [
-            AgentTddSubagentConfig(
-                name=default_provider,
-                provider=default_provider,
-            )
-        ]
+        return [AgentTddSubagentConfig(name=default_provider, provider=default_provider)]
 
     async def _run_subagents(
         self,
@@ -282,14 +284,14 @@ class AgentTddService:
             return None
 
         judge_cfg = data.judge or data.default_judge_config()
-        provider = judge_cfg.provider or settings.LLM_PROVIDER
+        provider = judge_cfg.provider or "openai"
         model_name = judge_cfg.model_name or settings.JUDGE_LLM_MODEL
 
-        prompt = self._build_judge_prompt(candidates)
+        prompt = self._build_judge_prompt(data.message, candidates)
         agent = AssistantAgent(
             model_name=model_name,
             temperature=judge_cfg.temperature,
-            system_prompt=judge_cfg.system_prompt or "You are an expert code reviewer and judge.",
+            system_prompt=judge_cfg.system_prompt or JUDGE_SYSTEM_PROMPT,
             llm_provider=provider,
         )
 
@@ -306,7 +308,9 @@ class AgentTddService:
             parsed = {
                 "candidate_id": candidates[0].id,
                 "score": None,
-                "rationale": "Judge output could not be parsed; defaulted to first candidate.",
+                "rationale": (
+                    "Judge output could not be parsed; defaulted to first candidate."
+                ),
             }
 
         return await self.run_service.set_decision(
@@ -335,7 +339,7 @@ class AgentTddService:
         return {"events": events}
 
     @staticmethod
-    def _build_judge_prompt(candidates) -> str:
+    def _build_judge_prompt(user_message: str, candidates) -> str:
         items = []
         for candidate in candidates:
             items.append(
@@ -348,8 +352,10 @@ class AgentTddService:
                 }
             )
         return (
-            "Select the best candidate response. "
-            "Return JSON with keys: candidate_id, score (0-1), rationale.\n\n"
+            "Select the best candidate response based on helpfulness and correctness. "
+            "Return JSON with keys: candidate_id, score (0-1), "
+            "helpfulness_score (0-1), correctness_score (0-1), rationale.\n\n"
+            f"User message:\n{user_message}\n\n"
             f"Candidates:\n{json.dumps(items, indent=2)}"
         )
 
@@ -368,8 +374,21 @@ class AgentTddService:
         if candidate_id not in candidate_ids:
             return None
 
+        helpfulness = data.get("helpfulness_score")
+        correctness = data.get("correctness_score")
+        rationale = data.get("rationale")
+        if helpfulness is not None or correctness is not None:
+            rationale_parts = []
+            if helpfulness is not None:
+                rationale_parts.append(f"helpfulness={helpfulness}")
+            if correctness is not None:
+                rationale_parts.append(f"correctness={correctness}")
+            if rationale:
+                rationale_parts.append(str(rationale))
+            rationale = "; ".join(rationale_parts)
+
         return {
             "candidate_id": UUID(candidate_id),
             "score": data.get("score"),
-            "rationale": data.get("rationale"),
+            "rationale": rationale,
         }

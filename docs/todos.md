@@ -38,6 +38,10 @@
 - [x] Add AI-research-SKILLs marketplace install script + validation.
 - [x] Document AI-research-SKILLs marketplace usage for Codex.
 - [x] Document agent-browser tool usage (default-on browser access).
+- [ ] Route all prompts through OpenAI + Anthropic subagents, then judge.
+- [ ] Persist subagent outputs + judge rationale in agent run records.
+- [ ] Emit telemetry spans for subagent runs + judge selection.
+- [ ] Add tests for judge selection + dual-subagent orchestration.
 - [x] Document HTTP fetch tool usage (default-on URL access).
 
 ## Spec Workflow (Auto-Claude Port)

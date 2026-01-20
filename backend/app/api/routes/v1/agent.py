@@ -23,6 +23,10 @@ from pydantic_ai.messages import (
 )
 
 from app.agents.assistant import Deps, get_agent
+from app.core.config import settings
+from app.db.session import get_db_context
+from app.schemas.agent_tdd import AgentTddJudgeConfig, AgentTddRunCreate, AgentTddSubagentConfig
+from app.services.agent_tdd import AgentTddService
 
 logger = logging.getLogger(__name__)
 
@@ -126,114 +130,178 @@ async def agent_websocket(
             await manager.send_event(websocket, "user_prompt", {"content": user_message})
 
             try:
-                assistant = get_agent()
-                model_history = build_message_history(conversation_history)
+                chosen_output: str | None = None
 
-                # Use iter() on the underlying PydanticAI agent to stream all events
-                async with assistant.agent.iter(
-                    user_message,
-                    deps=deps,
-                    message_history=model_history,
-                ) as agent_run:
-                    async for node in agent_run:
-                        if Agent.is_user_prompt_node(node):
-                            await manager.send_event(
-                                websocket,
-                                "user_prompt_processed",
-                                {"prompt": node.user_prompt},
-                            )
+                if settings.DUAL_SUBAGENT_ENABLED:
+                    await manager.send_event(websocket, "crew_started", {"mode": "dual_subagent"})
 
-                        elif Agent.is_model_request_node(node):
-                            await manager.send_event(websocket, "model_request_start", {})
+                    async with get_db_context() as db:
+                        service = AgentTddService(db)
+                        payload = AgentTddRunCreate(
+                            message=user_message,
+                            history=conversation_history,
+                            subagents=[
+                                AgentTddSubagentConfig(name="openai", provider="openai"),
+                                AgentTddSubagentConfig(name="anthropic", provider="anthropic"),
+                            ],
+                            judge=AgentTddJudgeConfig(
+                                provider="openai",
+                                model_name=settings.JUDGE_LLM_MODEL,
+                            ),
+                            metadata={"source": "ws"},
+                        )
+                        result = await service.execute(payload, user_id=None)
 
-                            async with node.stream(agent_run.ctx) as request_stream:
-                                async for event in request_stream:
-                                    if isinstance(event, PartStartEvent):
-                                        await manager.send_event(
-                                            websocket,
-                                            "part_start",
-                                            {
-                                                "index": event.index,
-                                                "part_type": type(event.part).__name__,
-                                            },
-                                        )
-                                        # Send initial content from TextPart if present
-                                        if isinstance(event.part, TextPart) and event.part.content:
+                    chosen_output = None
+                    for candidate in result.candidates:
+                        await manager.send_event(
+                            websocket,
+                            "agent_started",
+                            {"agent": candidate.agent_name, "task": "candidate"},
+                        )
+                        await manager.send_event(
+                            websocket,
+                            "agent_completed",
+                            {"agent": candidate.agent_name, "output": candidate.output or ""},
+                        )
+
+                    if result.decision and result.decision.candidate_id:
+                        for candidate in result.candidates:
+                            if candidate.id == result.decision.candidate_id:
+                                chosen_output = candidate.output
+                                break
+
+                    if not chosen_output and result.candidates:
+                        chosen_output = result.candidates[0].output
+
+                    if not chosen_output:
+                        await manager.send_event(
+                            websocket,
+                            "error",
+                            {"message": "No candidate output produced by subagents."},
+                        )
+                    else:
+                        await manager.send_event(websocket, "model_request_start", {})
+                        await manager.send_event(
+                            websocket,
+                            "final_result",
+                            {
+                                "output": chosen_output,
+                                "decision": result.decision.model_dump()
+                                if result.decision
+                                else None,
+                            },
+                        )
+                else:
+                    assistant = get_agent()
+                    model_history = build_message_history(conversation_history)
+
+                    # Use iter() on the underlying PydanticAI agent to stream all events
+                    async with assistant.agent.iter(
+                        user_message,
+                        deps=deps,
+                        message_history=model_history,
+                    ) as agent_run:
+                        async for node in agent_run:
+                            if Agent.is_user_prompt_node(node):
+                                await manager.send_event(
+                                    websocket,
+                                    "user_prompt_processed",
+                                    {"prompt": node.user_prompt},
+                                )
+
+                            elif Agent.is_model_request_node(node):
+                                await manager.send_event(websocket, "model_request_start", {})
+
+                                async with node.stream(agent_run.ctx) as request_stream:
+                                    async for event in request_stream:
+                                        if isinstance(event, PartStartEvent):
                                             await manager.send_event(
                                                 websocket,
-                                                "text_delta",
+                                                "part_start",
                                                 {
                                                     "index": event.index,
-                                                    "content": event.part.content,
+                                                    "part_type": type(event.part).__name__,
+                                                },
+                                            )
+                                            # Send initial content from TextPart if present
+                                            if isinstance(event.part, TextPart) and event.part.content:
+                                                await manager.send_event(
+                                                    websocket,
+                                                    "text_delta",
+                                                    {
+                                                        "index": event.index,
+                                                        "content": event.part.content,
+                                                    },
+                                                )
+
+                                        elif isinstance(event, PartDeltaEvent):
+                                            if isinstance(event.delta, TextPartDelta):
+                                                await manager.send_event(
+                                                    websocket,
+                                                    "text_delta",
+                                                    {
+                                                        "index": event.index,
+                                                        "content": event.delta.content_delta,
+                                                    },
+                                                )
+                                            elif isinstance(event.delta, ToolCallPartDelta):
+                                                await manager.send_event(
+                                                    websocket,
+                                                    "tool_call_delta",
+                                                    {
+                                                        "index": event.index,
+                                                        "args_delta": event.delta.args_delta,
+                                                    },
+                                                )
+
+                                        elif isinstance(event, FinalResultEvent):
+                                            await manager.send_event(
+                                                websocket,
+                                                "final_result_start",
+                                                {"tool_name": event.tool_name},
+                                            )
+
+                            elif Agent.is_call_tools_node(node):
+                                await manager.send_event(websocket, "call_tools_start", {})
+
+                                async with node.stream(agent_run.ctx) as handle_stream:
+                                    async for tool_event in handle_stream:
+                                        if isinstance(tool_event, FunctionToolCallEvent):
+                                            await manager.send_event(
+                                                websocket,
+                                                "tool_call",
+                                                {
+                                                    "tool_name": tool_event.part.tool_name,
+                                                    "args": tool_event.part.args,
+                                                    "tool_call_id": tool_event.part.tool_call_id,
                                                 },
                                             )
 
-                                    elif isinstance(event, PartDeltaEvent):
-                                        if isinstance(event.delta, TextPartDelta):
+                                        elif isinstance(tool_event, FunctionToolResultEvent):
                                             await manager.send_event(
                                                 websocket,
-                                                "text_delta",
+                                                "tool_result",
                                                 {
-                                                    "index": event.index,
-                                                    "content": event.delta.content_delta,
-                                                },
-                                            )
-                                        elif isinstance(event.delta, ToolCallPartDelta):
-                                            await manager.send_event(
-                                                websocket,
-                                                "tool_call_delta",
-                                                {
-                                                    "index": event.index,
-                                                    "args_delta": event.delta.args_delta,
+                                                    "tool_call_id": tool_event.tool_call_id,
+                                                    "content": str(tool_event.result.content),
                                                 },
                                             )
 
-                                    elif isinstance(event, FinalResultEvent):
-                                        await manager.send_event(
-                                            websocket,
-                                            "final_result_start",
-                                            {"tool_name": event.tool_name},
-                                        )
+                            elif Agent.is_end_node(node) and agent_run.result is not None:
+                                await manager.send_event(
+                                    websocket,
+                                    "final_result",
+                                    {"output": agent_run.result.output},
+                                )
 
-                        elif Agent.is_call_tools_node(node):
-                            await manager.send_event(websocket, "call_tools_start", {})
+                    if agent_run.result:
+                        chosen_output = agent_run.result.output
 
-                            async with node.stream(agent_run.ctx) as handle_stream:
-                                async for tool_event in handle_stream:
-                                    if isinstance(tool_event, FunctionToolCallEvent):
-                                        await manager.send_event(
-                                            websocket,
-                                            "tool_call",
-                                            {
-                                                "tool_name": tool_event.part.tool_name,
-                                                "args": tool_event.part.args,
-                                                "tool_call_id": tool_event.part.tool_call_id,
-                                            },
-                                        )
-
-                                    elif isinstance(tool_event, FunctionToolResultEvent):
-                                        await manager.send_event(
-                                            websocket,
-                                            "tool_result",
-                                            {
-                                                "tool_call_id": tool_event.tool_call_id,
-                                                "content": str(tool_event.result.content),
-                                            },
-                                        )
-
-                        elif Agent.is_end_node(node) and agent_run.result is not None:
-                            await manager.send_event(
-                                websocket,
-                                "final_result",
-                                {"output": agent_run.result.output},
-                            )
-
-                # Update conversation history
+                # Update conversation history with judge-selected output
                 conversation_history.append({"role": "user", "content": user_message})
-                if agent_run.result:
-                    conversation_history.append(
-                        {"role": "assistant", "content": agent_run.result.output}
-                    )
+                if chosen_output:
+                    conversation_history.append({"role": "assistant", "content": chosen_output})
 
                 await manager.send_event(websocket, "complete", {})
 
