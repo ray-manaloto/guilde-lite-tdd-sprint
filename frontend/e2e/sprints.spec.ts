@@ -1,11 +1,44 @@
 import { test, expect, type Locator } from "@playwright/test";
 import { execFileSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 
-const logfireTemplate = process.env.LOGFIRE_TRACE_URL_TEMPLATE;
+const envFiles = [
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(process.cwd(), "../.env"),
+  path.resolve(process.cwd(), "../backend/.env"),
+];
+
+const loadEnvFile = (filePath: string) => {
+  if (!fs.existsSync(filePath)) return {};
+  const output: Record<string, string> = {};
+  for (const raw of fs.readFileSync(filePath, "utf-8").split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#") || !line.includes("=")) continue;
+    const [key, ...rest] = line.split("=");
+    output[key] = rest.join("=").replace(/^['"]|['"]$/g, "");
+  }
+  return output;
+};
+
+const fileEnv = envFiles.reduce<Record<string, string>>(
+  (acc, filePath) => ({ ...acc, ...loadEnvFile(filePath) }),
+  {}
+);
+
+const resolveEnv = (key: string) => process.env[key] ?? fileEnv[key];
+
+const logfireTemplate = resolveEnv("LOGFIRE_TRACE_URL_TEMPLATE");
 const shouldValidateLogfire = process.env.PLAYWRIGHT_LOGFIRE_VALIDATION === "true";
 const backendDir = path.resolve(process.cwd(), "../backend");
 const PLANNING_WAIT_TIMEOUT = 90000;
+const openaiModel = resolveEnv("OPENAI_MODEL");
+const anthropicModel = resolveEnv("ANTHROPIC_MODEL");
+const judgeModel = resolveEnv("JUDGE_MODEL");
+const dualSubagentFlag = resolveEnv("DUAL_SUBAGENT_ENABLED");
+const dualSubagentEnabled = dualSubagentFlag ? dualSubagentFlag === "true" : true;
+const logfireReadToken = resolveEnv("LOGFIRE_READ_TOKEN");
+const logfireServiceName = resolveEnv("LOGFIRE_SERVICE_NAME");
 
 const extractTraceId = (url: string, template: string) => {
   const parts = template.split("{trace_id}");
@@ -20,10 +53,16 @@ const extractTraceId = (url: string, template: string) => {
 };
 
 const validateTrace = (traceId: string) => {
+  const traceEnv = {
+    ...process.env,
+    ...(logfireReadToken ? { LOGFIRE_READ_TOKEN: logfireReadToken } : {}),
+    ...(logfireServiceName ? { LOGFIRE_SERVICE_NAME: logfireServiceName } : {}),
+    ...(logfireTemplate ? { LOGFIRE_TRACE_URL_TEMPLATE: logfireTemplate } : {}),
+  };
   execFileSync("uv", ["run", "python", "scripts/logfire_validate_trace.py", traceId], {
     cwd: backendDir,
     stdio: "inherit",
-    env: process.env,
+    env: traceEnv,
   });
 };
 
@@ -64,6 +103,9 @@ test.describe("Sprint Board", () => {
   });
 
   test("loads and shows a created sprint", async ({ page }) => {
+    if (shouldValidateLogfire) {
+      test.skip(true, "Covered by full workflow Logfire validation test.");
+    }
     test.setTimeout(180000);
     const sprintName = `Sprint ${Date.now()}`;
 
@@ -104,8 +146,14 @@ test.describe("Sprint Board", () => {
     if (!shouldValidateLogfire) {
       test.skip(true, "PLAYWRIGHT_LOGFIRE_VALIDATION not enabled");
     }
-    if (!process.env.LOGFIRE_READ_TOKEN) {
+    if (!logfireReadToken) {
       test.skip(true, "LOGFIRE_READ_TOKEN not set");
+    }
+    if (dualSubagentFlag && !dualSubagentEnabled) {
+      test.skip(true, "DUAL_SUBAGENT_ENABLED must be true to validate judge workflow");
+    }
+    if (!openaiModel || !anthropicModel || !judgeModel) {
+      test.skip(true, "OPENAI_MODEL, ANTHROPIC_MODEL, and JUDGE_MODEL must be set");
     }
     await page.goto("/sprints");
     await expect(page.getByRole("heading", { name: /sprint board/i })).toBeVisible();
@@ -126,6 +174,9 @@ test.describe("Sprint Board", () => {
         page.getByTestId("planning-telemetry-model")
       )
     ).toBeVisible();
+    await expect(telemetryPanel).toContainText(`openai (${openaiModel})`);
+    await expect(telemetryPanel).toContainText(`anthropic (${anthropicModel})`);
+    await expect(telemetryPanel).toContainText(`(${judgeModel})`);
 
     const judgeLink = page.getByTestId("planning-telemetry-judge-link");
     const judgeTrace = page.getByTestId("planning-telemetry-judge-trace");
@@ -141,5 +192,24 @@ test.describe("Sprint Board", () => {
     validateTrace(judgeTraceId);
     validateTrace(openaiTraceId);
     validateTrace(anthropicTraceId);
+
+    const answerInputs = page.locator("[id^='planning-answer-']");
+    const answerCount = await answerInputs.count();
+    for (let i = 0; i < answerCount; i += 1) {
+      await answerInputs.nth(i).fill("Answer for planning");
+    }
+    await page.getByRole("button", { name: /save answers/i }).click();
+    await expect(page.getByText(/planning interview complete/i)).toBeVisible();
+
+    const sprintNameInput = page.locator("#sprint-name");
+    const sprintGoalInput = page.locator("#sprint-goal");
+    const sprintName = `Sprint ${Date.now()}`;
+    await sprintNameInput.fill("");
+    await sprintNameInput.click();
+    await sprintNameInput.type(sprintName);
+    await expect(sprintNameInput).toHaveValue(sprintName);
+    await sprintGoalInput.fill("Workflow + telemetry validation");
+    await page.getByRole("button", { name: /create sprint/i }).click();
+    await expect(page.getByRole("button", { name: new RegExp(sprintName) })).toBeVisible();
   });
 });

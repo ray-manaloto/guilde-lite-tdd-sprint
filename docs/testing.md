@@ -170,7 +170,9 @@ export LOGFIRE_SERVICE_NAME=guilde_lite_tdd_sprint
 
 The Playwright test will:
 - Start a sprint planning interview (requires real LLM keys).
+- Assert the judge + subagent models match `OPENAI_MODEL`, `ANTHROPIC_MODEL`, and `JUDGE_MODEL`.
 - Read the judge + subagent trace links from the UI.
+- Save answers and create a sprint (full workflow).
 - Query Logfire using the read token to validate the trace IDs exist.
 
 If `LOGFIRE_TRACE_URL_TEMPLATE` is not set, the test will fall back to trace IDs
