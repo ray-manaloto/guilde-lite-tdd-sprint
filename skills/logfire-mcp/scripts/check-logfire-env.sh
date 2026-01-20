@@ -9,6 +9,20 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   exit 1
 fi
 
+logfire_dir=""
+for candidate in "${ROOT_DIR}/.logfire" "${ROOT_DIR}/backend/.logfire"; do
+  if [[ -d "${candidate}" ]]; then
+    logfire_dir="${candidate}"
+    break
+  fi
+done
+
+if [[ -n "${logfire_dir}" ]]; then
+  echo "Found Logfire CLI config at ${logfire_dir}."
+else
+  echo "No Logfire CLI config found in repo root or backend."
+fi
+
 if command -v rg >/dev/null 2>&1; then
   grep_cmd=(rg -q)
 else

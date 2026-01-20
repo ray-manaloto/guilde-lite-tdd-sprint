@@ -548,6 +548,21 @@ Optional override (keeps template default if unset):
 LOGFIRE_SEND_TO_LOGFIRE=if-token-present  # true|false|if-token-present
 ```
 
+### Local Dev Auth (Recommended)
+
+Use the Logfire CLI to store a project token locally (no `.env` needed):
+
+```bash
+cd backend
+uv run logfire auth
+uv run logfire projects use guilde-lite
+```
+
+If `LOGFIRE_TOKEN` is set in `.env`, it will override the local CLI token.
+
+Use a **write token** for `LOGFIRE_TOKEN`. A **read token** is only for
+logfire-mcp. Logfire API tokens are not used by the SDK in this project.
+
 ### Usage
 
 ```python

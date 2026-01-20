@@ -98,6 +98,19 @@ What you see:
 - Latency
 - Cache hit/miss patterns
 
+## Authentication (Dev)
+
+Preferred local setup (avoids storing tokens in `.env`):
+
+```bash
+cd backend
+uv run logfire auth
+uv run logfire projects use guilde-lite
+```
+
+If `LOGFIRE_TOKEN` is set in `.env`, it overrides the CLI token and must be a
+**write token** for the target project. A **read token** is only for logfire-mcp.
+
 ### Background Tasks
 
 #### Celery
