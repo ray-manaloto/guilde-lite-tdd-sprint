@@ -20,6 +20,53 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
 }
 
+const formatValidationDetail = (detail: unknown): string | null => {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((entry) => {
+        if (typeof entry === "string") return entry;
+        if (entry && typeof entry === "object") {
+          const entryRecord = entry as { msg?: unknown; loc?: unknown };
+          const msg = typeof entryRecord.msg === "string" ? entryRecord.msg : null;
+          const loc = Array.isArray(entryRecord.loc)
+            ? entryRecord.loc.map((value) => String(value)).join(".")
+            : null;
+          if (msg && loc) return `${loc}: ${msg}`;
+          if (msg) return msg;
+        }
+        return null;
+      })
+      .filter((message): message is string => Boolean(message));
+    return messages.length ? messages.join("; ") : null;
+  }
+  if (detail && typeof detail === "object") {
+    const entryRecord = detail as { msg?: unknown };
+    if (typeof entryRecord.msg === "string") {
+      return entryRecord.msg;
+    }
+  }
+  return null;
+};
+
+const formatErrorMessage = (errorData: unknown): string => {
+  if (!errorData) return "Request failed";
+  if (typeof errorData === "string") return errorData;
+  if (Array.isArray(errorData)) {
+    const message = formatValidationDetail(errorData);
+    return message || "Request failed";
+  }
+  if (typeof errorData === "object") {
+    const record = errorData as { detail?: unknown; message?: unknown };
+    const detailMessage = formatValidationDetail(record.detail);
+    if (detailMessage) return detailMessage;
+    if (typeof record.message === "string") return record.message;
+    const message = formatValidationDetail(record.message);
+    if (message) return message;
+  }
+  return "Request failed";
+};
+
 class ApiClient {
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { params, body, ...fetchOptions } = options;
@@ -47,9 +94,10 @@ class ApiClient {
       } catch {
         errorData = null;
       }
+      const message = formatErrorMessage(errorData);
       throw new ApiError(
         response.status,
-        errorData?.detail || errorData?.message || "Request failed",
+        message,
         errorData
       );
     }

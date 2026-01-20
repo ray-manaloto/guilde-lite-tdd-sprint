@@ -5,6 +5,9 @@
 export const APP_NAME = "guilde_lite_tdd_sprint";
 export const APP_DESCRIPTION = "A FastAPI project";
 
+// Public API URL (used for OAuth redirects in the browser)
+export const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 // API Routes (Next.js internal routes)
 export const API_ROUTES = {
   // Auth

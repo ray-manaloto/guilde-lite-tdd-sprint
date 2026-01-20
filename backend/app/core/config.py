@@ -4,7 +4,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import computed_field, field_validator, ValidationInfo
+from pydantic import computed_field, field_validator, model_validator, ValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -175,6 +175,27 @@ class Settings(BaseSettings):
     JUDGE_MODEL: str = ""
     AI_FRAMEWORK: str = "pydantic_ai"
     LLM_PROVIDER: Literal["openai", "anthropic", "openrouter"] = "openai"
+
+    @model_validator(mode="after")
+    def validate_llm_provider_settings(self):  # type: ignore[override]
+        """Validate API keys and models for the configured LLM provider."""
+        provider = self.LLM_PROVIDER.lower()
+        if provider == "openai":
+            if not self.OPENAI_API_KEY:
+                raise ValueError("OPENAI_API_KEY must be set when LLM_PROVIDER=openai")
+            if not self.OPENAI_MODEL:
+                raise ValueError("OPENAI_MODEL must be set when LLM_PROVIDER=openai")
+        elif provider == "anthropic":
+            if not self.ANTHROPIC_API_KEY:
+                raise ValueError("ANTHROPIC_API_KEY must be set when LLM_PROVIDER=anthropic")
+            if not self.ANTHROPIC_MODEL:
+                raise ValueError("ANTHROPIC_MODEL must be set when LLM_PROVIDER=anthropic")
+        elif provider == "openrouter":
+            if not self.OPENROUTER_API_KEY:
+                raise ValueError("OPENROUTER_API_KEY must be set when LLM_PROVIDER=openrouter")
+            if not self.OPENROUTER_MODEL:
+                raise ValueError("OPENROUTER_MODEL must be set when LLM_PROVIDER=openrouter")
+        return self
 
     @computed_field  # type: ignore[prop-decorator]
     @property

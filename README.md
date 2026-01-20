@@ -934,6 +934,11 @@ fastapi-fullstack new
 | [AI Agent](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/ai-agent.md) | PydanticAI, tools, WebSocket streaming |
 | [Sprints](docs/sprints.md) | Sprint planning API + web UI |
 | [Project Plan](docs/project-plan.md) | Feature milestones and next steps |
+| [Google OAuth](docs/oauth-google.md) | Configure Google sign-in credentials |
+| [Testing](docs/testing.md) | Unit, integration, and Playwright E2E |
+| [TODOs](docs/todos.md) | Work queue and validation tasks |
+| [Skills](docs/skills.md) | Codex skills for testing automation |
+| [External Links](docs/external-links.md) | Related repos and reference links |
 | [Observability](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/observability.md) | Logfire integration, tracing, metrics |
 | [Deployment](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/deployment.md) | Docker, Kubernetes, production setup |
 | [Development](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/development.md) | Local setup, testing, debugging |

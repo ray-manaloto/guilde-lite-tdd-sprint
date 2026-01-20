@@ -5,6 +5,9 @@
 ```bash
 cd backend
 
+# Run unit + API + integration tests
+uv run pytest
+
 # Run all tests
 uv run pytest
 
@@ -69,6 +72,14 @@ async def auth_client(client, test_user):
 
 ## Writing Tests
 
+### Integration Test (DB + service layer)
+```python
+async def test_create_item_integration(db_session):
+    service = ItemService(db_session)
+    item = await service.create(ItemCreate(name="Test"))
+    assert item.id is not None
+```
+
 ### API Endpoint Test
 ```python
 def test_health_check(client):
@@ -91,6 +102,61 @@ def test_protected_endpoint(auth_client):
     response = auth_client.get("/api/v1/users/me")
     assert response.status_code == 200
 ```
+
+## Playwright E2E Tests (Browser)
+
+Playwright is configured in `frontend/playwright.config.ts` with `testDir=./e2e`.
+The config starts the Next.js dev server automatically for local runs.
+
+Recommended flow:
+1. Start backend (required for auth + API tests).
+2. Run Playwright from `frontend/`.
+
+```bash
+cd frontend
+
+# Uses webServer in playwright config
+bun run test:e2e
+
+# Run in headed mode (see browser)
+bun run test:e2e:headed
+```
+
+Example E2E test:
+```ts
+import { test, expect } from "@playwright/test";
+
+test("register page loads", async ({ page }) => {
+  await page.goto("/register");
+  await expect(page.getByRole("heading", { name: "Create Account" })).toBeVisible();
+});
+```
+
+If you want to point to a running frontend server instead of starting one:
+```bash
+PLAYWRIGHT_BASE_URL=http://localhost:3000 bun run test:e2e
+```
+
+## Skills & Browser Automation Helpers
+
+- **agent-browser**: CLI-driven browser automation that can complement Playwright for smoke checks
+  or reproducing UI bugs interactively. See:
+  - https://github.com/vercel-labs/agent-browser
+  - https://github.com/vercel-labs/agent-browser/blob/main/skills/agent-browser/SKILL.md
+  - https://agent-browser.dev/
+- **Codex skills**: Use local `skills/testing-automation` for repeatable validation workflow.
+  References:
+  - https://developers.openai.com/codex/skills/
+  - https://developers.openai.com/codex/skills/create-skill/
+  - https://github.com/openai/skills
+  - https://agentskills.io/
+
+## Test Coverage Expectations (Required)
+
+- Every new feature must include automated tests.
+- Backend: unit + API/integration coverage.
+- Frontend: unit tests for helpers + Playwright for user flows.
+- Add or update tests when behavior changes to avoid regressions.
 
 ## Frontend Tests
 
