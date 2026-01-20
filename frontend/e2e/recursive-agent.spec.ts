@@ -48,7 +48,7 @@ test('Recursive Agent Browser Flow', async ({ page }) => {
 
     // 8. Wait for response
     // The agent takes time to "think" and run the tool
-    const responseLocator = page.locator('.prose').filter({ hasText: /Google/i });
+    const responseLocator = page.locator('.prose-sm').filter({ hasText: /Google/i });
 
     // Increase timeout to 45s for full round trip and tool execution delay
     // We expect the word "Google" in the response (e.g. "The title is Google")

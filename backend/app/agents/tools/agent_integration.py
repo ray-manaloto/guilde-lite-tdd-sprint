@@ -1,9 +1,11 @@
 
 import logging
+import os
 import shlex
 import subprocess
 from typing import Optional
 
+import logfire
 from pydantic_ai import RunContext
 
 from app.agents.deps import Deps
@@ -25,36 +27,48 @@ def run_codex_agent(ctx: RunContext[Deps], prompt: str) -> str:
     Returns:
         The standard output from the Codex CLI.
     """
-    # Construct the command: codex --no-alt-screen -a never exec "prompt"
-    # We use shlex.quote to safely escape the prompt for the shell if needed,
-    # but subprocess.run with a list is safer and preferred.
-    
-    cmd = ["codex", "--no-alt-screen", "-a", "never", "exec", prompt]
-    
-    try:
-        logger.info(f"Invoking Codex Agent with prompt: {prompt[:50]}...")
-        # running synchronously since these are CLI tools that might block
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            limit=20 * 1024 * 1024, # 20MB limit on output to prevent hanging
-            timeout=120 # 2 minute timeout
-        )
+    with logfire.span("run_codex_agent", prompt=prompt) as span:
+        # Check for mock mode
+        if os.environ.get("MOCK_AGENT_CLI") == "true":
+            logger.info(f"MOCK_AGENT_CLI is enabled. Returning mock response for Codex prompt: {prompt[:50]}...")
+            span.set_attribute("mock", True)
+            return f"Mock Codex Output: {prompt}"
+
+        # Construct the command: codex --no-alt-screen -a never exec "prompt"
+        # We use shlex.quote to safely escape the prompt for the shell if needed,
+        # but subprocess.run with a list is safer and preferred.
         
-        if result.returncode != 0:
-            error_msg = f"Codex agent failed with code {result.returncode}.\nStderr: {result.stderr}"
-            logger.error(error_msg)
-            return error_msg
+        cmd = ["codex", "--no-alt-screen", "-a", "never", "exec", prompt]
+        span.set_attribute("command", str(cmd))
+        
+        try:
+            logger.info(f"Invoking Codex Agent with prompt: {prompt[:50]}...")
+            # running synchronously since these are CLI tools that might block
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=120 # 2 minute timeout
+            )
             
-        return result.stdout
-        
-    except subprocess.TimeoutExpired:
-        logger.error("Codex agent timed out.")
-        return "Error: Codex agent timed out after 120 seconds."
-    except Exception as e:
-        logger.exception(f"Failed to run Codex agent: {e}")
-        return f"Error executing Codex agent: {str(e)}"
+            span.set_attribute("returncode", result.returncode)
+            
+            if result.returncode != 0:
+                error_msg = f"Codex agent failed with code {result.returncode}.\nStderr: {result.stderr}"
+                logger.error(error_msg)
+                span.record_exception(Exception(error_msg))
+                return error_msg
+                
+            return result.stdout
+            
+        except subprocess.TimeoutExpired:
+            logger.error("Codex agent timed out.")
+            span.record_exception(Exception("Timeout"))
+            return "Error: Codex agent timed out after 120 seconds."
+        except Exception as e:
+            logger.exception(f"Failed to run Codex agent: {e}")
+            span.record_exception(e)
+            return f"Error executing Codex agent: {str(e)}"
 
 
 def run_claude_agent(ctx: RunContext[Deps], prompt: str) -> str:
@@ -70,28 +84,41 @@ def run_claude_agent(ctx: RunContext[Deps], prompt: str) -> str:
     Returns:
         The standard output from the Claude CLI.
     """
-    # Construct the command: claude -p "prompt"
-    cmd = ["claude", "-p", prompt]
-    
-    try:
-        logger.info(f"Invoking Claude Agent with prompt: {prompt[:50]}...")
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=120 # 2 minute timeout
-        )
-        
-        if result.returncode != 0:
-            error_msg = f"Claude agent failed with code {result.returncode}.\nStderr: {result.stderr}"
-            logger.error(error_msg)
-            return error_msg
-            
-        return result.stdout
+    with logfire.span("run_claude_agent", prompt=prompt) as span:
+        # Check for mock mode
+        if os.environ.get("MOCK_AGENT_CLI") == "true":
+            logger.info(f"MOCK_AGENT_CLI is enabled. Returning mock response for Claude prompt: {prompt[:50]}...")
+            span.set_attribute("mock", True)
+            return f"Mock Claude Output: {prompt}"
 
-    except subprocess.TimeoutExpired:
-        logger.error("Claude agent timed out.")
-        return "Error: Claude agent timed out after 120 seconds."
-    except Exception as e:
-        logger.exception(f"Failed to run Claude agent: {e}")
-        return f"Error executing Claude agent: {str(e)}"
+        # Construct the command: claude -p "prompt"
+        cmd = ["claude", "-p", prompt]
+        span.set_attribute("command", str(cmd))
+        
+        try:
+            logger.info(f"Invoking Claude Agent with prompt: {prompt[:50]}...")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=120 # 2 minute timeout
+            )
+            
+            span.set_attribute("returncode", result.returncode)
+            
+            if result.returncode != 0:
+                error_msg = f"Claude agent failed with code {result.returncode}.\nStderr: {result.stderr}"
+                logger.error(error_msg)
+                span.record_exception(Exception(error_msg))
+                return error_msg
+                
+            return result.stdout
+
+        except subprocess.TimeoutExpired:
+            logger.error("Claude agent timed out.")
+            span.record_exception(Exception("Timeout"))
+            return "Error: Claude agent timed out after 120 seconds."
+        except Exception as e:
+            logger.exception(f"Failed to run Claude agent: {e}")
+            span.record_exception(e)
+            return f"Error executing Claude agent: {str(e)}"
