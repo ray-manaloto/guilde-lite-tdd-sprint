@@ -102,6 +102,65 @@ This template gives you all of that out of the box, with **20+ configurable inte
 
 ---
 
+## 🧭 Project Quickstart (This Repo)
+
+Use these steps on a fresh machine. This repo is already generated, so you do
+not need to run the `fastapi-fullstack` generator.
+
+### 1) Install Dependencies
+
+```bash
+uv sync --directory backend --dev
+cd frontend
+bun install
+cd ..
+```
+
+### 2) Configure Environment
+
+```bash
+cp backend/.env.example .env
+cp frontend/.env.example frontend/.env.local
+```
+
+Update `.env` with at least:
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL=openai-responses:<model>`
+- `LLM_PROVIDER=openai` (or `anthropic`)
+- `ANTHROPIC_API_KEY` + `ANTHROPIC_MODEL` if using Anthropic
+- `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` for OAuth
+
+Update `frontend/.env.local` with:
+- `NEXT_PUBLIC_API_URL=http://localhost:8000`
+
+### 3) Start Dependencies
+
+```bash
+docker-compose -f docker-compose.dev.yml up -d db redis
+```
+
+### 4) Apply Migrations
+
+```bash
+uv run --directory backend alembic upgrade head
+```
+
+### 5) Run the App
+
+```bash
+uv run --directory backend guilde_lite_tdd_sprint server run --reload
+cd frontend
+bun dev
+```
+
+Optional: start the PydanticAI Web UI:
+
+```bash
+uv run --directory backend guilde_lite_tdd_sprint agent web --port 8001
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### Installation
