@@ -22,7 +22,8 @@ from pydantic_ai.messages import (
     UserPromptPart,
 )
 
-from app.agents.assistant import Deps, get_agent
+from app.agents.deps import Deps
+from app.agents.assistant import get_agent
 from datetime import datetime
 
 from app.core.config import settings
