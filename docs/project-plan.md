@@ -58,7 +58,6 @@
 ## Next Up
 
 - Integration test matrix + CI gating
-- Fix spec planning proxy endpoints for UI + Playwright telemetry stability
 - Logfire log review + provider/model validation
 - Agent-browser tool integration + usage doc (done)
 - OpenAI/Anthropic SDK usage doc + smoke tests (done)

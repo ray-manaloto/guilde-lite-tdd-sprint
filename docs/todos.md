@@ -28,7 +28,7 @@
 - [x] Add agent-browser tool integration tests (allow-all URL policy).
 - [x] Add HTTP fetch tool for link access (allow-all URL policy).
 - [x] Add Playwright logfire telemetry validation for sprint planning.
-- [ ] Fix `/api/specs/planning` + `/api/specs/{id}/planning/answers` proxy and stabilize planning telemetry Playwright test.
+- [x] Fix `/api/specs/planning` + `/api/specs/{id}/planning/answers` proxy and stabilize planning telemetry Playwright test.
 
 ## Skills & Automation
 
