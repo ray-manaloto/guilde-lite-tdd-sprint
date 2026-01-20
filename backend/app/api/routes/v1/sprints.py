@@ -4,7 +4,8 @@
 from uuid import UUID
 
 from fastapi import APIRouter, status
-from fastapi_pagination import Page, paginate
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 
 from app.api.deps import DBSession, SprintSvc

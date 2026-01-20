@@ -217,6 +217,8 @@ make docker-up
 make docker-frontend
 ```
 
+Docker Compose reads configuration from the repo root `.env` file.
+
 ---
 
 ### Using the Project CLI
@@ -382,11 +384,11 @@ fastapi-fullstack create my_app --ai-agent --ai-framework langchain --llm-provid
 
 ### Model Configuration
 
-Set provider-specific model names in `.env`:
+Set provider-specific model names in `.env` (OpenAI uses the Responses API):
 
 ```bash
 # OpenAI example
-OPENAI_MODEL=gpt-4o-mini
+OPENAI_MODEL=openai-responses:gpt-5.2-codex
 # Optional: override judge model (must match the provider)
 JUDGE_MODEL=
 ```
@@ -405,7 +407,7 @@ class Deps:
     db: AsyncSession | None = None
 
 agent = Agent[Deps, str](
-    model="openai:gpt-4o-mini",
+    model="openai-responses:gpt-5.2-codex",
     system_prompt="You are a helpful assistant.",
 )
 
@@ -418,7 +420,7 @@ async def search_database(ctx: RunContext[Deps], query: str) -> list[dict]:
 
 ### LangChain Integration
 
-Flexible agents with LangGraph:
+Flexible agents with LangGraph (uses chat completions; prefer PydanticAI for OpenAI Responses API):
 
 ```python
 # app/agents/langchain_assistant.py

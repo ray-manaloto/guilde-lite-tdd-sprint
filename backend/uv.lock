@@ -1389,7 +1389,7 @@ requires-dist = [
     { name = "prometheus-fastapi-instrumentator", specifier = ">=7.0.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.0" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.10.0" },
-    { name = "pydantic-ai", specifier = ">=0.0.39" },
+    { name = "pydantic-ai", specifier = "==1.44.0" },
     { name = "pydantic-settings", specifier = ">=2.6.0" },
     { name = "pyjwt", specifier = ">=2.9.0" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.3.0" },

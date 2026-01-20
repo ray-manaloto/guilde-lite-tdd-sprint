@@ -16,7 +16,7 @@ from pydantic_ai.messages import (
     UserPromptPart,
 )
 from pydantic_ai.models.anthropic import AnthropicModel
-from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.settings import ModelSettings
 
@@ -88,10 +88,18 @@ class AssistantAgent:
                 self.model_name,
                 provider=OpenRouterProvider(api_key=settings.api_key_for_provider(provider)),
             )
-        return OpenAIChatModel(
-            self.model_name,
-            provider=OpenAIProvider(api_key=settings.api_key_for_provider(provider)),
-        )
+        model_name = self._normalize_openai_model(self.model_name)
+        openai_provider = OpenAIProvider(api_key=settings.api_key_for_provider(provider))
+        return OpenAIResponsesModel(model_name, provider=openai_provider)
+
+    @staticmethod
+    def _normalize_openai_model(model_name: str) -> str:
+        """Normalize OpenAI model strings for Responses API usage."""
+        if model_name.startswith("openai-responses:"):
+            return model_name.split(":", 1)[1]
+        if model_name.startswith("openai:"):
+            raise ValueError("OpenAI chat models are disabled; use openai-responses:<model>.")
+        raise ValueError("OpenAI models must use openai-responses:<model>.")
 
     def _register_tools(self, agent: Agent[Deps, str]) -> None:
         """Register all tools on the agent."""

@@ -22,7 +22,7 @@ from pydantic_ai import Agent
 logfire.configure()
 logfire.instrument_pydantic_ai()
 
-agent = Agent("openai:gpt-4o-mini")
+agent = Agent("openai-responses:gpt-5.2-codex")
 
 # All agent runs are automatically traced
 result = await agent.run("Hello!")

@@ -17,7 +17,7 @@ services:
       - ./backend/app:/app/app:ro
       - ./backend/cli:/app/cli:ro
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       - DEBUG=true
       - ENVIRONMENT=local
@@ -84,7 +84,7 @@ services:
       - ./backend/app:/app/app:ro
     command: celery -A app.worker.celery_app worker --loglevel=debug
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       - DEBUG=true
       - POSTGRES_HOST=db
@@ -109,7 +109,7 @@ services:
       - ./backend/app:/app/app:ro
     command: celery -A app.worker.celery_app beat --loglevel=debug
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       - DEBUG=true
       - REDIS_HOST=redis
@@ -131,7 +131,7 @@ services:
     ports:
       - "5555:5555"
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       - DEBUG=true
       - REDIS_HOST=redis

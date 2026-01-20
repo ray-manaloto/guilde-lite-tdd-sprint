@@ -73,7 +73,7 @@ services:
     container_name: guilde_lite_tdd_sprint_backend
     env_file:
       - .env.prod
-      - ./backend/.env
+      - ./.env
     environment:
       - DEBUG=false
       - ENVIRONMENT=production
@@ -161,7 +161,7 @@ services:
     command: celery -A app.worker.celery_app worker --loglevel=warning --concurrency=4
     env_file:
       - .env.prod
-      - ./backend/.env
+      - ./.env
     environment:
       - DEBUG=false
       - POSTGRES_HOST=db
@@ -194,7 +194,7 @@ services:
     command: celery -A app.worker.celery_app beat --loglevel=warning
     env_file:
       - .env.prod
-      - ./backend/.env
+      - ./.env
     environment:
       - DEBUG=false
       - REDIS_HOST=redis
@@ -220,7 +220,7 @@ services:
     command: celery -A app.worker.celery_app flower --port=5555
     env_file:
       - .env.prod
-      - ./backend/.env
+      - ./.env
     environment:
       - DEBUG=false
       - REDIS_HOST=redis

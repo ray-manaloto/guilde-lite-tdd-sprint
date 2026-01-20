@@ -60,26 +60,43 @@ class TestAssistantAgent:
 
     @patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"})
     @patch("app.agents.assistant.OpenAIProvider")
-    @patch("app.agents.assistant.OpenAIChatModel")
+    @patch("app.agents.assistant.OpenAIResponsesModel")
     def test_agent_property_creates_agent(self, mock_model, mock_provider):
         """Test agent property creates agent on first access."""
         mock_model.return_value = TestModel()
-        agent = AssistantAgent()
+        agent = AssistantAgent(model_name="openai-responses:gpt-5.2-codex")
         _ = agent.agent
         assert agent._agent is not None
         mock_model.assert_called_once()
 
     @patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"})
     @patch("app.agents.assistant.OpenAIProvider")
-    @patch("app.agents.assistant.OpenAIChatModel")
+    @patch("app.agents.assistant.OpenAIResponsesModel")
     def test_agent_property_caches_agent(self, mock_model, mock_provider):
         """Test agent property caches the agent instance."""
         mock_model.return_value = TestModel()
-        agent = AssistantAgent()
+        agent = AssistantAgent(model_name="openai-responses:gpt-5.2-codex")
         agent1 = agent.agent
         agent2 = agent.agent
         assert agent1 is agent2
         mock_model.assert_called_once()
+
+    @patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"})
+    @patch("app.agents.assistant.OpenAIProvider")
+    @patch("app.agents.assistant.OpenAIResponsesModel")
+    def test_agent_uses_openai_responses_model(self, mock_model, mock_provider):
+        """Test OpenAI responses model selection with prefix."""
+        mock_model.return_value = TestModel()
+        agent = AssistantAgent(model_name="openai-responses:gpt-5.2-codex")
+        _ = agent.agent
+        mock_model.assert_called_once()
+        assert mock_model.call_args.args[0] == "gpt-5.2-codex"
+
+    def test_agent_rejects_openai_chat_models(self):
+        """Test OpenAI chat models are rejected."""
+        agent = AssistantAgent(model_name="openai:gpt-4o-mini")
+        with pytest.raises(ValueError, match="openai-responses"):
+            _ = agent.agent
 
 
 class TestGetAgent:

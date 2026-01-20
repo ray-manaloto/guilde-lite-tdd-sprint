@@ -23,3 +23,13 @@ This summarizes how the port aligns with the referenced frameworks/templates.
 - pydantic-deepagents: `pydantic-ai-slim>=0.1.0` (plus pydantic-ai-backend/todo).
 - pydantic-ai: dynamic versioning in `pyproject.toml` (pins slim extras to the same version at release).
 - Auto-Claude: no `pydantic-ai` dependency (uses `claude-agent-sdk`).
+
+## OpenAI Model Identifier Formats (Upstream)
+
+- full-stack-fastapi-nextjs-llm-template: `AI_MODEL=gpt-4o-mini` in env; PydanticAI example uses `model="openai:gpt-4o-mini"`.
+- pydantic-deepagents: `model="openai:gpt-4.1"` (default model string includes provider prefix).
+- pydantic-ai: model strings are `<provider>:<model>` (example: `openai:gpt-5`) or `openai-responses:<model>` for the Responses API.
+
+## Project Decision (OpenAI Responses)
+
+- This repo standardizes on the OpenAI Responses API: use `openai-responses:<model>` (for example, `openai-responses:gpt-5.2-codex`).

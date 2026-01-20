@@ -185,6 +185,8 @@ class Settings(BaseSettings):
                 raise ValueError("OPENAI_API_KEY must be set when LLM_PROVIDER=openai")
             if not self.OPENAI_MODEL:
                 raise ValueError("OPENAI_MODEL must be set when LLM_PROVIDER=openai")
+            if not self.OPENAI_MODEL.startswith("openai-responses:"):
+                raise ValueError("OPENAI_MODEL must start with 'openai-responses:' for OpenAI.")
         elif provider == "anthropic":
             if not self.ANTHROPIC_API_KEY:
                 raise ValueError("ANTHROPIC_API_KEY must be set when LLM_PROVIDER=anthropic")

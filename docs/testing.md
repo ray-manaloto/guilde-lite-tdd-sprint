@@ -160,8 +160,53 @@ uv run python scripts/openai_sdk_smoke.py
 
 Notes:
 - Reads `OPENAI_API_KEY` and `OPENAI_MODEL` from repo `.env` if not set in the shell.
-- If `OPENAI_MODEL` starts with `openai-responses:`, the prefix is stripped for the SDK call.
+- `OPENAI_MODEL` must use `openai-responses:<model>`; the prefix is stripped for the SDK call.
+- `openai:<model>` (chat) is intentionally unsupported in this repo.
 - This script makes a paid API call.
+
+## PydanticAI OpenAI Models List
+
+Use PydanticAI's OpenAI provider to list available models for the configured key.
+
+```bash
+cd backend
+uv run python scripts/pydanticai_openai_models.py
+```
+
+Notes:
+- Reads `OPENAI_API_KEY` and `OPENAI_BASE_URL` from repo `.env` if not set in the shell.
+- Uses `pydantic_ai.providers.openai.OpenAIProvider` and its async client.
+
+## OpenAI Model Permutation Test
+
+Verify which OpenAI model string formats work across the OpenAI SDK and
+PydanticAI model classes.
+
+```bash
+cd backend
+uv run python scripts/openai_model_permutations.py
+```
+
+Notes:
+- Reads `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_ORG` from repo `.env` if not set in the shell.
+- Tests model variants: `gpt-5.2-codex`, `openai:gpt-5.2-codex`, `openai-responses:gpt-5.2-codex`.
+- Uses OpenAI Responses API and PydanticAI Chat/Responses models.
+- This script makes paid API calls.
+
+### Latest Results (gpt-5.2-codex)
+
+Working:
+- OpenAI SDK Responses: `model="gpt-5.2-codex"`
+- PydanticAI Responses model: `OpenAIResponsesModel("gpt-5.2-codex")`
+- PydanticAI agent string: `Agent("openai-responses:gpt-5.2-codex")`
+
+Not working:
+- PydanticAI Chat model (`OpenAIChatModel`) with `gpt-5.2-codex` (not a chat model)
+- Any OpenAI SDK model string with `openai:` or `openai-responses:` prefix
+
+PydanticAI routing note:
+- `Agent("openai-responses:<model>")` maps to `OpenAIResponsesModel` via `infer_model`.
+- `Agent("openai:<model>")` maps to `OpenAIChatModel` (not supported here).
 
 ## Skills & Browser Automation Helpers
 

@@ -125,7 +125,7 @@ curl -X POST http://localhost:8000/api/v1/tdd-runs \
     "message": "Implement feature X",
     "history": [],
     "subagents": [
-      {"name": "openai", "provider": "openai", "model_name": "gpt-4o-mini"},
+      {"name": "openai", "provider": "openai", "model_name": "openai-responses:gpt-5.2-codex"},
       {"name": "anthropic", "provider": "anthropic", "model_name": "claude-3-5-sonnet"}
     ],
     "fork_label": "baseline"
