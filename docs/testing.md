@@ -122,13 +122,24 @@ bun run test:e2e
 bun run test:e2e:headed
 ```
 
+Chat streaming tests (PydanticAI WebSocket) are gated by an env flag to avoid
+LLM calls during standard runs. Enable them when the backend is configured with
+valid LLM credentials:
+
+```bash
+E2E_ALLOW_LLM=true bun run test:e2e
+```
+
 Example E2E test:
 ```ts
 import { test, expect } from "@playwright/test";
 
 test("register page loads", async ({ page }) => {
   await page.goto("/register");
-  await expect(page.getByRole("heading", { name: "Create Account" })).toBeVisible();
+  await expect(page.getByLabel(/email/i)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /create account|sign up/i })
+  ).toBeVisible();
 });
 ```
 
@@ -157,6 +168,13 @@ PLAYWRIGHT_BASE_URL=http://localhost:3000 bun run test:e2e
 - Backend: unit + API/integration coverage.
 - Frontend: unit tests for helpers + Playwright for user flows.
 - Add or update tests when behavior changes to avoid regressions.
+
+## Validation Matrix (Required)
+
+- **Auth**: register, login, invalid creds, required fields (Playwright).
+- **Sprints**: create + list sprint, basic navigation (Playwright + integration).
+- **Chat**: UI loads + connection state (Playwright); streaming only with `E2E_ALLOW_LLM=true`.
+- **API**: health, auth, sprints, and chat endpoints (pytest integration).
 
 ## Frontend Tests
 

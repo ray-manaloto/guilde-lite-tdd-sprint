@@ -9,13 +9,14 @@ const getAuthHeader = (request: NextRequest) => {
 };
 
 interface RouteParams {
-  params: { sprintId: string };
+  params: Promise<{ sprintId: string }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const { sprintId } = await params;
     const data = await backendFetch<PaginatedResponse<SprintItem>>(
-      `/api/v1/sprints/${params.sprintId}/items`,
+      `/api/v1/sprints/${sprintId}/items`,
       {
         method: "GET",
         headers: getAuthHeader(request),
@@ -34,7 +35,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const body = (await request.json()) as SprintItemCreate;
-    const data = await backendFetch<SprintItem>(`/api/v1/sprints/${params.sprintId}/items`, {
+    const { sprintId } = await params;
+    const data = await backendFetch<SprintItem>(`/api/v1/sprints/${sprintId}/items`, {
       method: "POST",
       headers: getAuthHeader(request),
       body: JSON.stringify(body),

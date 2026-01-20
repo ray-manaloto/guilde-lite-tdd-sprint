@@ -8,14 +8,15 @@ const getAuthHeader = (request: NextRequest) => {
 };
 
 interface RouteParams {
-  params: { sprintId: string; itemId: string };
+  params: Promise<{ sprintId: string; itemId: string }>;
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const body = (await request.json()) as SprintItemUpdate;
+    const { sprintId, itemId } = await params;
     const data = await backendFetch<SprintItem>(
-      `/api/v1/sprints/${params.sprintId}/items/${params.itemId}`,
+      `/api/v1/sprints/${sprintId}/items/${itemId}`,
       {
         method: "PATCH",
         headers: getAuthHeader(request),
@@ -34,7 +35,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    await backendFetch<void>(`/api/v1/sprints/${params.sprintId}/items/${params.itemId}`, {
+    const { sprintId, itemId } = await params;
+    await backendFetch<void>(`/api/v1/sprints/${sprintId}/items/${itemId}`, {
       method: "DELETE",
       headers: getAuthHeader(request),
     });
