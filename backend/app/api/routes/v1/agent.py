@@ -23,6 +23,8 @@ from pydantic_ai.messages import (
 )
 
 from app.agents.assistant import Deps, get_agent
+from datetime import datetime
+
 from app.core.config import settings
 from app.core.logfire_links import build_logfire_payload
 from app.core.telemetry import get_trace_context
@@ -102,7 +104,6 @@ def resolve_candidate_trace_id(candidate) -> str | None:
             return trace_id
     return None
 
-
 @router.websocket("/ws/agent")
 async def agent_websocket(
     websocket: WebSocket,
@@ -132,6 +133,17 @@ async def agent_websocket(
     # Conversation state per connection
     conversation_history: list[dict[str, str]] = []
     deps = Deps()
+
+    # Initialize session-scoped artifact directory if configured
+    if settings.AUTOCODE_ARTIFACTS_DIR and deps.session_dir is None:
+        timestamp = datetime.now().strftime("%Y-%m-%dT%H%M%S.%f")
+        session_path = settings.AUTOCODE_ARTIFACTS_DIR / timestamp
+        try:
+            session_path.mkdir(parents=True, exist_ok=True)
+            deps.session_dir = session_path
+            logger.info(f"Created session artifact directory: {session_path}")
+        except Exception as e:
+            logger.error(f"Failed to create session artifact directory: {e}")
 
     try:
         while True:
