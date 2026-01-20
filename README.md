@@ -126,8 +126,10 @@ cp frontend/.env.example frontend/.env.local
 Update `.env` with at least:
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL=openai-responses:<model>`
-- `LLM_PROVIDER=openai` (or `anthropic`)
-- `ANTHROPIC_API_KEY` + `ANTHROPIC_MODEL` if using Anthropic
+- `ANTHROPIC_API_KEY`
+- `ANTHROPIC_MODEL=anthropic:<model>`
+- `JUDGE_MODEL=openai-responses:<model>`
+- `LLM_PROVIDER=openai` (dual-subagent mode still uses Anthropic)
 - `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` for OAuth
 
 Update `frontend/.env.local` with:
@@ -452,8 +454,10 @@ OPENAI_MODEL=openai-responses:gpt-5.2-codex
 ANTHROPIC_MODEL=anthropic:claude-opus-4-5-20251101
 # Provider selection
 LLM_PROVIDER=openai
-# Optional: override judge model (must match the provider)
-JUDGE_MODEL=
+# Judge model (OpenAI Responses required)
+JUDGE_MODEL=openai-responses:gpt-5.2-codex
+# Dual-subagent judge flow (OpenAI + Anthropic per prompt)
+DUAL_SUBAGENT_ENABLED=true
 ```
 
 ### PydanticAI Integration
@@ -491,6 +495,13 @@ async def search_database(ctx: RunContext[Deps], query: str) -> list[dict]:
 - `agent_browser`: browser automation via CLI (optional; requires the CLI in PATH). Configure with:
   - `AGENT_BROWSER_ENABLED=true|false`
   - `AGENT_BROWSER_TIMEOUT_SECONDS=60`
+
+### Dual-Subagent + Judge Flow (Default)
+
+All user prompts run through two subagents (OpenAI + Anthropic). A judge model
+then scores helpfulness + correctness, picks the best response, and stores the
+decision alongside both candidate outputs for auditing. This flow is the default
+for the main agent endpoint (disable with `DUAL_SUBAGENT_ENABLED=false`).
 
 ### LangChain Integration
 

@@ -268,6 +268,7 @@ PydanticAI routing note:
 - Backend: unit + API/integration coverage.
 - Frontend: unit tests for helpers + Playwright for user flows.
 - Add or update tests when behavior changes to avoid regressions.
+- Agent routing: verify dual-subagent + judge flow and persisted decisions.
 
 ## Validation Matrix (Required)
 
@@ -275,6 +276,9 @@ PydanticAI routing note:
 - **Sprints**: create + list sprint, basic navigation (Playwright + integration).
 - **Chat**: UI loads + connection state (Playwright); streaming only with `E2E_ALLOW_LLM=true`.
 - **API**: health, auth, sprints, and chat endpoints (pytest integration).
+- **Agents**: OpenAI + Anthropic subagents run per prompt, judge chooses, decision stored.
+  Requires `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `JUDGE_MODEL`, and
+  `DUAL_SUBAGENT_ENABLED=true` in `.env`.
 
 ## Frontend Tests
 

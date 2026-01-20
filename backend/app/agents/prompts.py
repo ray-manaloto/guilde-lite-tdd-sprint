@@ -12,3 +12,10 @@ RALPH_PLANNING_SYSTEM_PROMPT = (
     "Focus on JTBD, scope boundaries, constraints, edge cases, "
     "and acceptance criteria."
 )
+
+JUDGE_SYSTEM_PROMPT = (
+    "You are an expert judge evaluating assistant responses. "
+    "Score candidates on helpfulness and correctness for the user's request. "
+    "Return JSON with: candidate_id, score (0-1), helpfulness_score (0-1), "
+    "correctness_score (0-1), rationale."
+)

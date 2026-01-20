@@ -184,6 +184,7 @@ class Settings(BaseSettings):
     HTTP_FETCH_ENABLED: bool = True
     HTTP_FETCH_TIMEOUT_SECONDS: int = 15
     HTTP_FETCH_MAX_CHARS: int = 12000
+    DUAL_SUBAGENT_ENABLED: bool = True
 
     @model_validator(mode="after")
     def validate_llm_provider_settings(self):  # type: ignore[override]
@@ -237,6 +238,25 @@ class Settings(BaseSettings):
         if provider == "openrouter":
             return self.OPENROUTER_API_KEY
         return self.OPENAI_API_KEY
+
+    def validate_dual_subagent_settings(self) -> None:
+        """Validate settings for the dual-subagent + judge workflow."""
+        if not self.DUAL_SUBAGENT_ENABLED:
+            return
+        if not self.OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY must be set for dual-subagent mode")
+        if not self.OPENAI_MODEL:
+            raise ValueError("OPENAI_MODEL must be set for dual-subagent mode")
+        if not self.OPENAI_MODEL.startswith("openai-responses:"):
+            raise ValueError("OPENAI_MODEL must start with 'openai-responses:' for OpenAI.")
+        if not self.ANTHROPIC_API_KEY:
+            raise ValueError("ANTHROPIC_API_KEY must be set for dual-subagent mode")
+        if not self.ANTHROPIC_MODEL:
+            raise ValueError("ANTHROPIC_MODEL must be set for dual-subagent mode")
+        if not self.JUDGE_MODEL:
+            raise ValueError("JUDGE_MODEL must be set for dual-subagent mode")
+        if not self.JUDGE_MODEL.startswith("openai-responses:"):
+            raise ValueError("JUDGE_MODEL must start with 'openai-responses:' for OpenAI.")
 
     # === CORS ===
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8080"]
