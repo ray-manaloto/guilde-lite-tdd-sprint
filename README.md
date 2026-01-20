@@ -62,6 +62,7 @@ This template gives you all of that out of the box, with **20+ configurable inte
 - **Custom Tools** - Easily extend agent capabilities
 - **Multi-model Support** - OpenAI, Anthropic, and more
 - **Observability** - Logfire for PydanticAI, LangSmith for LangChain
+- **PydanticAI Web UI** - Launch a built-in agent UI for demos and debugging
 
 ### ⚡ Backend (FastAPI)
 
@@ -76,6 +77,7 @@ This template gives you all of that out of the box, with **20+ configurable inte
 - **React 19** + **TypeScript** + **Tailwind CSS v4**
 - **AI Chat Interface** - WebSocket streaming, tool call visualization
 - **Authentication** - HTTP-only cookies, auto-refresh
+- **Sprint Board** - Sprint planning with optional Kanban view
 - **Dark Mode** + **i18n** (optional)
 
 ### 🔌 20+ Enterprise Integrations
@@ -215,6 +217,8 @@ make docker-up
 make docker-frontend
 ```
 
+Docker Compose reads configuration from the repo root `.env` file.
+
 ---
 
 ### Using the Project CLI
@@ -227,6 +231,8 @@ cd backend
 # Server commands
 uv run guilde_lite_tdd_sprint server run --reload     # Start dev server
 uv run guilde_lite_tdd_sprint server routes           # Show all routes
+# Agent commands
+uv run guilde_lite_tdd_sprint agent web --port 8001   # Start PydanticAI web UI
 # Database commands
 uv run guilde_lite_tdd_sprint db migrate -m "message" # Create migration
 uv run guilde_lite_tdd_sprint db upgrade              # Apply migrations
@@ -252,6 +258,7 @@ make create-admin  # Create admin user
 - Docs: http://localhost:8000/docs
 - Admin Panel: http://localhost:8000/admin
 - Frontend: http://localhost:3000
+- PydanticAI Web UI: http://localhost:8001
 
 ---
 
@@ -375,6 +382,21 @@ fastapi-fullstack create my_app --ai-agent --ai-framework langchain --llm-provid
 | **PydanticAI** | ✓ | ✓ | ✓ |
 | **LangChain** | ✓ | ✓ | - |
 
+### Model Configuration
+
+Set provider-specific model names in `.env` (OpenAI uses the Responses API):
+
+```bash
+# OpenAI example
+OPENAI_MODEL=openai-responses:gpt-5.2-codex
+# Anthropic example (optional `anthropic:` prefix)
+ANTHROPIC_MODEL=anthropic:claude-opus-4-5-20251101
+# Provider selection
+LLM_PROVIDER=openai
+# Optional: override judge model (must match the provider)
+JUDGE_MODEL=
+```
+
 ### PydanticAI Integration
 
 Type-safe agents with full dependency injection:
@@ -389,7 +411,7 @@ class Deps:
     db: AsyncSession | None = None
 
 agent = Agent[Deps, str](
-    model="openai:gpt-4o-mini",
+    model="openai-responses:gpt-5.2-codex",
     system_prompt="You are a helpful assistant.",
 )
 
@@ -400,9 +422,20 @@ async def search_database(ctx: RunContext[Deps], query: str) -> list[dict]:
     ...
 ```
 
+### Built-in Tools
+
+- `current_datetime`: returns the current date/time.
+- `http_fetch`: fetches URL content (default on, allow-all URLs). Configure with:
+  - `HTTP_FETCH_ENABLED=true|false`
+  - `HTTP_FETCH_TIMEOUT_SECONDS=15`
+  - `HTTP_FETCH_MAX_CHARS=12000`
+- `agent_browser`: browser automation via CLI (optional; requires the CLI in PATH). Configure with:
+  - `AGENT_BROWSER_ENABLED=true|false`
+  - `AGENT_BROWSER_TIMEOUT_SECONDS=60`
+
 ### LangChain Integration
 
-Flexible agents with LangGraph:
+Flexible agents with LangGraph (uses chat completions; prefer PydanticAI for OpenAI Responses API):
 
 ```python
 # app/agents/langchain_assistant.py
@@ -524,6 +557,28 @@ fastapi-fullstack new
 #   ✓ Instrument Celery
 #   ✓ Instrument HTTPX
 ```
+
+Optional override (keeps template default if unset):
+
+```bash
+# .env
+LOGFIRE_SEND_TO_LOGFIRE=if-token-present  # true|false|if-token-present
+```
+
+### Local Dev Auth (Recommended)
+
+Use the Logfire CLI to store a project token locally (no `.env` needed):
+
+```bash
+cd backend
+uv run logfire auth
+uv run logfire projects use guilde-lite
+```
+
+If `LOGFIRE_TOKEN` is set in `.env`, it will override the local CLI token.
+
+Use a **write token** for `LOGFIRE_TOKEN`. A **read token** is only for
+logfire-mcp. Logfire API tokens are not used by the SDK in this project.
 
 ### Usage
 
@@ -752,6 +807,7 @@ All commands should be run from the project root directory.
 | Start dev server | `uv run --directory backend guilde_lite_tdd_sprint server run --reload` |
 | Start prod server | `uv run --directory backend guilde_lite_tdd_sprint server run --host 0.0.0.0 --port 8000` |
 | Show routes | `uv run --directory backend guilde_lite_tdd_sprint server routes` |
+| Start PydanticAI web UI | `uv run --directory backend guilde_lite_tdd_sprint agent web --port 8001` |
 
 ### Code Quality
 
@@ -908,6 +964,13 @@ fastapi-fullstack new
 | [Architecture](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/architecture.md) | Repository + Service pattern, layered design |
 | [Frontend](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/frontend.md) | Next.js setup, auth, state management |
 | [AI Agent](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/ai-agent.md) | PydanticAI, tools, WebSocket streaming |
+| [Sprints](docs/sprints.md) | Sprint planning API + web UI |
+| [Project Plan](docs/project-plan.md) | Feature milestones and next steps |
+| [Google OAuth](docs/oauth-google.md) | Configure Google sign-in credentials |
+| [Testing](docs/testing.md) | Unit, integration, and Playwright E2E |
+| [TODOs](docs/todos.md) | Work queue and validation tasks |
+| [Skills](docs/skills.md) | Codex skills for testing automation |
+| [External Links](docs/external-links.md) | Related repos and reference links |
 | [Observability](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/observability.md) | Logfire integration, tracing, metrics |
 | [Deployment](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/deployment.md) | Docker, Kubernetes, production setup |
 | [Development](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/development.md) | Local setup, testing, debugging |

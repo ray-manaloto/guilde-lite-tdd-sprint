@@ -12,6 +12,12 @@ repos:
       - id: check-merge-conflict
       - id: detect-private-key
 
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.22.0
+    hooks:
+      - id: gitleaks
+        stages: [commit, push]
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.0
     hooks:
@@ -27,3 +33,26 @@ repos:
           - pydantic>=2.0.0
           - pydantic-settings>=2.0.0
         args: [--ignore-missing-imports]
+
+  - repo: local
+    hooks:
+      - id: bandit
+        name: bandit
+        entry: uv run --directory backend bandit -q -r app cli -x tests -s B311,B104,B404,B603,B607
+        language: system
+        pass_filenames: false
+      - id: vulture
+        name: vulture
+        entry: uv run --directory backend vulture app cli --min-confidence 80 --ignore-names cls,allowed_tags
+        language: system
+        pass_filenames: false
+      - id: xenon
+        name: xenon
+        entry: uv run --directory backend xenon --max-absolute D --max-modules C --max-average B app cli
+        language: system
+        pass_filenames: false
+      - id: pylint-duplicate-code
+        name: pylint-duplicate-code
+        entry: uv run --directory backend pylint --disable=all --enable=similarities --min-similarity-lines=20 app cli
+        language: system
+        pass_filenames: false

@@ -33,6 +33,18 @@ jobs:
       - name: Run mypy
         run: uv run --directory backend mypy app
 
+      - name: Run bandit
+        run: uv run --directory backend bandit -q -r app cli -x tests -s B311,B104,B404,B603,B607
+
+      - name: Run vulture
+        run: uv run --directory backend vulture app cli --min-confidence 80 --ignore-names cls,allowed_tags
+
+      - name: Run xenon
+        run: uv run --directory backend xenon --max-absolute D --max-modules C --max-average B app cli
+
+      - name: Run pylint (duplicate code)
+        run: uv run --directory backend pylint --disable=all --enable=similarities --min-similarity-lines=20 app cli
+
   test:
     runs-on: ubuntu-latest
     services:
@@ -95,6 +107,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --redact --no-git
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4

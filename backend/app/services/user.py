@@ -76,7 +76,11 @@ class UserService:
             AuthenticationError: If credentials are invalid or user is inactive.
         """
         user = await user_repo.get_by_email(self.db, email)
-        if not user or not verify_password(password, user.hashed_password):
+        if (
+            not user
+            or not user.hashed_password
+            or not verify_password(password, user.hashed_password)
+        ):
             raise AuthenticationError(message="Invalid email or password")
         if not user.is_active:
             raise AuthenticationError(message="User account is disabled")

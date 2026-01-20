@@ -14,5 +14,17 @@ from app.services.item import ItemService
 from app.services.webhook import WebhookService
 
 from app.services.agent_run import AgentRunService
+from app.services.agent_tdd import AgentTddService
+from app.services.sprint import SprintService
+from app.services.spec import SpecService
 
-__all__ = ["UserService", "SessionService", "ItemService", "WebhookService", "AgentRunService"]
+__all__ = [
+    "UserService",
+    "SessionService",
+    "ItemService",
+    "WebhookService",
+    "AgentRunService",
+    "AgentTddService",
+    "SprintService",
+    "SpecService",
+]

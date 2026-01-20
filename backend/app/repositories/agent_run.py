@@ -54,6 +54,10 @@ async def create_run(
     input_payload: dict | None = None,
     model_config: dict | None = None,
     workspace_ref: str | None = None,
+    parent_run_id: UUID | None = None,
+    parent_checkpoint_id: UUID | None = None,
+    fork_label: str | None = None,
+    fork_reason: str | None = None,
     trace_id: str | None = None,
     span_id: str | None = None,
 ) -> AgentRun:
@@ -64,6 +68,10 @@ async def create_run(
         input_payload=input_payload or {},
         model_config=model_config or {},
         workspace_ref=workspace_ref,
+        parent_run_id=parent_run_id,
+        parent_checkpoint_id=parent_checkpoint_id,
+        fork_label=fork_label,
+        fork_reason=fork_reason,
         trace_id=trace_id,
         span_id=span_id,
     )
@@ -218,3 +226,11 @@ async def list_checkpoints(
     query = query.order_by(AgentCheckpoint.sequence.asc(), AgentCheckpoint.created_at.asc())
     result = await db.execute(query)
     return list(result.scalars().all())
+
+
+async def get_checkpoint_by_id(
+    db: AsyncSession,
+    checkpoint_id: UUID,
+) -> AgentCheckpoint | None:
+    """Get a checkpoint by ID."""
+    return await db.get(AgentCheckpoint, checkpoint_id)

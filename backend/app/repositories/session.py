@@ -1,9 +1,13 @@
 """Session repository (PostgreSQL async)."""
 
 from datetime import UTC, datetime
+from typing import Any, cast
 from uuid import UUID
 
+from inspect import isawaitable
+
 from sqlalchemy import select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.session import Session
@@ -22,7 +26,10 @@ async def get_by_refresh_token_hash(db: AsyncSession, token_hash: str) -> Sessio
             Session.is_active.is_(True),
         )
     )
-    return result.scalar_one_or_none()
+    session = result.scalar_one_or_none()
+    if isawaitable(session):
+        session = await session
+    return session
 
 
 async def get_user_sessions(
@@ -93,7 +100,7 @@ async def deactivate_all_user_sessions(db: AsyncSession, user_id: UUID) -> int:
         .values(is_active=False)
     )
     await db.flush()
-    return result.rowcount
+    return cast(CursorResult[Any], result).rowcount or 0
 
 
 async def deactivate_by_refresh_token_hash(db: AsyncSession, token_hash: str) -> Session | None:

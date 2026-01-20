@@ -53,3 +53,6 @@ HTTP Request → API Route → Service → Repository → Database
 - Dependencies: `app/api/deps.py`
 - Auth utilities: `app/core/security.py`
 - Exception handlers: `app/api/exception_handlers.py`
+- SDK clients: `app/agents/sdk_clients.py`
+- Agent-browser tool: `app/agents/tools/agent_browser.py`
+- HTTP fetch tool: `app/agents/tools/http_fetch.py`

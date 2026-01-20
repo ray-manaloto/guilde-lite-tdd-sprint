@@ -4,26 +4,25 @@ These handlers convert domain exceptions to proper HTTP responses.
 """
 
 import logging
+from typing import cast
 
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from starlette.types import ExceptionHandler
 
 from app.core.exceptions import AppException
 
 logger = logging.getLogger(__name__)
 
 
-async def app_exception_handler(request: Request | WebSocket, exc: AppException) -> JSONResponse:
+async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
     """Handle application exceptions.
 
     Logs 5xx errors as errors and 4xx as warnings.
     Returns a standardized JSON error response.
 
-    Note: For WebSocket connections, this handler may not be able to return
-    a response if the connection was already closed.
     """
-    # WebSocket objects don't have a method attribute
-    method = getattr(request, "method", "WEBSOCKET")
+    method = request.method
 
     log_extra = {
         "error_code": exc.code,
@@ -55,13 +54,13 @@ async def app_exception_handler(request: Request | WebSocket, exc: AppException)
     )
 
 
-async def unhandled_exception_handler(request: Request | WebSocket, exc: Exception) -> JSONResponse:
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle unexpected exceptions.
 
     Logs the full exception but returns a generic error to the client
     to avoid leaking sensitive information.
     """
-    method = getattr(request, "method", "WEBSOCKET")
+    method = request.method
 
     logger.exception(
         "Unhandled exception",
@@ -88,6 +87,6 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     Call this after creating the FastAPI application instance.
     """
-    app.add_exception_handler(AppException, app_exception_handler)
+    app.add_exception_handler(AppException, cast(ExceptionHandler, app_exception_handler))
     # Uncomment to catch all unhandled exceptions:
     # app.add_exception_handler(Exception, unhandled_exception_handler)

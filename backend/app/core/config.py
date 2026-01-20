@@ -4,7 +4,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import computed_field, field_validator, ValidationInfo
+from pydantic import computed_field, field_validator, model_validator, ValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,6 +37,21 @@ class Settings(BaseSettings):
     LOGFIRE_TOKEN: str | None = None
     LOGFIRE_SERVICE_NAME: str = "guilde_lite_tdd_sprint"
     LOGFIRE_ENVIRONMENT: str = "development"
+    LOGFIRE_SEND_TO_LOGFIRE: bool | Literal["if-token-present"] = "if-token-present"
+    TELEMETRY_FILE: str | None = None
+
+    @field_validator("LOGFIRE_SEND_TO_LOGFIRE", mode="before")
+    @classmethod
+    def normalize_logfire_send_to_logfire(cls, v: str | bool | None):
+        if isinstance(v, str):
+            normalized = v.strip().lower()
+            if normalized in {"true", "1", "yes", "on", "always"}:
+                return True
+            if normalized in {"false", "0", "no", "off", "never"}:
+                return False
+            if normalized in {"if-token-present", "if_token_present"}:
+                return "if-token-present"
+        return v
 
     # === Database (PostgreSQL async) ===
     POSTGRES_HOST: str = "localhost"
@@ -148,26 +163,80 @@ class Settings(BaseSettings):
     S3_BUCKET: str = "guilde_lite_tdd_sprint"
     S3_REGION: str = "us-east-1"
 
-    # === AI Agent (pydantic_ai, openai) ===
+    # === AI Agent (pydantic_ai) ===
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = ""
+    OPENAI_BASE_URL: str | None = None
+    OPENAI_ORG: str | None = None
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_MODEL: str = ""
+    ANTHROPIC_BASE_URL: str | None = None
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = ""
     AI_MODEL: str = "gpt-4o-mini"
     AI_TEMPERATURE: float = 0.7
     JUDGE_MODEL: str = ""
     AI_FRAMEWORK: str = "pydantic_ai"
-    LLM_PROVIDER: str = "openai"
+    LLM_PROVIDER: Literal["openai", "anthropic", "openrouter"] = "openai"
+    PLANNING_INTERVIEW_MODE: Literal["live", "stub"] = "live"
+    AGENT_BROWSER_ENABLED: bool = True
+    AGENT_BROWSER_TIMEOUT_SECONDS: int = 60
+    HTTP_FETCH_ENABLED: bool = True
+    HTTP_FETCH_TIMEOUT_SECONDS: int = 15
+    HTTP_FETCH_MAX_CHARS: int = 12000
+
+    @model_validator(mode="after")
+    def validate_llm_provider_settings(self):  # type: ignore[override]
+        """Validate API keys and models for the configured LLM provider."""
+        provider = self.LLM_PROVIDER.lower()
+        if provider == "openai":
+            if not self.OPENAI_API_KEY:
+                raise ValueError("OPENAI_API_KEY must be set when LLM_PROVIDER=openai")
+            if not self.OPENAI_MODEL:
+                raise ValueError("OPENAI_MODEL must be set when LLM_PROVIDER=openai")
+            if not self.OPENAI_MODEL.startswith("openai-responses:"):
+                raise ValueError("OPENAI_MODEL must start with 'openai-responses:' for OpenAI.")
+        elif provider == "anthropic":
+            if not self.ANTHROPIC_API_KEY:
+                raise ValueError("ANTHROPIC_API_KEY must be set when LLM_PROVIDER=anthropic")
+            if not self.ANTHROPIC_MODEL:
+                raise ValueError("ANTHROPIC_MODEL must be set when LLM_PROVIDER=anthropic")
+        elif provider == "openrouter":
+            if not self.OPENROUTER_API_KEY:
+                raise ValueError("OPENROUTER_API_KEY must be set when LLM_PROVIDER=openrouter")
+            if not self.OPENROUTER_MODEL:
+                raise ValueError("OPENROUTER_MODEL must be set when LLM_PROVIDER=openrouter")
+        return self
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def LLM_MODEL(self) -> str:
         """Select the active model for the configured provider."""
-        return self.OPENAI_MODEL or self.AI_MODEL
+        return self.model_for_provider(self.LLM_PROVIDER)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def JUDGE_LLM_MODEL(self) -> str:
         """Select the judge model, falling back to the primary model."""
         return self.JUDGE_MODEL or self.LLM_MODEL
+
+    def model_for_provider(self, provider: str) -> str:
+        """Return the model name for a specific provider."""
+        provider = provider.lower()
+        if provider == "anthropic":
+            return self.ANTHROPIC_MODEL or self.AI_MODEL
+        if provider == "openrouter":
+            return self.OPENROUTER_MODEL or self.AI_MODEL
+        return self.OPENAI_MODEL or self.AI_MODEL
+
+    def api_key_for_provider(self, provider: str) -> str:
+        """Return the API key for a specific provider."""
+        provider = provider.lower()
+        if provider == "anthropic":
+            return self.ANTHROPIC_API_KEY
+        if provider == "openrouter":
+            return self.OPENROUTER_API_KEY
+        return self.OPENAI_API_KEY
 
     # === CORS ===
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8080"]

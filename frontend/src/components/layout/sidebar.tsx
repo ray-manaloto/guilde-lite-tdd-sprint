@@ -4,13 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
-import { LayoutDashboard, MessageSquare } from "lucide-react";
+import { Flag, LayoutDashboard, LayoutGrid, MessageSquare, TestTubes } from "lucide-react";
 import { useSidebarStore } from "@/stores";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui";
 
 const navigation = [
   { name: "Dashboard", href: ROUTES.DASHBOARD, icon: LayoutDashboard },
   { name: "Chat", href: ROUTES.CHAT, icon: MessageSquare },
+  { name: "TDD Runs", href: ROUTES.TDD, icon: TestTubes },
+  { name: "Sprints", href: ROUTES.SPRINTS, icon: Flag },
+  { name: "Kanban", href: ROUTES.KANBAN, icon: LayoutGrid },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {

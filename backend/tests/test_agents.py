@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+from pydantic_ai.models.test import TestModel
 
 from app.agents.assistant import AssistantAgent, Deps, get_agent
 from app.agents.tools.datetime_tool import get_current_datetime
@@ -59,24 +60,54 @@ class TestAssistantAgent:
 
     @patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"})
     @patch("app.agents.assistant.OpenAIProvider")
-    @patch("app.agents.assistant.OpenAIChatModel")
+    @patch("app.agents.assistant.OpenAIResponsesModel")
     def test_agent_property_creates_agent(self, mock_model, mock_provider):
         """Test agent property creates agent on first access."""
-        agent = AssistantAgent()
+        mock_model.return_value = TestModel()
+        agent = AssistantAgent(model_name="openai-responses:gpt-5.2-codex")
         _ = agent.agent
         assert agent._agent is not None
         mock_model.assert_called_once()
 
     @patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"})
     @patch("app.agents.assistant.OpenAIProvider")
-    @patch("app.agents.assistant.OpenAIChatModel")
+    @patch("app.agents.assistant.OpenAIResponsesModel")
     def test_agent_property_caches_agent(self, mock_model, mock_provider):
         """Test agent property caches the agent instance."""
-        agent = AssistantAgent()
+        mock_model.return_value = TestModel()
+        agent = AssistantAgent(model_name="openai-responses:gpt-5.2-codex")
         agent1 = agent.agent
         agent2 = agent.agent
         assert agent1 is agent2
         mock_model.assert_called_once()
+
+    @patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"})
+    @patch("app.agents.assistant.OpenAIProvider")
+    @patch("app.agents.assistant.OpenAIResponsesModel")
+    def test_agent_uses_openai_responses_model(self, mock_model, mock_provider):
+        """Test OpenAI responses model selection with prefix."""
+        mock_model.return_value = TestModel()
+        agent = AssistantAgent(model_name="openai-responses:gpt-5.2-codex")
+        _ = agent.agent
+        mock_model.assert_called_once()
+        assert mock_model.call_args.args[0] == "gpt-5.2-codex"
+
+    def test_agent_rejects_openai_chat_models(self):
+        """Test OpenAI chat models are rejected."""
+        agent = AssistantAgent(model_name="openai:gpt-4o-mini")
+        with pytest.raises(ValueError, match="openai-responses"):
+            _ = agent.agent
+
+    @patch("app.agents.assistant.AnthropicModel")
+    def test_agent_strips_anthropic_prefix(self, mock_model):
+        """Test Anthropic prefix is normalized before model creation."""
+        mock_model.return_value = TestModel()
+        agent = AssistantAgent(
+            model_name="anthropic:claude-opus-4-5-20251101",
+            llm_provider="anthropic",
+        )
+        _ = agent.agent
+        assert mock_model.call_args.args[0] == "claude-opus-4-5-20251101"
 
 
 class TestGetAgent:

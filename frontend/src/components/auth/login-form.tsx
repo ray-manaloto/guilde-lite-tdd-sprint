@@ -14,7 +14,7 @@ import {
   CardFooter,
 } from "@/components/ui";
 import { ApiError } from "@/lib/api-client";
-import { ROUTES } from "@/lib/constants";
+import { PUBLIC_API_URL, ROUTES } from "@/lib/constants";
 import { GoogleIcon } from "@/components/icons/google-icon";
 
 export function LoginForm() {
@@ -45,7 +45,7 @@ export function LoginForm() {
   const handleGoogleLogin = () => {
     setIsOAuthLoading(true);
     // Redirect to backend OAuth endpoint
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/oauth/google/login`;
+    window.location.href = `${PUBLIC_API_URL}/api/v1/oauth/google/login`;
   };
 
   return (

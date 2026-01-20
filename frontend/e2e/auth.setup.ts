@@ -10,8 +10,24 @@ const authFile = path.join(__dirname, "../.playwright/.auth/user.json");
  */
 setup("authenticate", async ({ page }) => {
   // Test credentials - adjust for your environment
-  const testEmail = process.env.TEST_USER_EMAIL || "test@example.com";
+  const testEmail =
+    process.env.TEST_USER_EMAIL || `test+${Date.now()}@example.com`;
   const testPassword = process.env.TEST_USER_PASSWORD || "TestPassword123!";
+
+  // Ensure user exists (ignore if already registered)
+  const registerResponse = await page.request.post("/api/auth/register", {
+    data: {
+      email: testEmail,
+      password: testPassword,
+      full_name: "Playwright Test User",
+    },
+  });
+
+  if (!registerResponse.ok() && registerResponse.status() !== 400) {
+    throw new Error(
+      `Failed to register test user (status ${registerResponse.status()})`
+    );
+  }
 
   // Navigate to login page
   await page.goto("/login");
@@ -23,10 +39,8 @@ setup("authenticate", async ({ page }) => {
   // Submit and wait for redirect
   await page.getByRole("button", { name: /sign in|log in|login/i }).click();
 
-  // Wait for authentication to complete - adjust selector based on your app
-  await expect(
-    page.getByRole("link", { name: /dashboard|home/i }).or(page.getByText(/welcome/i))
-  ).toBeVisible({ timeout: 10000 });
+  // Wait for authentication to complete
+  await expect(page).toHaveURL(/dashboard/i, { timeout: 10000 });
 
   // Save authentication state
   await page.context().storageState({ path: authFile });

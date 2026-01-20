@@ -4,46 +4,35 @@ test.describe("Home Page", () => {
   test("should load the home page", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/guilde_lite_tdd_sprint/i);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/guilde_lite_tdd_sprint/i);
   });
 
-  test("should have navigation elements", async ({ page }) => {
+  test("should show key feature cards", async ({ page }) => {
     await page.goto("/");
 
-    // Check for main navigation elements
-    const nav = page.getByRole("navigation");
-    await expect(nav).toBeVisible();
+    await expect(page.getByText("Authentication", { exact: true })).toBeVisible();
+    await expect(page.getByText("AI Assistant", { exact: true })).toBeVisible();
+    await expect(page.getByText("Dashboard", { exact: true })).toBeVisible();
   });
 
-  test("should be accessible", async ({ page }) => {
+  test("should expose auth actions", async ({ page }) => {
     await page.goto("/");
 
-    // Basic accessibility checks
-    // Main landmark should exist
-    await expect(page.getByRole("main")).toBeVisible();
-
-    // Page should have a heading
-    const heading = page.getByRole("heading", { level: 1 });
-    await expect(heading).toBeVisible();
+    await expect(page.getByRole("link", { name: /^login$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^register$/i })).toBeVisible();
   });
 });
 
 test.describe("Navigation", () => {
-  test("unauthenticated user should see login link", async ({ page }) => {
-    // Clear any stored auth state
-    await page.context().clearCookies();
-    await page.goto("/");
-
-    // Should have login/sign in link
-    const loginLink = page.getByRole("link", { name: /log in|sign in/i });
-    await expect(loginLink).toBeVisible();
-  });
-
   test("should navigate between pages", async ({ page }) => {
     await page.goto("/");
 
-    // Test navigation to different sections
-    const links = await page.getByRole("link").all();
-    expect(links.length).toBeGreaterThan(0);
+    await page.getByRole("link", { name: /^login$/i }).click();
+    await expect(page).toHaveURL(/\/login/i);
+
+    await page.goto("/");
+    await page.getByRole("link", { name: /^register$/i }).click();
+    await expect(page).toHaveURL(/\/register/i);
   });
 });
 
@@ -53,7 +42,7 @@ test.describe("Responsive Design", () => {
     await page.goto("/");
 
     // Page should still be functional
-    await expect(page.getByRole("main")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
   test("should work on tablet viewport", async ({ page }) => {
@@ -61,6 +50,6 @@ test.describe("Responsive Design", () => {
     await page.goto("/");
 
     // Page should still be functional
-    await expect(page.getByRole("main")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 });

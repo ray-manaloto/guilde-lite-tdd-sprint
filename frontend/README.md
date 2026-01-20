@@ -307,7 +307,7 @@ class Deps:
     db: AsyncSession | None = None
 
 agent = Agent[Deps, str](
-    model="openai:gpt-4o-mini",
+    model="openai-responses:gpt-5.2-codex",
     system_prompt="You are a helpful assistant.",
 )
 
@@ -320,7 +320,7 @@ async def search_database(ctx: RunContext[Deps], query: str) -> list[dict]:
 
 ### LangChain Integration
 
-Flexible agents with LangGraph:
+Flexible agents with LangGraph (uses chat completions; prefer PydanticAI for OpenAI Responses API):
 
 ```python
 # app/agents/langchain_assistant.py

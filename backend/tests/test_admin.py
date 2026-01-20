@@ -24,6 +24,15 @@ from app.admin import (
 )
 
 
+class SessionSpy(dict):
+    """Dict-backed session with a mockable clear call."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._clear_impl = super().clear
+        self.clear = MagicMock(side_effect=self._clear_impl)
+
+
 class MockBase(DeclarativeBase):
     """Mock base class for testing."""
 
@@ -579,7 +588,7 @@ class TestAdminAuth:
     def mock_request(self):
         """Create a mock request object."""
         request = MagicMock()
-        request.session = {}
+        request.session = SessionSpy()
         return request
 
     @pytest.mark.anyio

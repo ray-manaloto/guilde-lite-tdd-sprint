@@ -7,10 +7,13 @@ See: https://anyio.readthedocs.io/en/stable/testing.html
 # ruff: noqa: I001 - Imports structured for Jinja2 template conditionals
 
 from collections.abc import AsyncGenerator
+import os
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+
+os.environ.setdefault("ENABLE_METRICS", "true")
 
 from app.main import app
 from app.core.config import settings
@@ -47,6 +50,7 @@ async def mock_db_session() -> AsyncGenerator[AsyncMock, None]:
     """Create a mock database session for testing."""
     mock = AsyncMock()
     mock.execute = AsyncMock()
+    mock.add = MagicMock()
     mock.commit = AsyncMock()
     mock.rollback = AsyncMock()
     mock.close = AsyncMock()

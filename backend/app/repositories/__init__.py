@@ -12,6 +12,9 @@ from app.repositories import item as item_repo
 from app.repositories import webhook as webhook_repo
 
 from app.repositories import agent_run as agent_run_repo
+from app.repositories import sprint as sprint_repo
+from app.repositories import sprint_item as sprint_item_repo
+from app.repositories import spec as spec_repo
 
 __all__ = [
     "BaseRepository",
@@ -20,4 +23,7 @@ __all__ = [
     "item_repo",
     "webhook_repo",
     "agent_run_repo",
+    "sprint_repo",
+    "sprint_item_repo",
+    "spec_repo",
 ]

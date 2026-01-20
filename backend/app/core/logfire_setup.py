@@ -7,12 +7,15 @@ from app.core.config import settings
 
 def setup_logfire() -> None:
     """Configure Logfire instrumentation."""
-    logfire.configure(
-        token=settings.LOGFIRE_TOKEN,
-        service_name=settings.LOGFIRE_SERVICE_NAME,
-        environment=settings.LOGFIRE_ENVIRONMENT,
-        send_to_logfire="if-token-present",
-    )
+    config = {
+        "service_name": settings.LOGFIRE_SERVICE_NAME,
+        "environment": settings.LOGFIRE_ENVIRONMENT,
+        "send_to_logfire": settings.LOGFIRE_SEND_TO_LOGFIRE,
+    }
+    if settings.LOGFIRE_TOKEN:
+        config["token"] = settings.LOGFIRE_TOKEN
+
+    logfire.configure(**config)
 
 
 def instrument_app(app):

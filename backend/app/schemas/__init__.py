@@ -23,6 +23,7 @@ from app.schemas.agent_run import (
     AgentRunRead,
     AgentRunUpdate,
     AgentRunList,
+    AgentRunForkCreate,
     AgentCandidateCreate,
     AgentCandidateRead,
     AgentCandidateList,
@@ -31,6 +32,32 @@ from app.schemas.agent_run import (
     AgentCheckpointCreate,
     AgentCheckpointRead,
     AgentCheckpointList,
+)
+from app.schemas.agent_tdd import (
+    AgentTddJudgeConfig,
+    AgentTddRunCreate,
+    AgentTddRunResult,
+    AgentTddSubagentConfig,
+    AgentTddSubagentError,
+)
+from app.schemas.sprint import (
+    SprintCreate,
+    SprintRead,
+    SprintReadWithItems,
+    SprintUpdate,
+    SprintItemCreate,
+    SprintItemRead,
+    SprintItemUpdate,
+)
+from app.schemas.spec import (
+    SpecCreate,
+    SpecPlanningAnswers,
+    SpecPlanningCreate,
+    SpecPlanningRead,
+    SpecPlanningResponse,
+    SpecRead,
+    SpecValidationRead,
+    SpecValidationResponse,
 )
 
 __all__ = [
@@ -56,6 +83,7 @@ __all__ = [
     "AgentRunRead",
     "AgentRunUpdate",
     "AgentRunList",
+    "AgentRunForkCreate",
     "AgentCandidateCreate",
     "AgentCandidateRead",
     "AgentCandidateList",
@@ -64,4 +92,24 @@ __all__ = [
     "AgentCheckpointCreate",
     "AgentCheckpointRead",
     "AgentCheckpointList",
+    "AgentTddJudgeConfig",
+    "AgentTddRunCreate",
+    "AgentTddRunResult",
+    "AgentTddSubagentConfig",
+    "AgentTddSubagentError",
+    "SprintCreate",
+    "SprintRead",
+    "SprintReadWithItems",
+    "SprintUpdate",
+    "SprintItemCreate",
+    "SprintItemRead",
+    "SprintItemUpdate",
+    "SpecCreate",
+    "SpecPlanningAnswers",
+    "SpecPlanningCreate",
+    "SpecPlanningRead",
+    "SpecPlanningResponse",
+    "SpecRead",
+    "SpecValidationRead",
+    "SpecValidationResponse",
 ]

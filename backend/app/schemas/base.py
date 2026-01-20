@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 def serialize_datetime(dt: datetime) -> str:
@@ -24,14 +24,17 @@ class BaseSchema(BaseModel):
         from_attributes=True,
         populate_by_name=True,
         str_strip_whitespace=True,
-        json_encoders={datetime: serialize_datetime},
     )
+
+    @field_serializer("*", when_used="json")
+    def _serialize_fields(self, value: Any):
+        if isinstance(value, datetime):
+            return serialize_datetime(value)
+        return value
 
     def serializable_dict(self, **kwargs: Any) -> dict[str, Any]:
         """Return a dict with only JSON-serializable fields."""
-        from fastapi.encoders import jsonable_encoder
-
-        return jsonable_encoder(self.model_dump(**kwargs))
+        return self.model_dump(mode="json", **kwargs)
 
 
 class TimestampSchema(BaseModel):

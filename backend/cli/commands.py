@@ -49,6 +49,30 @@ def server_routes():
     click.echo(tabulate(routes, headers=["Method", "Path", "Name"]))
 
 
+# === Agent Commands ===
+@cli.group("agent")
+def agent_cli():
+    """Agent commands."""
+    pass
+
+
+@agent_cli.command("web")
+@click.option("--host", default="0.0.0.0", help="Host to bind to")
+@click.option("--port", default=8001, type=int, help="Port to bind to")
+@click.option("--reload", is_flag=True, help="Enable auto-reload")
+def agent_web(host: str, port: int, reload: bool):
+    """Run the PydanticAI web UI for the assistant agent."""
+    import uvicorn
+
+    uvicorn.run(
+        "app.agents.web:create_app",
+        host=host,
+        port=port,
+        reload=reload,
+        factory=True,
+    )
+
+
 # === Database Commands ===
 @cli.group("db")
 def db_cli():

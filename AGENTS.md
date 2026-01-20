@@ -15,8 +15,8 @@ This file provides guidance for AI coding agents (Codex, Copilot, Cursor, Zed, O
 cd backend && uv run uvicorn app.main:app --reload
 
 # Tests & lint
-pytest
-ruff check . --fix && ruff format .
+uv run pytest
+uv run ruff check . --fix && uv run ruff format .
 
 # Migrations
 uv run alembic upgrade head
