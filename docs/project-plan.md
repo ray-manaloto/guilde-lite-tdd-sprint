@@ -20,8 +20,8 @@
 - [x] Sprint models, services, routes, tests
 - [x] Sprint board UI (Next.js)
 - [x] PydanticAI Web UI CLI entrypoint
-- [ ] Automated validation plan for new/existing features
-- [ ] Codex testing-automation skill (local + package)
+- [x] Automated validation plan for new/existing features
+- [x] Codex testing-automation skill (local + package)
 - [ ] Install agent-browser + agent-skills in Codex
 - [ ] Kanban board implementation (optional)
 - [ ] Agent terminals / live run dashboard
