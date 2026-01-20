@@ -14,7 +14,9 @@
 - [ ] Review Logfire logs for LLM provider/model usage (OpenAI/Anthropic).
 - [ ] Confirm OpenAI/Anthropic keys + models match env + docs.
 - [ ] Configure logfire-mcp client/server (no secrets in repo) and run initial trace query.
+- [x] Add Logfire trace links to chat messages (WS payload + UI).
 - [ ] Resolve OpenAI model access error (openai-responses:gpt-5.2-codex 404) and re-verify logs.
+- [x] Add sprint planning telemetry panel (judge + subagent trace links, chosen model).
 - [x] Document upstream OpenAI model format conventions (template, deepagents, pydantic-ai).
 - [x] Verify upstream PydanticAI version pins in referenced repos (template, deepagents, Auto-Claude).
 - [x] Add OpenAI SDK smoke test script (uses .env OPENAI_API_KEY + OPENAI_MODEL).
@@ -25,6 +27,8 @@
 - [x] Document API key requirements/scopes for OpenAI + Anthropic usage.
 - [x] Add agent-browser tool integration tests (allow-all URL policy).
 - [x] Add HTTP fetch tool for link access (allow-all URL policy).
+- [x] Add Playwright logfire telemetry validation for sprint planning.
+- [x] Fix `/api/specs/planning` + `/api/specs/{id}/planning/answers` proxy and stabilize planning telemetry Playwright test.
 
 ## Skills & Automation
 

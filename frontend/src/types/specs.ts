@@ -35,7 +35,38 @@ export interface SpecPlanningPayload {
   status: string;
   questions: SpecPlanningQuestion[];
   answers: SpecPlanningAnswer[];
-  metadata: Record<string, unknown>;
+  metadata: SpecPlanningMetadata;
+}
+
+export interface SpecPlanningTelemetryLink {
+  provider?: string | null;
+  model_name?: string | null;
+  trace_id?: string | null;
+  trace_url?: string | null;
+  error?: string | null;
+}
+
+export interface SpecPlanningMetadata {
+  mode?: string;
+  provider?: string | null;
+  model_name?: string | null;
+  max_questions?: number;
+  question_count?: number;
+  trace_id?: string | null;
+  trace_url?: string | null;
+  candidates?: SpecPlanningTelemetryLink[];
+  judge?: {
+    provider?: string | null;
+    model_name?: string | null;
+    trace_id?: string | null;
+    trace_url?: string | null;
+    score?: number | null;
+    rationale?: string | null;
+  };
+  selected_candidate?: {
+    provider?: string | null;
+    model_name?: string | null;
+  };
 }
 
 export interface SpecPlanningResponse {

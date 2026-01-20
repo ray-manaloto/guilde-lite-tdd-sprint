@@ -150,15 +150,40 @@ uv run --directory backend alembic upgrade head
 ### 5) Run the App
 
 ```bash
-uv run --directory backend guilde_lite_tdd_sprint server run --reload
-cd frontend
-bun dev
+./scripts/devctl.sh start
 ```
 
 Optional: start the PydanticAI Web UI:
 
 ```bash
-uv run --directory backend guilde_lite_tdd_sprint agent web --port 8001
+./scripts/devctl.sh start
+```
+
+Manage all services:
+
+```bash
+./scripts/devctl.sh status
+./scripts/devctl.sh stop
+./scripts/devctl.sh restart
+```
+
+If `tmux` is installed, `devctl` runs services inside a session (default:
+`guilde-lite-dev`). Attach with:
+
+```bash
+./scripts/devctl.sh logs frontend
+```
+
+Force background mode instead of tmux:
+
+```bash
+DEVCTL_MODE=background ./scripts/devctl.sh start
+```
+
+Optional ports:
+
+```bash
+BACKEND_PORT=8000 AGENT_WEB_PORT=8001 FRONTEND_PORT=3000 ./scripts/devctl.sh start
 ```
 
 ---

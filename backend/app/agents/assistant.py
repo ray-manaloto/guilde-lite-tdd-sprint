@@ -17,6 +17,7 @@ from pydantic_ai.messages import (
 )
 from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.models.openai import OpenAIResponsesModel
+from pydantic_ai.providers.anthropic import AnthropicProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.settings import ModelSettings
 
@@ -77,9 +78,13 @@ class AssistantAgent:
         provider = self.llm_provider
         if provider == "anthropic":
             model_name = self._normalize_anthropic_model(self.model_name)
+            anthropic_provider = AnthropicProvider(
+                api_key=settings.api_key_for_provider(provider),
+                base_url=settings.ANTHROPIC_BASE_URL or None,
+            )
             return AnthropicModel(
                 model_name,
-                api_key=settings.api_key_for_provider(provider),
+                provider=anthropic_provider,
             )
         if provider == "openrouter":
             from pydantic_ai.models.openrouter import OpenRouterModel

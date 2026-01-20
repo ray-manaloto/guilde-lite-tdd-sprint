@@ -5,6 +5,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label }
 import { apiClient } from "@/lib/api-client";
 import type {
   PaginatedResponse,
+  Spec,
   SpecPlanningQuestion,
   SpecPlanningResponse,
   Sprint,
@@ -68,6 +69,12 @@ export default function SprintsPage() {
   const [planningSpecId, setPlanningSpecId] = useState<string | null>(null);
   const [planningStatus, setPlanningStatus] = useState<"idle" | "questions" | "answered">("idle");
   const [planningError, setPlanningError] = useState<string | null>(null);
+  const [planningMetadata, setPlanningMetadata] = useState<
+    SpecPlanningResponse["planning"]["metadata"] | null
+  >(null);
+  const [specPlanningMetadata, setSpecPlanningMetadata] = useState<
+    SpecPlanningResponse["planning"]["metadata"] | null
+  >(null);
   const [isPlanning, setIsPlanning] = useState(false);
   const [isSavingAnswers, setIsSavingAnswers] = useState(false);
 
@@ -93,6 +100,187 @@ export default function SprintsPage() {
     planningQuestions.length > 0 &&
     planningAnswers.length === planningQuestions.length &&
     planningAnswers.every((answer) => answer.trim().length > 0);
+  const planningTelemetryMetadata = planningMetadata ?? specPlanningMetadata;
+  const planningTelemetrySourceLabel = planningMetadata
+    ? "Current interview"
+    : specPlanningMetadata
+      ? "Sprint history"
+      : null;
+
+  const renderTelemetryPanel = (
+    metadata: SpecPlanningResponse["planning"]["metadata"] | null,
+    options: {
+      prefix: "planning" | "sprint";
+      emptyMessage: string;
+      sourceLabel?: string | null;
+    }
+  ) => {
+    const telemetryCandidates = metadata?.candidates ?? [];
+    const telemetryJudge = metadata?.judge;
+    const selectedProvider = metadata?.selected_candidate?.provider ?? null;
+    const hasTelemetryData = Boolean(
+      metadata &&
+        (telemetryCandidates.length ||
+          telemetryJudge ||
+          metadata.selected_candidate ||
+          metadata.provider ||
+          metadata.model_name ||
+          metadata.trace_id ||
+          metadata.trace_url)
+    );
+    const hasAnyTraceUrl = Boolean(
+      metadata?.trace_url ||
+        telemetryJudge?.trace_url ||
+        telemetryCandidates.some((candidate) => Boolean(candidate.trace_url))
+    );
+    const hasAnyTraceId = Boolean(
+      metadata?.trace_id ||
+        telemetryJudge?.trace_id ||
+        telemetryCandidates.some((candidate) => Boolean(candidate.trace_id))
+    );
+    const baseId = `${options.prefix}-telemetry`;
+    return (
+      <div
+        className="space-y-3 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground"
+        data-testid={baseId}
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Telemetry</p>
+          {options.sourceLabel && (
+            <span className="text-[10px] uppercase text-muted-foreground">
+              {options.sourceLabel}
+            </span>
+          )}
+        </div>
+        {!metadata && (
+          <p className="text-xs" data-testid={`${baseId}-empty`}>
+            {options.emptyMessage}
+          </p>
+        )}
+        {metadata && !hasTelemetryData && (
+          <p className="text-xs">Telemetry is pending for this interview.</p>
+        )}
+        {metadata && hasTelemetryData && (
+          <>
+            {metadata.mode && (
+              <p className="text-xs text-muted-foreground">
+                Mode: {metadata.mode.replace("_", " ")}
+              </p>
+            )}
+            {metadata.selected_candidate ? (
+              <p className="text-sm" data-testid={`${baseId}-selected`}>
+                Judge selected{" "}
+                <span className="font-medium text-foreground">
+                  {metadata.selected_candidate.provider || "agent"}
+                  {metadata.selected_candidate.model_name
+                    ? ` (${metadata.selected_candidate.model_name})`
+                    : ""}
+                </span>
+              </p>
+            ) : metadata.provider || metadata.model_name ? (
+              <p className="text-sm" data-testid={`${baseId}-model`}>
+                Model{" "}
+                <span className="font-medium text-foreground">
+                  {metadata.provider || "agent"}
+                  {metadata.model_name ? ` (${metadata.model_name})` : ""}
+                </span>
+              </p>
+            ) : null}
+            {metadata.trace_url ? (
+              <a
+                className="underline decoration-dashed underline-offset-2 hover:text-foreground"
+                href={metadata.trace_url}
+                rel="noreferrer"
+                target="_blank"
+                data-testid={`${baseId}-trace-link`}
+                data-trace-id={metadata.trace_id || undefined}
+              >
+                Planning trace
+              </a>
+            ) : metadata.trace_id ? (
+              <span data-testid={`${baseId}-trace`} data-trace-id={metadata.trace_id}>
+                Trace: {metadata.trace_id}
+              </span>
+            ) : null}
+            {telemetryJudge && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span>
+                  Judge {telemetryJudge.provider ? `${telemetryJudge.provider} ` : ""}
+                  {telemetryJudge.model_name ? `(${telemetryJudge.model_name})` : ""}
+                </span>
+                {telemetryJudge.trace_url ? (
+                  <a
+                    className="underline decoration-dashed underline-offset-2 hover:text-foreground"
+                    href={telemetryJudge.trace_url}
+                    rel="noreferrer"
+                    target="_blank"
+                    data-testid={`${baseId}-judge-link`}
+                    data-trace-id={telemetryJudge.trace_id || undefined}
+                  >
+                    Logfire
+                  </a>
+                ) : telemetryJudge.trace_id ? (
+                  <span
+                    data-testid={`${baseId}-judge-trace`}
+                    data-trace-id={telemetryJudge.trace_id}
+                  >
+                    Trace: {telemetryJudge.trace_id}
+                  </span>
+                ) : null}
+              </div>
+            )}
+            {telemetryCandidates.length ? (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Subagents</p>
+                {telemetryCandidates.map((candidate, index) => {
+                  const candidateKey = candidate.provider || `agent-${index}`;
+                  const isSelected = Boolean(
+                    selectedProvider && candidate.provider === selectedProvider
+                  );
+                  return (
+                    <div
+                      key={`${candidateKey}-${index}`}
+                      className="flex flex-wrap items-center gap-2"
+                    >
+                      <span>
+                        {candidate.provider || "agent"}
+                        {candidate.model_name ? ` (${candidate.model_name})` : ""}
+                      </span>
+                      {isSelected && <Badge variant="secondary">Selected</Badge>}
+                      {candidate.trace_url ? (
+                        <a
+                          className="underline decoration-dashed underline-offset-2 hover:text-foreground"
+                          href={candidate.trace_url}
+                          rel="noreferrer"
+                          target="_blank"
+                          data-testid={`${baseId}-agent-${candidateKey}-link`}
+                          data-trace-id={candidate.trace_id || undefined}
+                        >
+                          Logfire
+                        </a>
+                      ) : candidate.trace_id ? (
+                        <span
+                          data-testid={`${baseId}-agent-${candidateKey}-trace`}
+                          data-trace-id={candidate.trace_id}
+                        >
+                          Trace: {candidate.trace_id}
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+          </>
+        )}
+        {metadata && hasAnyTraceId && !hasAnyTraceUrl && (
+          <p className="text-[10px] text-muted-foreground">
+            Add LOGFIRE_TRACE_URL_TEMPLATE in the backend .env to render clickable links.
+          </p>
+        )}
+      </div>
+    );
+  };
 
   const loadSprints = async () => {
     setLoading(true);
@@ -123,6 +311,24 @@ export default function SprintsPage() {
     }
   };
 
+  const extractPlanningMetadata = (spec: Spec | null) => {
+    const artifacts = spec?.artifacts;
+    if (!artifacts || typeof artifacts !== "object") return null;
+    const planning = (
+      artifacts as { planning?: { metadata?: SpecPlanningResponse["planning"]["metadata"] } }
+    ).planning;
+    return planning?.metadata ?? null;
+  };
+
+  const loadSpecPlanning = async (specId: string) => {
+    try {
+      const spec = await apiClient.get<Spec>(`/specs/${specId}`);
+      setSpecPlanningMetadata(extractPlanningMetadata(spec));
+    } catch (err) {
+      setSpecPlanningMetadata(null);
+    }
+  };
+
   useEffect(() => {
     loadSprints();
   }, []);
@@ -134,6 +340,14 @@ export default function SprintsPage() {
     }
     loadSprintDetail(selectedSprintId);
   }, [selectedSprintId]);
+
+  useEffect(() => {
+    if (!selectedSprint?.spec_id) {
+      setSpecPlanningMetadata(null);
+      return;
+    }
+    loadSpecPlanning(selectedSprint.spec_id);
+  }, [selectedSprint?.spec_id]);
 
   const handleCreateSprint = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -168,6 +382,7 @@ export default function SprintsPage() {
       setPlanningAnswers([]);
       setPlanningSpecId(null);
       setPlanningStatus("idle");
+      setPlanningMetadata(null);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Failed to create sprint.");
     } finally {
@@ -234,6 +449,7 @@ export default function SprintsPage() {
       });
       setPlanningSpecId(data.spec.id);
       setPlanningQuestions(data.planning.questions || []);
+      setPlanningMetadata(data.planning.metadata || null);
       setPlanningAnswers(new Array(data.planning.questions.length).fill(""));
       setPlanningStatus("questions");
       setDraftSprint((prev) => ({
@@ -274,6 +490,7 @@ export default function SprintsPage() {
       );
       setPlanningStatus("answered");
       setPlanningQuestions(data.planning.questions || planningQuestions);
+      setPlanningMetadata(data.planning.metadata || planningMetadata);
     } catch (err) {
       setPlanningError(err instanceof Error ? err.message : "Failed to save planning answers.");
     } finally {
@@ -425,6 +642,12 @@ export default function SprintsPage() {
                 </form>
               )}
 
+              {renderTelemetryPanel(planningTelemetryMetadata, {
+                prefix: "planning",
+                emptyMessage: "Start the planning interview to capture model and Logfire telemetry.",
+                sourceLabel: planningTelemetrySourceLabel,
+              })}
+
               {planningStatus === "answered" && (
                 <p className="text-sm text-muted-foreground">
                   Planning interview complete. You can create the sprint now.
@@ -558,6 +781,12 @@ export default function SprintsPage() {
                     <span>End: {formatDate(selectedSprint.end_date)}</span>
                     <span>{selectedSprint.items?.length || 0} items</span>
                   </div>
+                  {renderTelemetryPanel(specPlanningMetadata, {
+                    prefix: "sprint",
+                    emptyMessage:
+                      "No telemetry recorded for this sprint yet. Run the planning interview to capture it.",
+                    sourceLabel: specPlanningMetadata ? "Sprint history" : null,
+                  })}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">

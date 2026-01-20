@@ -13,6 +13,7 @@ export interface ChatMessage {
   isStreaming?: boolean;
   /** Group ID for related messages (e.g., CrewAI agent chain) */
   groupId?: string;
+  logfire?: LogfireTraceInfo;
 }
 
 export interface ToolCall {
@@ -21,6 +22,12 @@ export interface ToolCall {
   args: Record<string, unknown>;
   result?: unknown;
   status: "pending" | "running" | "completed" | "error";
+}
+
+export interface LogfireTraceInfo {
+  traceId?: string;
+  spanId?: string;
+  traceUrl?: string;
 }
 
 // WebSocket event types from backend
@@ -88,6 +95,11 @@ export interface FinalResultEvent {
   data: {
     output: string;
     tool_events: ToolCall[];
+    logfire?: {
+      trace_id?: string;
+      span_id?: string;
+      trace_url?: string;
+    };
   };
 }
 

@@ -115,3 +115,6 @@ frontend/.turbo/
 telemetry/
 backend/telemetry/
 *.jsonl
+
+# Dev control
+.run/

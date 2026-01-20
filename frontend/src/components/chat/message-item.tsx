@@ -23,6 +23,7 @@ export function MessageItem({ message, groupPosition }: MessageItemProps) {
         isGrouped ? "py-2 sm:py-3" : "py-3 sm:py-4",
         isUser && "flex-row-reverse"
       )}
+      data-testid={`chat-message-${message.role}`}
     >
       {/* Timeline connector line for grouped messages */}
       {isGrouped && !isUser && (
@@ -82,6 +83,23 @@ export function MessageItem({ message, groupPosition }: MessageItemProps) {
                 />
               </div>
             )}
+          </div>
+        )}
+
+        {!isUser && !message.isStreaming && message.logfire && (
+          <div className="text-xs text-muted-foreground">
+            {message.logfire.traceUrl ? (
+              <a
+                className="underline decoration-dashed underline-offset-2 hover:text-foreground"
+                href={message.logfire.traceUrl}
+                rel="noreferrer"
+                target="_blank"
+              >
+                View Logfire trace
+              </a>
+            ) : message.logfire.traceId ? (
+              <span>Logfire trace: {message.logfire.traceId}</span>
+            ) : null}
           </div>
         )}
 
