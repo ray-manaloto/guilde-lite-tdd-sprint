@@ -1,4 +1,34 @@
+
 # Testing Guide
+
+## Agent CLI Integration Testing
+
+The application integrates with external AI CLI tools (`claude` and `codex`). Testing this integration involves two strategies:
+
+### 1. Mocked Testing (Docker/CI)
+In Docker environments (like CI or standard `docker-compose up`), the CLIs are not installed. We use a mocking strategy:
+- **Environment Variable:** `MOCK_AGENT_CLI=true`
+- **Behavior:** The backend intercepts `claude` and `codex` calls and returns fixed mock responses (e.g., `"Mock Claude Output: <prompt>"`).
+- **Usage:** This is the default in `docker-compose.yml` and is used for standard E2E tests.
+
+### 2. Live Verification (Local Host)
+To verify the *actual* integration with installed CLIs:
+- **Prerequisite:** Ensure `claude` and `codex` are installed and authenticated on your host machine.
+- **Run Backend Locally:** `make run` (runs on host, access to host binaries).
+- **Run Live Integration Tests:**
+  ```bash
+  RUN_LIVE_TESTS=1 uv run --directory backend pytest tests/integration/test_tools_live.py
+  ```
+- **Run E2E Tests Locally:**
+  ```bash
+  # Ensure backend is running locally on port 8000
+  cd frontend
+  npx playwright test e2e/cli-agent.spec.ts
+  npx playwright test e2e/codex-agent.spec.ts
+  ```
+
+---
+
 
 ## Running Tests
 
