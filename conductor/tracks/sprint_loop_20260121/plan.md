@@ -1,9 +1,9 @@
 # Implementation Plan: Implement the Core "Sprint" Trigger and Agentic Loop
 
 ## Phase 1: Sprint API and Foundation
-- [ ] Task: Define Sprint Database Model and Repository
-    - [ ] Write unit tests for Sprint repository (CRUD operations)
-    - [ ] Implement Sprint model and repository
+- [x] Task: Define Sprint Database Model and Repository 650961e
+    - [x] Write unit tests for Sprint repository (CRUD operations)
+    - [x] Implement Sprint model and repository
 - [ ] Task: Create Sprint Trigger API Endpoint
     - [ ] Write integration tests for `POST /api/v1/sprints`
     - [ ] Implement the API endpoint and initial "Pending" state
