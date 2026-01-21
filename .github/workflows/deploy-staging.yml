@@ -363,7 +363,7 @@ jobs:
 
       - name: Notify on failure
         if: ${{ needs.health-check.result == 'failure' || needs.deploy.result == 'failure' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const title = `🚨 Staging Deployment Failed - ${new Date().toISOString().split('T')[0]}`;
