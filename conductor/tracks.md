@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Implement the Core "Sprint" Trigger and Agentic Loop**
+- [~] **Track: Implement the Core "Sprint" Trigger and Agentic Loop**
   *Link: [./tracks/sprint_loop_20260121/](./tracks/sprint_loop_20260121/)*

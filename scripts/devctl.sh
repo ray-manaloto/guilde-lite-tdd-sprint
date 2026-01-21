@@ -399,6 +399,21 @@ case "${cmd}" in
       logs_service "${service}"
     fi
     ;;
+  infra)
+    action="${2:-up}"
+    if [[ "${action}" == "up" ]]; then
+      echo "Starting infrastructure (db, redis)..."
+      docker-compose -f "${ROOT_DIR}/docker-compose.dev.yml" up -d db redis
+    elif [[ "${action}" == "down" ]]; then
+      echo "Stopping infrastructure..."
+      docker-compose -f "${ROOT_DIR}/docker-compose.dev.yml" down
+    elif [[ "${action}" == "logs" ]]; then
+       docker-compose -f "${ROOT_DIR}/docker-compose.dev.yml" logs -f
+    else
+      echo "Usage: $0 infra [up|down|logs]"
+      exit 1
+    fi
+    ;;
   *)
     usage
     exit 1
