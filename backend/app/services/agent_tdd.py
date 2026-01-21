@@ -224,7 +224,16 @@ class AgentTddService:
         data: AgentTddRunCreate,
     ) -> _SubagentResult:
         model_name = cfg.model_name or settings.model_for_provider(cfg.provider)
-        agent = AssistantAgent(
+        
+        # Resolve agent class based on agent_type in metadata
+        agent_type = data.metadata.get("agent_type", "assistant")
+        if agent_type == "sprint":
+            from app.agents.sprint_agent import SprintAgent
+            agent_class = SprintAgent
+        else:
+            agent_class = AssistantAgent
+
+        agent = agent_class(
             model_name=model_name,
             temperature=cfg.temperature,
             system_prompt=cfg.system_prompt,

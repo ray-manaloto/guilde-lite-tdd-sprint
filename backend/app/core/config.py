@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     DEBUG: bool = False
     ENVIRONMENT: Literal["development", "local", "staging", "production"] = "local"
+    BACKEND_DIR: Path = Path(__file__).resolve().parent.parent.parent
 
     # === Logfire ===
     LOGFIRE_TOKEN: str | None = None
