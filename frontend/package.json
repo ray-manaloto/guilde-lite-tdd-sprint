@@ -19,7 +19,17 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,md,css}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
@@ -41,6 +51,8 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
     "typescript": "^5.9.3",
     "@types/node": "^25.0.9",
     "@types/react": "^19.2.9",

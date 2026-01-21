@@ -1,0 +1,586 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: "Skip tests (use with extreme caution)"
+        required: false
+        default: false
+        type: boolean
+      rollback_to:
+        description: "Tag to rollback to (e.g., v1.0.0)"
+        required: false
+        type: string
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      backend_changed: ${{ steps.changes.outputs.backend }}
+      frontend_changed: ${{ steps.changes.outputs.frontend }}
+      version: ${{ steps.version.outputs.version }}
+      is_rollback: ${{ steps.check_rollback.outputs.is_rollback }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if rollback
+        id: check_rollback
+        env:
+          ROLLBACK_TO: ${{ inputs.rollback_to }}
+        run: |
+          if [ -n "$ROLLBACK_TO" ]; then
+            echo "is_rollback=true" >> "$GITHUB_OUTPUT"
+            echo "Rolling back to $ROLLBACK_TO"
+          else
+            echo "is_rollback=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get version
+        id: version
+        env:
+          ROLLBACK_TO: ${{ inputs.rollback_to }}
+          GIT_REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -n "$ROLLBACK_TO" ]; then
+            echo "version=$ROLLBACK_TO" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$GIT_REF_NAME" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'docker-compose*.yml'
+              - 'Dockerfile*'
+            frontend:
+              - 'frontend/**'
+
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    needs: validate
+    if: ${{ !inputs.skip_tests && needs.validate.outputs.is_rollback != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --directory backend --dev
+
+      - name: Run ruff check
+        run: uv run --directory backend ruff check app tests cli
+
+      - name: Run ruff format check
+        run: uv run --directory backend ruff format app tests cli --check
+
+      - name: Run mypy
+        run: uv run --directory backend mypy app
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: validate
+    if: ${{ !inputs.skip_tests && needs.validate.outputs.is_rollback != 'true' }}
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --directory backend --dev
+
+      - name: Run tests
+        run: uv run --directory backend pytest tests/ -v --cov=app --cov-report=xml --cov-fail-under=80
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: validate
+    if: ${{ !inputs.skip_tests && needs.validate.outputs.is_rollback != 'true' && needs.validate.outputs.frontend_changed == 'true' }}
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run ESLint
+        run: bun run lint
+
+      - name: Check formatting
+        run: bun run format:check
+
+      - name: Run type check
+        run: bun run type-check
+
+      - name: Run unit tests
+        run: bun run test:run
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: validate
+    if: ${{ needs.validate.outputs.is_rollback != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --redact --no-git
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --directory backend --dev
+
+      - name: Run bandit
+        run: uv run --directory backend bandit -q -r app cli -x tests -s B311,B104,B404,B603,B607
+
+  build-backend:
+    name: Build Backend Image
+    runs-on: ubuntu-latest
+    needs: [lint, test, security-scan, validate]
+    if: ${{ always() && (needs.lint.result == 'success' || needs.lint.result == 'skipped') && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.security-scan.result == 'success' || needs.security-scan.result == 'skipped') }}
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      image_digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/backend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-frontend:
+    name: Build Frontend Image
+    runs-on: ubuntu-latest
+    needs: [frontend-test, security-scan, validate]
+    if: ${{ always() && (needs.frontend-test.result == 'success' || needs.frontend-test.result == 'skipped') && (needs.security-scan.result == 'success' || needs.security-scan.result == 'skipped') }}
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      image_digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/frontend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.PRODUCTION_API_URL }}
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend, validate]
+    if: ${{ always() && needs.build-backend.result == 'success' }}
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production environment
+        env:
+          BACKEND_IMAGE_TAG: ${{ needs.build-backend.outputs.image_tag }}
+          FRONTEND_IMAGE_TAG: ${{ needs.build-frontend.outputs.image_tag }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          IS_ROLLBACK: ${{ needs.validate.outputs.is_rollback }}
+        run: |
+          echo "Deploying to production environment..."
+          echo "Version: $VERSION"
+          echo "Is Rollback: $IS_ROLLBACK"
+          echo "Backend image: $BACKEND_IMAGE_TAG"
+          echo "Frontend image: $FRONTEND_IMAGE_TAG"
+          # Add your deployment commands here (kubectl, docker-compose, etc.)
+
+      - name: Wait for deployment to stabilize
+        run: sleep 60
+
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Check backend health
+        env:
+          PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
+        run: |
+          for i in {1..15}; do
+            if curl -sf "$PRODUCTION_API_URL/api/v1/health" > /dev/null 2>&1; then
+              echo "Backend health check passed"
+              exit 0
+            fi
+            echo "Waiting for backend to be healthy... ($i/15)"
+            sleep 20
+          done
+          echo "Backend health check failed"
+          exit 1
+
+      - name: Check frontend health
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          for i in {1..15}; do
+            if curl -sf "$PRODUCTION_URL" > /dev/null 2>&1; then
+              echo "Frontend health check passed"
+              exit 0
+            fi
+            echo "Waiting for frontend to be healthy... ($i/15)"
+            sleep 20
+          done
+          echo "Frontend health check failed"
+          exit 1
+
+  smoke-test:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: health-check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run API smoke tests
+        env:
+          PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
+        run: |
+          echo "Running API smoke tests..."
+
+          # Test health endpoint
+          response=$(curl -s -w "%{http_code}" -o /dev/null "$PRODUCTION_API_URL/api/v1/health")
+          if [ "$response" != "200" ]; then
+            echo "Health endpoint returned $response"
+            exit 1
+          fi
+          echo "✓ Health endpoint OK"
+
+          # Test API docs endpoint
+          response=$(curl -s -w "%{http_code}" -o /dev/null "$PRODUCTION_API_URL/docs")
+          if [ "$response" != "200" ]; then
+            echo "API docs endpoint returned $response"
+            exit 1
+          fi
+          echo "✓ API docs endpoint OK"
+
+          echo "All smoke tests passed!"
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [smoke-test, validate]
+    if: ${{ needs.validate.outputs.is_rollback != 'true' && github.event_name == 'push' }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "Generating changelog from $PREV_TAG to $VERSION"
+            {
+              echo "changelog<<EOF"
+              git log --pretty=format:"- %s (%h)" "$PREV_TAG"..HEAD
+              echo ""
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "changelog=Initial release" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create release
+        uses: actions/github-script@v7
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        with:
+          script: |
+            const version = process.env.VERSION;
+            const changelog = process.env.CHANGELOG;
+
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: version,
+              name: `Release ${version}`,
+              body: `## What's Changed\n\n${changelog}\n\n---\n*Released by GitHub Actions*`,
+              draft: false,
+              prerelease: version.includes('-')
+            });
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [deploy, health-check, smoke-test, validate]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create deployment summary
+        env:
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          HEALTH_CHECK_RESULT: ${{ needs.health-check.result }}
+          SMOKE_TEST_RESULT: ${{ needs.smoke-test.result }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          IS_ROLLBACK: ${{ needs.validate.outputs.is_rollback }}
+          COMMIT_SHA: ${{ github.sha }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_ID: ${{ github.run_id }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "## Production Deployment Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$IS_ROLLBACK" == "true" ]; then
+            echo "🔄 **Type:** Rollback to $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "🚀 **Type:** New Release $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$SMOKE_TEST_RESULT" == "success" ]; then
+            echo "✅ **Status:** Deployment successful" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "❌ **Status:** Deployment failed" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Version:** \`$VERSION\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Commit:** \`$COMMIT_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Branch/Tag:** \`$REF_NAME\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Triggered by:** @$ACTOR" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Run ID:** $RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify on failure
+        if: ${{ needs.smoke-test.result == 'failure' || needs.health-check.result == 'failure' || needs.deploy.result == 'failure' }}
+        uses: actions/github-script@v7
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          IS_ROLLBACK: ${{ needs.validate.outputs.is_rollback }}
+        with:
+          script: |
+            const version = process.env.VERSION;
+            const isRollback = process.env.IS_ROLLBACK === 'true';
+            const deployType = isRollback ? `Rollback to ${version}` : `Release ${version}`;
+
+            const title = `🚨 Production Deployment Failed - ${deployType}`;
+            const body = `## Production Deployment Failure
+
+            The deployment to production environment has failed.
+
+            **Version:** \`${version}\`
+            **Type:** ${deployType}
+            **Commit:** \`${context.sha}\`
+            **Triggered by:** @${context.actor}
+
+            **Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+
+            **Immediate Actions Required:**
+            1. Review the deployment logs
+            2. Check health check and smoke test failures
+            3. Verify infrastructure status
+            4. ${isRollback ? 'Escalate to on-call team' : 'Consider rolling back to previous version'}
+
+            **Rollback Command:**
+            \`\`\`
+            gh workflow run deploy-production.yml -f rollback_to=<previous-version>
+            \`\`\`
+
+            ---
+            *This issue was automatically created by the Production Deployment workflow.*`;
+
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'deployment-failure,production'
+            });
+
+            const todayIssue = existingIssues.data.find(issue =>
+              issue.title.includes(new Date().toISOString().split('T')[0])
+            );
+
+            if (!todayIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['deployment-failure', 'production', 'automated', 'critical']
+              });
+            }
+
+      - name: Close previous failure issues on success
+        if: ${{ needs.smoke-test.result == 'success' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'deployment-failure,production'
+            });
+
+            for (const issue of issues.data) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `✅ This issue has been automatically closed because a subsequent production deployment succeeded.\n\n**Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+              });
+            }
