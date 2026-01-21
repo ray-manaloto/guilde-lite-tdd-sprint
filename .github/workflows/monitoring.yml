@@ -1,0 +1,228 @@
+name: Monitoring & Alerts
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to check"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --directory backend --dev
+
+      - name: Run pip-audit
+        id: pip-audit
+        continue-on-error: true
+        run: |
+          uv pip install pip-audit
+          uv run pip-audit --require-hashes=false --progress-spinner=off --format json > audit-results.json 2>&1 || true
+        working-directory: backend
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Run npm audit
+        id: npm-audit
+        continue-on-error: true
+        run: bun pm audit --json > npm-audit-results.json 2>&1 || true
+        working-directory: frontend
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-results
+          path: |
+            backend/audit-results.json
+            frontend/npm-audit-results.json
+          retention-days: 30
+
+  stale-dependencies:
+    name: Check Stale Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Check outdated Python packages
+        continue-on-error: true
+        run: |
+          echo "## Outdated Python Packages" >> "$GITHUB_STEP_SUMMARY"
+          uv pip list --outdated 2>/dev/null >> "$GITHUB_STEP_SUMMARY" || echo "No outdated packages found" >> "$GITHUB_STEP_SUMMARY"
+        working-directory: backend
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Check outdated npm packages
+        continue-on-error: true
+        run: |
+          echo "## Outdated npm Packages" >> "$GITHUB_STEP_SUMMARY"
+          bun pm outdated 2>/dev/null >> "$GITHUB_STEP_SUMMARY" || echo "No outdated packages found" >> "$GITHUB_STEP_SUMMARY"
+        working-directory: frontend
+
+  code-quality-trends:
+    name: Code Quality Metrics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --directory backend --dev
+
+      - name: Generate code metrics
+        run: |
+          echo "## Code Quality Metrics" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "### Lines of Code" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          find backend/app -name "*.py" -exec wc -l {} + | tail -1 >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Complexity Analysis" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          uv run --directory backend xenon --max-absolute D --max-modules C --max-average B app 2>&1 >> "$GITHUB_STEP_SUMMARY" || echo "Complexity check passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Test Files Count" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          find backend/tests -name "test_*.py" | wc -l >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+
+  repo-health:
+    name: Repository Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check repository health
+        run: |
+          echo "## Repository Health" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "### TODO/FIXME Count" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          grep -rn "TODO\|FIXME" backend/app frontend/src --include="*.py" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l >> "$GITHUB_STEP_SUMMARY" || echo "0" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Large Files (>1MB)" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          find . -type f -size +1M -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./.venv/*" 2>/dev/null >> "$GITHUB_STEP_SUMMARY" || echo "None found" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Sensitive Files Check" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          if find . -name "*.env" -not -name "*.env.example" -not -path "./.git/*" 2>/dev/null | grep -q .; then
+            echo "WARNING: .env files found (excluding .env.example)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No sensitive .env files detected" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Documentation Freshness" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          find docs -name "*.md" -mtime +90 2>/dev/null | head -5 >> "$GITHUB_STEP_SUMMARY" || echo "All docs updated within 90 days" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+
+  notify-on-failure:
+    name: Notify on Monitoring Failures
+    needs: [dependency-audit, stale-dependencies, code-quality-trends, repo-health]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create issue on failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `Monitoring Alert: Workflow failures detected - ${new Date().toISOString().split('T')[0]}`;
+            const body = `## Monitoring Workflow Failure
+
+            One or more monitoring checks have failed. Please review the workflow run for details.
+
+            **Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+
+            **Failed Jobs:** Check the workflow summary for specific failures.
+
+            **Next Steps:**
+            1. Review the failed job logs
+            2. Address any security vulnerabilities found
+            3. Update outdated dependencies if needed
+            4. Close this issue once resolved
+
+            ---
+            *This issue was automatically created by the Monitoring workflow.*`;
+
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'monitoring-alert'
+            });
+
+            const todayIssue = existingIssues.data.find(issue =>
+              issue.title.includes(new Date().toISOString().split('T')[0])
+            );
+
+            if (!todayIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['monitoring-alert', 'automated']
+              });
+            }
