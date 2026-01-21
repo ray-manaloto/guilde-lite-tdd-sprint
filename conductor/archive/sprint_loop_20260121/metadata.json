@@ -1,0 +1,8 @@
+{
+  "track_id": "sprint_loop_20260121",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-21T10:00:00Z",
+  "updated_at": "2026-01-21T10:00:00Z",
+  "description": "Implement the Core 'Sprint' Trigger and Agentic Loop"
+}
