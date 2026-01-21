@@ -4,9 +4,9 @@
 - [x] Task: Define Sprint Database Model and Repository 650961e
     - [x] Write unit tests for Sprint repository (CRUD operations)
     - [x] Implement Sprint model and repository
-- [ ] Task: Create Sprint Trigger API Endpoint
-    - [ ] Write integration tests for `POST /api/v1/sprints`
-    - [ ] Implement the API endpoint and initial "Pending" state
+- [x] Task: Create Sprint Trigger API Endpoint a137388
+    - [x] Write integration tests for `POST /api/v1/sprints`
+    - [x] Implement the API endpoint and initial "Pending" state
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Sprint API and Foundation' (Protocol in workflow.md)
 
 ## Phase 2: Agentic Loop and PydanticAI Integration
