@@ -79,6 +79,8 @@ def mock_sprint(mock_sprint_item: MockSprintItem) -> MockSprint:
 def mock_sprint_service(mock_sprint: MockSprint, mock_sprint_item: MockSprintItem) -> MagicMock:
     """Create a mock sprint service."""
     service = MagicMock()
+    service.db = MagicMock()
+    service.db.commit = AsyncMock()
     service.get_with_items = AsyncMock(return_value=mock_sprint)
     service.create = AsyncMock(return_value=mock_sprint)
     service.update = AsyncMock(return_value=mock_sprint)

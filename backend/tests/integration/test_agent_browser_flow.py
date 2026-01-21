@@ -1,5 +1,7 @@
-import pytest
 import os
+import shutil
+
+import pytest
 from app.agents.assistant import AssistantAgent
 
 @pytest.mark.anyio
@@ -14,6 +16,24 @@ async def test_agent_browser_google_title_flow():
     3. Agent calls 'agent_browser get title' (or similar).
     4. Agent returns final answer.
     """
+    if not shutil.which("agent-browser"):
+        pytest.skip("agent-browser CLI not available")
+    if not any(
+        [
+            os.getenv("OPENAI_API_KEY"),
+            os.getenv("ANTHROPIC_API_KEY"),
+            os.getenv("OPENROUTER_API_KEY"),
+        ]
+    ):
+        pytest.skip("No LLM API key configured for agent browser test")
+    if not any(
+        [
+            os.getenv("OPENAI_MODEL"),
+            os.getenv("ANTHROPIC_MODEL"),
+            os.getenv("OPENROUTER_MODEL"),
+        ]
+    ):
+        pytest.skip("No LLM model configured for agent browser test")
     # Use a cheap/fast model if possible, or the one from env
     # Using the class default which pulls from settings
     agent = AssistantAgent(
