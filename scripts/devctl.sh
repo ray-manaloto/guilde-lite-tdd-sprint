@@ -323,9 +323,32 @@ tmux_logs() {
   tmux attach -t "${TMUX_SESSION}"
 }
 
+preflight() {
+  echo "Running pre-flight service checks..."
+  cd "${ROOT_DIR}/backend"
+  uv run python "${ROOT_DIR}/scripts/preflight.py" "$@"
+}
+
 usage() {
   cat <<EOF
-Usage: $(basename "$0") <start|stop|restart|status|logs> [service]
+Usage: $(basename "$0") <command> [args]
+
+Commands:
+  start [service]     Start all services or a specific service
+  stop [service]      Stop all services or a specific service
+  restart [service]   Restart all services or a specific service
+  status [service]    Show status of all services or a specific service
+  logs <service>      Tail logs for a specific service
+  infra [up|down]     Manage infrastructure (db, redis)
+  preflight [opts]    Run pre-flight service health checks
+
+Preflight options:
+  --backend-only      Skip frontend check
+  --no-migrations     Skip migration check
+  --no-websocket      Skip WebSocket check
+  --verbose, -v       Verbose output
+  --retries N         Number of retries per service (default: 3)
+  --retry-delay N     Delay between retries in seconds (default: 2.0)
 
 Services: ${SERVICES[*]}
 Environment overrides:
@@ -346,7 +369,7 @@ if [[ -z "${cmd}" ]]; then
   exit 1
 fi
 
-if [[ "${cmd}" != "infra" ]]; then
+if [[ "${cmd}" != "infra" ]] && [[ "${cmd}" != "preflight" ]]; then
   targets=("${SERVICES[@]}")
   if [[ -n "${service}" ]]; then
     if [[ ! " ${SERVICES[*]} " =~ " ${service} " ]]; then
@@ -427,6 +450,9 @@ case "${cmd}" in
       echo "Usage: $0 infra [up|down|logs]"
       exit 1
     fi
+    ;;
+  preflight)
+    preflight "${@:2}"
     ;;
   *)
     usage

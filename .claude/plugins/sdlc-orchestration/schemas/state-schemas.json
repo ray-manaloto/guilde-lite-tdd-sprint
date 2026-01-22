@@ -1,0 +1,674 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SDLC State File Schemas",
+  "description": "JSON schemas for all SDLC orchestration state files",
+  "version": "2.0.0",
+
+  "schemas": {
+    "sdlc-state": {
+      "title": "SDLC Workflow State",
+      "description": "Main state file tracking workflow progress (.claude/sdlc-state.json)",
+      "type": "object",
+      "required": ["track_id", "current_phase", "started_at", "phases"],
+      "properties": {
+        "track_id": {
+          "type": "string",
+          "description": "Unique identifier for this workflow track (kebab-case)",
+          "pattern": "^[a-z0-9-]+$",
+          "maxLength": 50
+        },
+        "current_phase": {
+          "type": "string",
+          "enum": ["requirements", "design", "implementation", "quality", "release"],
+          "description": "Currently active phase"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when workflow started"
+        },
+        "phases": {
+          "type": "object",
+          "description": "Status and details for each phase",
+          "required": ["requirements", "design", "implementation", "quality", "release"],
+          "additionalProperties": false,
+          "properties": {
+            "requirements": { "$ref": "#/schemas/phase-status" },
+            "design": { "$ref": "#/schemas/phase-status" },
+            "implementation": { "$ref": "#/schemas/phase-status" },
+            "quality": { "$ref": "#/schemas/phase-status" },
+            "release": { "$ref": "#/schemas/phase-status" }
+          }
+        },
+        "checkpoints": {
+          "type": "array",
+          "description": "List of checkpoint records",
+          "items": { "$ref": "#/schemas/checkpoint-record" }
+        },
+        "handoffs": {
+          "type": "array",
+          "description": "Phase transition handoff records",
+          "items": { "$ref": "#/schemas/handoff-record" }
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Optional workflow metadata",
+          "properties": {
+            "feature_description": { "type": "string" },
+            "sprint_id": { "type": "string" },
+            "created_by": { "type": "string" }
+          }
+        }
+      },
+      "example": {
+        "track_id": "user-auth-oauth2",
+        "current_phase": "implementation",
+        "started_at": "2026-01-22T10:00:00Z",
+        "phases": {
+          "requirements": {
+            "status": "completed",
+            "started_at": "2026-01-22T10:00:00Z",
+            "completed_at": "2026-01-22T10:30:00Z",
+            "agents_completed": ["ceo-stakeholder", "business-analyst", "research-scientist"],
+            "artifacts": {
+              "business_goals": "docs/requirements/business-goals.md",
+              "user_stories": "docs/requirements/user-stories.md"
+            },
+            "gates_passed": ["all_agents_complete", "artifacts_validated"]
+          },
+          "design": {
+            "status": "completed",
+            "started_at": "2026-01-22T10:30:00Z",
+            "completed_at": "2026-01-22T11:00:00Z",
+            "agents_completed": ["software-architect", "data-scientist"],
+            "artifacts": {
+              "adr": "docs/design/ADR-001-auth.md",
+              "api_spec": "docs/design/api-spec.yaml"
+            },
+            "gates_passed": ["architecture_reviewed"]
+          },
+          "implementation": {
+            "status": "in_progress",
+            "started_at": "2026-01-22T11:00:00Z",
+            "agents_completed": ["staff-engineer"],
+            "agents_pending": ["senior-engineer", "junior-engineer", "devops-engineer"]
+          },
+          "quality": { "status": "pending", "agents_completed": [] },
+          "release": { "status": "pending", "agents_completed": [] }
+        },
+        "checkpoints": [
+          {
+            "phase": "requirements",
+            "completed_at": "2026-01-22T10:30:00Z",
+            "transitioned_to": "design"
+          }
+        ],
+        "handoffs": [
+          {
+            "from_phase": "requirements",
+            "to_phase": "design",
+            "handoff_at": "2026-01-22T10:30:00Z",
+            "summary": "Requirements complete. 5 user stories, OAuth2 approach validated."
+          }
+        ]
+      }
+    },
+
+    "phase-status": {
+      "title": "Phase Status Object",
+      "description": "Status details for a single phase",
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "completed", "blocked", "failed"],
+          "description": "Current status of the phase"
+        },
+        "started_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When this phase started"
+        },
+        "completed_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When this phase completed"
+        },
+        "agents_completed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of agents that have completed work in this phase"
+        },
+        "agents_pending": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of agents still pending in this phase"
+        },
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Map of artifact names to file paths"
+        },
+        "gates_passed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of quality gates that have passed"
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "severity": { "enum": ["critical", "major", "minor"] },
+              "created_at": { "type": "string", "format": "date-time" }
+            }
+          },
+          "description": "List of blockers preventing phase completion"
+        }
+      }
+    },
+
+    "checkpoint-record": {
+      "title": "Checkpoint Record",
+      "description": "Record of a phase checkpoint",
+      "type": "object",
+      "required": ["phase", "completed_at"],
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": ["requirements", "design", "implementation", "quality", "release"]
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "transitioned_to": {
+          "type": "string",
+          "enum": ["requirements", "design", "implementation", "quality", "release"]
+        },
+        "validation_results": {
+          "type": "object",
+          "properties": {
+            "tests_passed": { "type": "boolean" },
+            "lint_clean": { "type": "boolean" },
+            "coverage_met": { "type": "boolean" },
+            "review_approved": { "type": "boolean" }
+          }
+        },
+        "git_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{7,40}$",
+          "description": "Git commit SHA at checkpoint"
+        }
+      }
+    },
+
+    "handoff-record": {
+      "title": "Handoff Record",
+      "description": "Record of phase transition handoff",
+      "type": "object",
+      "required": ["from_phase", "to_phase", "handoff_at"],
+      "properties": {
+        "from_phase": { "type": "string" },
+        "to_phase": { "type": "string" },
+        "handoff_at": { "type": "string", "format": "date-time" },
+        "summary": {
+          "type": "string",
+          "description": "Brief summary of what was handed off"
+        },
+        "artifacts_passed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of artifacts passed to next phase"
+        }
+      }
+    },
+
+    "sdlc-checkpoint": {
+      "title": "Session Checkpoint",
+      "description": "Crash recovery checkpoint file (.claude/sdlc-checkpoint.json)",
+      "type": "object",
+      "required": ["track_id", "phase", "recovery_pending", "checkpoint_at"],
+      "properties": {
+        "track_id": { "type": "string" },
+        "phase": {
+          "type": "string",
+          "enum": ["requirements", "design", "implementation", "quality", "release"]
+        },
+        "recovery_pending": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether recovery is needed"
+        },
+        "checkpoint_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When checkpoint was created"
+        },
+        "session_id": {
+          "type": "string",
+          "description": "Unique session identifier"
+        },
+        "current_phase": { "type": "string" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "phases": {
+          "type": "object",
+          "description": "Full phase state snapshot"
+        },
+        "last_agent": {
+          "type": "string",
+          "description": "Last agent that was running"
+        },
+        "pending_tasks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tasks that were in progress"
+        }
+      },
+      "example": {
+        "track_id": "user-auth-oauth2",
+        "phase": "implementation",
+        "recovery_pending": true,
+        "checkpoint_at": "2026-01-22T12:00:00Z",
+        "session_id": "a1b2c3d4",
+        "current_phase": "implementation",
+        "started_at": "2026-01-22T10:00:00Z",
+        "phases": {
+          "requirements": { "status": "completed" },
+          "design": { "status": "completed" },
+          "implementation": { "status": "in_progress", "agents_completed": ["staff-engineer"] },
+          "quality": { "status": "pending" },
+          "release": { "status": "pending" }
+        },
+        "last_agent": "senior-engineer",
+        "pending_tasks": ["implement user service", "add OAuth routes"]
+      }
+    },
+
+    "sdlc-stop-validation": {
+      "title": "Stop Validation Results",
+      "description": "Results of Stop hook validation checks (.claude/sdlc-stop-validation.json)",
+      "type": "object",
+      "required": ["timestamp", "checks"],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "phase": {
+          "type": "string",
+          "description": "Current phase when validation ran"
+        },
+        "checks": {
+          "type": "object",
+          "properties": {
+            "tests_pass": {
+              "type": "boolean",
+              "description": "Whether all tests passed"
+            },
+            "test_output": {
+              "type": "string",
+              "description": "Test command output"
+            },
+            "lint_clean": {
+              "type": "boolean",
+              "description": "Whether lint check passed"
+            },
+            "lint_issues": {
+              "type": "string",
+              "description": "Lint issues if any"
+            },
+            "type_check_pass": {
+              "type": "boolean",
+              "description": "Whether type check passed"
+            },
+            "type_errors": {
+              "type": "string",
+              "description": "Type errors if any"
+            },
+            "docs_synced": {
+              "type": "boolean",
+              "description": "Whether documentation is in sync"
+            },
+            "security_scan_pass": {
+              "type": "boolean",
+              "description": "Whether security scan passed"
+            }
+          }
+        },
+        "task_complete": {
+          "type": "boolean",
+          "description": "Overall task completion status"
+        },
+        "warnings": {
+          "type": "string",
+          "description": "Concatenated warning messages"
+        }
+      },
+      "example": {
+        "timestamp": "2026-01-22T12:30:00Z",
+        "phase": "implementation",
+        "checks": {
+          "tests_pass": true,
+          "test_output": "42 passed in 3.21s",
+          "lint_clean": false,
+          "lint_issues": "backend/app/services/auth.py:15 E501 line too long",
+          "docs_synced": true
+        },
+        "task_complete": false,
+        "warnings": "\\n- Lint issues detected"
+      }
+    },
+
+    "sdlc-agent-outputs": {
+      "title": "Agent Output Aggregation",
+      "description": "Aggregated outputs from subagents (.claude/sdlc-agent-outputs.json)",
+      "type": "object",
+      "properties": {
+        "agents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "agent": { "type": "string" },
+              "completed_at": { "type": "string", "format": "date-time" },
+              "output_length": { "type": "integer" },
+              "phase": { "type": "string" }
+            }
+          }
+        },
+        "research_results": {
+          "type": "array",
+          "description": "Aggregated research findings",
+          "items": {
+            "type": "object",
+            "properties": {
+              "agent": { "type": "string" },
+              "topic": { "type": "string" },
+              "findings": { "type": "string" }
+            }
+          }
+        },
+        "phase_summaries": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "summary": { "type": "string" },
+              "artifacts": { "type": "array", "items": { "type": "string" } },
+              "agents_contributed": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      },
+      "example": {
+        "agents": [
+          { "agent": "research-scientist", "completed_at": "2026-01-22T10:15:00Z", "output_length": 2500 },
+          { "agent": "business-analyst", "completed_at": "2026-01-22T10:16:00Z", "output_length": 1800 },
+          { "agent": "software-architect", "completed_at": "2026-01-22T10:17:00Z", "output_length": 3200 }
+        ],
+        "research_results": [
+          { "agent": "research-scientist", "topic": "OAuth2 implementation", "findings": "Recommend Auth0 or Firebase Auth" }
+        ],
+        "phase_summaries": {
+          "requirements": {
+            "summary": "5 user stories defined with acceptance criteria",
+            "artifacts": ["user-stories.md", "acceptance-criteria.md"],
+            "agents_contributed": ["ceo-stakeholder", "business-analyst", "research-scientist"]
+          }
+        }
+      }
+    },
+
+    "sdlc-research-results": {
+      "title": "Research Results Aggregation",
+      "description": "Aggregated parallel research results (.claude/sdlc-research-results.json)",
+      "type": "object",
+      "properties": {
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "all_complete": {
+          "type": "boolean",
+          "default": false
+        },
+        "agents_completed": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "findings": {
+          "type": "object",
+          "properties": {
+            "research-scientist": {
+              "type": "object",
+              "properties": {
+                "completed_at": { "type": "string" },
+                "technical_feasibility": { "type": "string" },
+                "recommended_approaches": { "type": "array", "items": { "type": "string" } },
+                "risks": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "business-analyst": {
+              "type": "object",
+              "properties": {
+                "completed_at": { "type": "string" },
+                "user_needs": { "type": "array", "items": { "type": "string" } },
+                "market_context": { "type": "string" },
+                "requirements": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "software-architect": {
+              "type": "object",
+              "properties": {
+                "completed_at": { "type": "string" },
+                "architecture_options": { "type": "array", "items": { "type": "string" } },
+                "technology_recommendations": { "type": "array", "items": { "type": "string" } },
+                "integration_points": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "synthesis": {
+          "type": "object",
+          "properties": {
+            "recommendation": { "type": "string" },
+            "next_steps": { "type": "array", "items": { "type": "string" } },
+            "consensus_score": { "type": "number", "minimum": 0, "maximum": 100 }
+          }
+        }
+      },
+      "example": {
+        "started_at": "2026-01-22T10:00:00Z",
+        "completed_at": "2026-01-22T10:20:00Z",
+        "all_complete": true,
+        "agents_completed": ["research-scientist", "business-analyst", "software-architect"],
+        "findings": {
+          "research-scientist": {
+            "completed_at": "2026-01-22T10:15:00Z",
+            "technical_feasibility": "High - OAuth2 is well-supported",
+            "recommended_approaches": ["Auth0 SDK", "Firebase Auth", "Custom JWT"],
+            "risks": ["Token refresh complexity", "Session management"]
+          },
+          "business-analyst": {
+            "completed_at": "2026-01-22T10:16:00Z",
+            "user_needs": ["Reduce signup friction", "Social login support", "Remember me"],
+            "market_context": "Competitors all offer OAuth2",
+            "requirements": ["Google login", "GitHub login", "Email fallback"]
+          },
+          "software-architect": {
+            "completed_at": "2026-01-22T10:17:00Z",
+            "architecture_options": ["Centralized auth service", "Distributed tokens"],
+            "technology_recommendations": ["Auth0", "JWT", "Redis for sessions"],
+            "integration_points": ["User service", "API gateway", "Frontend SDK"]
+          }
+        },
+        "synthesis": {
+          "recommendation": "Use Auth0 for OAuth2 with custom user service integration",
+          "next_steps": ["Design API contracts", "Set up Auth0 tenant", "Define user schema"],
+          "consensus_score": 95
+        }
+      }
+    },
+
+    "sdlc-doc-sync": {
+      "title": "Documentation Sync State",
+      "description": "Tracks code/doc synchronization (.claude/sdlc-doc-sync.json)",
+      "type": "object",
+      "properties": {
+        "code_changes": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "requirements_changes": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "pending_sync": {
+          "type": "boolean",
+          "description": "Whether documentation needs updating"
+        },
+        "last_doc_update": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "skipped_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When user skipped doc sync"
+        }
+      }
+    },
+
+    "sdlc-pending-confirm": {
+      "title": "Pending Confirmation State",
+      "description": "Awaiting user confirmation for workflow (.claude/sdlc-pending-confirm.json)",
+      "type": "object",
+      "required": ["type", "detected_at"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["research", "skill-discovery", "feature-implementation"],
+          "description": "Type of workflow detected"
+        },
+        "detected_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "prompt_text": {
+          "type": "string",
+          "description": "The user prompt that triggered detection"
+        }
+      }
+    },
+
+    "sdlc-research-active": {
+      "title": "Research Workflow Active",
+      "description": "Indicates research workflow is running (.claude/sdlc-research-active.json)",
+      "type": "object",
+      "required": ["started_at", "status"],
+      "properties": {
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "completed"]
+        },
+        "topic": {
+          "type": "string",
+          "description": "Research topic"
+        }
+      }
+    },
+
+    "sdlc-research-bypass": {
+      "title": "Research Bypass State",
+      "description": "User opted for manual research (.claude/sdlc-research-bypass.json)",
+      "type": "object",
+      "required": ["bypassed_at", "reason"],
+      "properties": {
+        "bypassed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why bypass was granted"
+        },
+        "expires_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When bypass expires (null = session)"
+        }
+      }
+    }
+  },
+
+  "state_file_locations": {
+    "sdlc-state.json": ".claude/sdlc-state.json",
+    "sdlc-checkpoint.json": ".claude/sdlc-checkpoint.json",
+    "sdlc-stop-validation.json": ".claude/sdlc-stop-validation.json",
+    "sdlc-agent-outputs.json": ".claude/sdlc-agent-outputs.json",
+    "sdlc-research-results.json": ".claude/sdlc-research-results.json",
+    "sdlc-doc-sync.json": ".claude/sdlc-doc-sync.json",
+    "sdlc-pending-confirm.json": ".claude/sdlc-pending-confirm.json",
+    "sdlc-research-active.json": ".claude/sdlc-research-active.json",
+    "sdlc-research-bypass.json": ".claude/sdlc-research-bypass.json",
+    "sdlc-activity.log": ".claude/sdlc-activity.log"
+  },
+
+  "state_lifecycle": {
+    "sdlc-state.json": {
+      "created": "On /sdlc-orchestration:full-feature or /sdlc-orchestration:phase",
+      "updated": "On agent completion, phase transition",
+      "deleted": "Manually after workflow complete"
+    },
+    "sdlc-checkpoint.json": {
+      "created": "On SessionStop when phase is in_progress",
+      "updated": "Never (snapshot)",
+      "deleted": "On /sdlc-orchestration:resume or manual cleanup"
+    },
+    "sdlc-stop-validation.json": {
+      "created": "On Stop hook",
+      "updated": "During validation checks",
+      "deleted": "Overwritten on next Stop"
+    },
+    "sdlc-pending-confirm.json": {
+      "created": "On research/skill task detection",
+      "updated": "Never",
+      "deleted": "On user confirmation response"
+    },
+    "sdlc-research-active.json": {
+      "created": "On /sdlc-orchestration:research invocation",
+      "updated": "Never",
+      "deleted": "On research completion or manual cleanup"
+    },
+    "sdlc-research-bypass.json": {
+      "created": "On user bypass confirmation",
+      "updated": "Never",
+      "deleted": "Manual cleanup or session end"
+    }
+  }
+}
