@@ -654,12 +654,22 @@ class PhaseRunner:
                         details=f"Coding attempt {attempt + 1} complete",
                     )
 
-                    # Phase 3: Verification
+                    # Phase 3: Verification with Evaluator Integration
                     verification_start_time = time.monotonic()
                     await tracker.start_phase(
                         f"verification_{attempt + 1}",
                         input_data={"attempt": attempt + 1},
                     )
+
+                    # Initialize feedback memory for this verification cycle
+                    if attempt == 0:
+                        feedback_memory = FeedbackMemory(
+                            sprint_id=sprint_id,
+                            phase="verification",
+                            original_goal=goal,
+                            max_attempts=cls.MAX_RETRIES,
+                        )
+
                     # Emit new granular events
                     await emit_phase_started(
                         "verification",
@@ -676,7 +686,8 @@ class PhaseRunner:
                         f"Implementation complete. Verifying... (Attempt {attempt + 1})",
                     )
 
-                    verification_prompt = (
+                    # Build verification prompt with feedback from previous attempts
+                    base_verification_prompt = (
                         f"Phase 3: Verification (Attempt {attempt + 1})\n"
                         f"1. Verify the implementation works as expected.\n"
                         f"2. If it is a script, run it. If it is a library, write and run a test script.\n"
@@ -684,6 +695,13 @@ class PhaseRunner:
                         f"4. CRITICAL: If verification SUCCEEDS, return the exact string 'VERIFICATION_SUCCESS'.\n"
                         f"5. If verification FAILS, return 'VERIFICATION_FAILURE' and explain what to fix."
                     )
+
+                    # Add feedback from previous attempts if available
+                    feedback_summary = feedback_memory.get_summary_for_prompt()
+                    if feedback_summary:
+                        verification_prompt = f"{feedback_summary}\n\n{base_verification_prompt}"
+                    else:
+                        verification_prompt = base_verification_prompt
 
                     result_p3 = await agent_tdd_service.execute(
                         AgentTddRunCreate(
@@ -709,15 +727,69 @@ class PhaseRunner:
                     elif result_p3.candidates:
                         output = result_p3.candidates[0].output or ""
 
-                    verification_success = "VERIFICATION_SUCCESS" in output
+                    agent_verification_success = "VERIFICATION_SUCCESS" in output
+
+                    # Run evaluators on the workspace (deterministic only for speed)
+                    eval_results = await cls.evaluate_phase_output(
+                        phase="verification",
+                        output=output,
+                        context={
+                            "workspace_ref": workspace_ref,
+                            "goal": goal,
+                            "attempt": attempt,
+                        },
+                        deterministic_only=True,
+                    )
+
+                    # Check if all evaluators passed
+                    evaluators_passed = all(e.passed for e in eval_results) if eval_results else True
+
+                    # Both agent AND evaluators must pass
+                    verification_success = agent_verification_success and evaluators_passed
+
+                    # Record attempt in feedback memory
+                    feedback_memory.add_attempt(
+                        phase_output=output,
+                        evaluation_results=eval_results,
+                    )
+
+                    # Log evaluation results
+                    for eval_result in eval_results:
+                        if eval_result.passed:
+                            logger.info(
+                                f"Evaluator {eval_result.evaluator_name}: PASSED "
+                                f"(score={eval_result.score:.2f})"
+                            )
+                        else:
+                            logger.warning(
+                                f"Evaluator {eval_result.evaluator_name}: FAILED - "
+                                f"{eval_result.feedback}"
+                            )
 
                     verification_duration_ms = int(
                         (time.monotonic() - verification_start_time) * 1000
                     )
+
+                    # Record evaluation results in tracker
+                    await tracker.record_event(
+                        event_type="evaluation_completed",
+                        phase=f"verification_{attempt + 1}",
+                        metadata={
+                            "agent_success": agent_verification_success,
+                            "evaluators_passed": evaluators_passed,
+                            "evaluations": [e.model_dump() for e in eval_results],
+                        },
+                    )
+
                     await tracker.end_phase(
                         f"verification_{attempt + 1}",
                         status="completed" if verification_success else "failed",
-                        output_data={"success": verification_success, "output": output[:500]},
+                        output_data={
+                            "success": verification_success,
+                            "agent_success": agent_verification_success,
+                            "evaluators_passed": evaluators_passed,
+                            "output": output[:500],
+                        },
                     )
 
                     if verification_success:
@@ -733,8 +805,14 @@ class PhaseRunner:
                         await emit_phase_completed(
                             "verification",
                             duration_ms=verification_duration_ms,
-                            output={"success": True},
-                            details="Verification passed",
+                            output={
+                                "success": True,
+                                "evaluations": [
+                                    {"name": e.evaluator_name, "passed": e.passed, "score": e.score}
+                                    for e in eval_results
+                                ],
+                            },
+                            details="Verification and all evaluators passed",
                         )
                         await emit_workflow_status(
                             "completed", "verification", "Sprint successfully completed"
@@ -747,18 +825,30 @@ class PhaseRunner:
                         )
                         return
 
-                    logger.warning(f"Verification Failed: {output}. Retrying...")
+                    # Build failure message
+                    failure_reasons = []
+                    if not agent_verification_success:
+                        failure_reasons.append("Agent verification failed")
+                    for eval_result in eval_results:
+                        if not eval_result.passed:
+                            failure_reasons.append(
+                                f"{eval_result.evaluator_name}: {eval_result.feedback}"
+                            )
+
+                    failure_message = "; ".join(failure_reasons[:3])
+                    logger.warning(f"Verification Failed: {failure_message}. Retrying...")
+
                     # Emit phase.failed event
                     await emit_phase_failed(
                         "verification",
-                        details=output[:200] if output else "Verification failed",
+                        details=failure_message[:200],
                         attempt=attempt + 1,
                     )
                     # Legacy event
                     await broadcast_status(
                         "active",
                         "verification",
-                        f"Verification failed: {output[:100]}... Retrying.",
+                        f"Verification failed: {failure_message[:100]}... Retrying.",
                     )
 
                 logger.error(f"Sprint Failed: Max retries ({cls.MAX_RETRIES}) reached.")
