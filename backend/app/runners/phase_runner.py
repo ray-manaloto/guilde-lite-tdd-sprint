@@ -178,7 +178,6 @@ class PhaseRunner:
 
                 # Update status to ACTIVE
                 await sprint_service.update(sprint_id, SprintUpdate(status=SprintStatus.ACTIVE))
-                await db.commit()
 
                 await broadcast_status("active", "init", f"Starting sprint: {sprint.name}")
                 await tracker.record_event(
@@ -493,7 +492,6 @@ class PhaseRunner:
                         await sprint_service.update(
                             sprint_id, SprintUpdate(status=SprintStatus.COMPLETED)
                         )
-                        await db.commit()
 
                         # Complete workflow tracking
                         await tracker.complete_sprint(status="completed")

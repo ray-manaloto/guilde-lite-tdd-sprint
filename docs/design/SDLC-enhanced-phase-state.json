@@ -1,0 +1,432 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Enhanced SDLC Phase State",
+  "description": "Updated state management template with UI/UX roles, enhanced gates, and checkpoint support",
+  "version": "2.0.0",
+
+  "agents_by_phase": {
+    "requirements": [
+      "ceo-stakeholder",
+      "business-analyst",
+      "research-scientist",
+      "ux-researcher"
+    ],
+    "design": [
+      "software-architect",
+      "data-scientist",
+      "network-engineer",
+      "frontend-architect",
+      "ui-designer",
+      "accessibility-specialist",
+      "design-system-engineer"
+    ],
+    "implementation": [
+      "staff-engineer",
+      "senior-engineer",
+      "junior-engineer",
+      "devops-engineer",
+      "design-system-engineer"
+    ],
+    "quality": [
+      "qa-automation",
+      "code-reviewer",
+      "performance-engineer",
+      "accessibility-specialist"
+    ],
+    "release": [
+      "cicd-engineer",
+      "canary-user",
+      "documentation-engineer",
+      "devops-engineer"
+    ]
+  },
+
+  "agent_metadata": {
+    "ux-researcher": {
+      "model": "sonnet",
+      "phases": ["requirements", "design"],
+      "color": "purple",
+      "parallel_group": "analysis"
+    },
+    "ui-designer": {
+      "model": "sonnet",
+      "phases": ["design"],
+      "color": "pink",
+      "parallel_group": "design"
+    },
+    "accessibility-specialist": {
+      "model": "sonnet",
+      "phases": ["design", "quality"],
+      "color": "teal",
+      "parallel_group": "quality"
+    },
+    "frontend-architect": {
+      "model": "opus",
+      "phases": ["design"],
+      "color": "indigo",
+      "parallel_group": "architecture"
+    },
+    "design-system-engineer": {
+      "model": "sonnet",
+      "phases": ["design", "implementation"],
+      "color": "orange",
+      "parallel_group": "design"
+    }
+  },
+
+  "gates": {
+    "requirements": {
+      "required": [
+        "all_agents_complete",
+        "artifacts_validated",
+        "stakeholder_approved"
+      ],
+      "optional": [
+        "personas_defined",
+        "journey_maps_created"
+      ]
+    },
+    "design": {
+      "required": [
+        "architecture_reviewed",
+        "api_contract_approved",
+        "security_reviewed"
+      ],
+      "optional": [
+        "a11y_requirements_defined",
+        "design_system_spec_approved",
+        "wireframes_approved",
+        "design_tokens_defined"
+      ]
+    },
+    "implementation": {
+      "required": [
+        "code_complete",
+        "unit_tests_pass",
+        "lint_pass",
+        "type_check_pass"
+      ],
+      "optional": [
+        "tdd_verified",
+        "design_tokens_implemented",
+        "component_library_complete"
+      ]
+    },
+    "quality": {
+      "required": [
+        "integration_tests_pass",
+        "code_review_approved",
+        "performance_validated",
+        "security_scan_pass"
+      ],
+      "optional": [
+        "preflight_validated",
+        "mutation_score_pass",
+        "a11y_audit_pass",
+        "screen_reader_tested"
+      ]
+    },
+    "release": {
+      "required": [
+        "staging_deployed",
+        "canary_validated",
+        "docs_updated",
+        "production_approved"
+      ],
+      "optional": [
+        "checkpoint_saved",
+        "a11y_certification"
+      ]
+    }
+  },
+
+  "preflight_checks": {
+    "quality": [
+      {
+        "name": "database_connectivity",
+        "command": "pg_isready -h $DB_HOST -p $DB_PORT",
+        "timeout": 5,
+        "required": true
+      },
+      {
+        "name": "redis_connectivity",
+        "command": "redis-cli -h $REDIS_HOST ping",
+        "timeout": 5,
+        "required": true
+      },
+      {
+        "name": "test_fixtures_exist",
+        "command": "test -d tests/fixtures && test -n \"$(ls -A tests/fixtures)\"",
+        "timeout": 2,
+        "required": true
+      },
+      {
+        "name": "env_vars_set",
+        "command": "test -n \"$DATABASE_URL\" && test -n \"$SECRET_KEY\"",
+        "timeout": 1,
+        "required": true
+      },
+      {
+        "name": "mock_services_ready",
+        "command": "curl -s http://localhost:9000/health | grep -q 'ok'",
+        "timeout": 10,
+        "required": false
+      }
+    ]
+  },
+
+  "mutation_testing": {
+    "enabled": true,
+    "tools": {
+      "python": "mutmut",
+      "typescript": "stryker"
+    },
+    "thresholds": {
+      "critical_paths": 70,
+      "standard_code": 50,
+      "test_code": 0
+    },
+    "excluded_patterns": [
+      "**/migrations/**",
+      "**/tests/**",
+      "**/*.d.ts"
+    ]
+  },
+
+  "tdd_enforcement": {
+    "enabled": true,
+    "rules": [
+      {
+        "pattern": "def |class |function |const .* = \\(",
+        "requires_test_file": true,
+        "warning_only": true
+      }
+    ],
+    "test_file_patterns": {
+      "python": "test_{filename}.py",
+      "typescript": "{filename}.test.ts"
+    }
+  },
+
+  "checkpoints": {
+    "enabled": true,
+    "storage_path": ".claude/checkpoints",
+    "triggers": [
+      "phase_complete",
+      "gate_passed",
+      "subagent_batch_complete"
+    ],
+    "retention": {
+      "max_checkpoints": 10,
+      "max_age_hours": 168
+    }
+  },
+
+  "hooks_v2": {
+    "SubagentComplete": {
+      "description": "Fires when a subagent task completes",
+      "available_data": [
+        "agent_type",
+        "agent_output",
+        "execution_time",
+        "phase",
+        "track_id"
+      ],
+      "actions": [
+        "aggregate",
+        "checkpoint",
+        "notify"
+      ]
+    },
+    "PhaseComplete": {
+      "description": "Fires when all agents in a phase complete",
+      "available_data": [
+        "phase",
+        "agents_completed",
+        "artifacts",
+        "execution_time"
+      ],
+      "actions": [
+        "checkpoint",
+        "notify",
+        "advance_phase"
+      ]
+    },
+    "GateFailed": {
+      "description": "Fires when a quality gate check fails",
+      "available_data": [
+        "gate_name",
+        "phase",
+        "error_details",
+        "failed_checks"
+      ],
+      "actions": [
+        "stop",
+        "notify",
+        "rollback"
+      ]
+    }
+  },
+
+  "example_state": {
+    "track_id": "feature-ui-dashboard",
+    "current_phase": "design",
+    "checkpoint_id": "chk_20260122_143000",
+    "phases": {
+      "requirements": {
+        "status": "completed",
+        "started_at": "2026-01-22T10:00:00Z",
+        "completed_at": "2026-01-22T12:00:00Z",
+        "agents_completed": [
+          "ceo-stakeholder",
+          "business-analyst",
+          "research-scientist",
+          "ux-researcher"
+        ],
+        "artifacts": {
+          "business_goals": "requirements/business-goals.md",
+          "user_stories": "requirements/user-stories.md",
+          "feasibility": "requirements/feasibility.md",
+          "personas": "requirements/personas.md",
+          "journey_maps": "requirements/journey-maps.md"
+        },
+        "gates_passed": [
+          "all_agents_complete",
+          "artifacts_validated",
+          "stakeholder_approved",
+          "personas_defined"
+        ],
+        "checkpoint_id": "chk_20260122_120000"
+      },
+      "design": {
+        "status": "in_progress",
+        "started_at": "2026-01-22T12:30:00Z",
+        "completed_at": null,
+        "agents_completed": [
+          "software-architect",
+          "frontend-architect",
+          "ui-designer"
+        ],
+        "agents_pending": [
+          "data-scientist",
+          "network-engineer",
+          "accessibility-specialist",
+          "design-system-engineer"
+        ],
+        "artifacts": {
+          "adr": "design/ADR-001.md",
+          "api_spec": "design/api-spec.yaml",
+          "wireframes": "design/wireframes.md",
+          "component_architecture": "design/component-architecture.md"
+        },
+        "gates_passed": [
+          "architecture_reviewed"
+        ]
+      },
+      "implementation": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      },
+      "quality": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "preflight_status": null,
+        "mutation_score": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      },
+      "release": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      }
+    },
+    "handoffs": [
+      {
+        "from_phase": "requirements",
+        "to_phase": "design",
+        "handoff_at": "2026-01-22T12:30:00Z",
+        "summary": "Requirements complete with 4 personas and 2 journey maps. 8 user stories prioritized.",
+        "checkpoint_id": "chk_20260122_123000"
+      }
+    ],
+    "aggregated_outputs": {
+      "requirements": {
+        "synthesized_at": "2026-01-22T12:00:00Z",
+        "agent_outputs": {
+          "ceo-stakeholder": "...",
+          "business-analyst": "...",
+          "research-scientist": "...",
+          "ux-researcher": "..."
+        },
+        "synthesis": "..."
+      }
+    }
+  },
+
+  "template": {
+    "track_id": "",
+    "current_phase": "requirements",
+    "checkpoint_id": null,
+    "phases": {
+      "requirements": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": [],
+        "checkpoint_id": null
+      },
+      "design": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": [],
+        "checkpoint_id": null
+      },
+      "implementation": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": [],
+        "checkpoint_id": null
+      },
+      "quality": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "preflight_status": null,
+        "mutation_score": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": [],
+        "checkpoint_id": null
+      },
+      "release": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": [],
+        "checkpoint_id": null
+      }
+    },
+    "handoffs": [],
+    "aggregated_outputs": {}
+  }
+}

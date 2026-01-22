@@ -10,7 +10,7 @@
       "hooks": [
         {
           "type": "prompt",
-          "prompt": "SDLC Orchestration plugin active (v2.0). Available workflows:\n- /sdlc-orchestration:full-feature - Complete SDLC with parallel agents (includes UI/UX)\n- /sdlc-orchestration:phase <phase> - Run specific phase\n- /sdlc-orchestration:research - Parallel research with 3 agents (includes skill search)\n- /sdlc-orchestration:role <role> - Single role agent\n- /sdlc-orchestration:resume - Resume from last checkpoint\n\nPhases: requirements, design, implement, quality, release\nRoles: ceo, pm, architect, ba, research, staff, senior, junior, qa, reviewer, devops, network, cicd, canary, docs, perf, data, ux-researcher, ui-designer, accessibility, frontend-architect, design-system\n\nENFORCEMENT ACTIVE:\n- Research tasks REQUIRE /sdlc-orchestration:research (WebSearch blocked otherwise)\n- Feature implementation REQUIRES /sdlc-orchestration:full-feature\n- User confirmation required before bypassing workflows\n- Crash recovery: session checkpoints auto-created"
+          "prompt": "SDLC Orchestration plugin active (v2.0). Available workflows:\n- /sdlc-orchestration:full-feature - Complete SDLC with parallel agents\n- /sdlc-orchestration:phase <phase> - Run specific phase\n- /sdlc-orchestration:research - Parallel research with 3 agents (includes skill search)\n- /sdlc-orchestration:role <role> - Single role agent\n- /sdlc-orchestration:resume - Resume from last checkpoint\n\nPhases: requirements, design, implement, quality, release\nRoles: ceo, pm, architect, ba, research, staff, senior, junior, qa, reviewer, devops, network, cicd, canary, docs, perf, data\n\nENFORCEMENT ACTIVE:\n- Research tasks REQUIRE /sdlc-orchestration:research (WebSearch blocked otherwise)\n- Feature implementation REQUIRES /sdlc-orchestration:full-feature\n- User confirmation required before bypassing workflows\n- Crash recovery: session checkpoints auto-created"
         },
         {
           "type": "command",
@@ -106,21 +106,6 @@
         },
         {
           "type": "command",
-          "command": "bash -c 'INPUT=$(cat); PROMPT=$(echo \"$INPUT\" | jq -r \".prompt // empty\" 2>/dev/null); BYPASS_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-research-bypass.json\"; RESEARCH_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-research-active.json\"; if [ -n \"$PROMPT\" ] && echo \"$PROMPT\" | grep -qiE \"(find|search|add|install).*(skill|plugin|agent|mcp)\"; then if [ ! -f \"$RESEARCH_FILE\" ] && [ ! -f \"$BYPASS_FILE\" ]; then CONFIRM_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-pending-confirm.json\"; mkdir -p \"$(dirname \"$CONFIRM_FILE\")\"; echo \"{\\\"type\\\":\\\"skill-discovery\\\",\\\"detected_at\\\":\\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\"}\" > \"$CONFIRM_FILE\"; echo \"{\\\"addToPrompt\\\": \\\"[SDLC CONFIRMATION REQUIRED]\\n\\nSkill/plugin discovery detected. You MUST ask the user:\\n\\n> This is a skill discovery task. I should use /sdlc-orchestration:research for parallel investigation.\\n>\\n> Options:\\n> 1. Yes, use research workflow (recommended)\\n> 2. No, I want manual search (creates bypass)\\n>\\n> Which do you prefer?\\n\\nDo NOT proceed until user responds.\\\"}\"; fi; fi'",
-          "timeout": 5
-        },
-        {
-          "type": "command",
-          "command": "bash -c 'INPUT=$(cat); PROMPT=$(echo \"$INPUT\" | jq -r \".prompt // empty\" 2>/dev/null); CONFIRM_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-pending-confirm.json\"; BYPASS_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-research-bypass.json\"; if [ -f \"$CONFIRM_FILE\" ]; then if echo \"$PROMPT\" | grep -qiE \"(yes|option 1|use research|recommended)\"; then rm -f \"$CONFIRM_FILE\"; echo \"{\\\"addToPrompt\\\": \\\"[SDLC] User confirmed research workflow. Now invoke /sdlc-orchestration:research with the original task.\\\"}\"; elif echo \"$PROMPT\" | grep -qiE \"(no|option 2|manual|bypass)\"; then rm -f \"$CONFIRM_FILE\"; mkdir -p \"$(dirname \"$BYPASS_FILE\")\"; echo \"{\\\"bypassed_at\\\":\\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\",\\\"reason\\\":\\\"user_requested\\\"}\" > \"$BYPASS_FILE\"; echo \"{\\\"addToPrompt\\\": \\\"[SDLC] User chose manual research. Bypass granted for this session. Proceeding without parallel agents.\\\"}\"; fi; fi'",
-          "timeout": 5
-        },
-        {
-          "type": "command",
-          "command": "bash -c 'INPUT=$(cat); PROMPT=$(echo \"$INPUT\" | jq -r \".prompt // empty\" 2>/dev/null); if echo \"$PROMPT\" | grep -qiE \"sdlc-orchestration:research\"; then RESEARCH_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-research-active.json\"; CONFIRM_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-pending-confirm.json\"; mkdir -p \"$(dirname \"$RESEARCH_FILE\")\"; echo \"{\\\"started_at\\\":\\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\",\\\"status\\\":\\\"active\\\"}\" > \"$RESEARCH_FILE\"; rm -f \"$CONFIRM_FILE\" 2>/dev/null; echo \"{\\\"addToPrompt\\\": \\\"[SDLC] Research workflow activated. Parallel agents enabled.\\\"}\"; fi'",
-          "timeout": 5
-        },
-        {
-          "type": "command",
           "command": "bash -c 'INPUT=$(cat); PROMPT=$(echo \"$INPUT\" | jq -r \".prompt // empty\" 2>/dev/null); if echo \"$PROMPT\" | grep -qiE \"sdlc-orchestration:(full-feature|phase)\"; then STATE_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-state.json\"; CHECKPOINT_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-checkpoint.json\"; FEATURE=$(echo \"$PROMPT\" | sed -n \"s/.*[\\\"\\x27]\\([^\\\"\\x27]*\\)[\\\"\\x27].*/\\1/p\" | head -1); TRACK_ID=$(echo \"$FEATURE\" | tr \" \" \"-\" | tr \"[:upper:]\" \"[:lower:]\" | head -c 50); TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ); mkdir -p \"${CLAUDE_PROJECT_ROOT:-.}/.claude\"; cat > \"$STATE_FILE\" <<EOF\n{\"track_id\":\"$TRACK_ID\",\"current_phase\":\"requirements\",\"started_at\":\"$TIMESTAMP\",\"phases\":{\"requirements\":{\"status\":\"in_progress\",\"started_at\":\"$TIMESTAMP\",\"agents_completed\":[]},\"design\":{\"status\":\"pending\",\"agents_completed\":[]},\"implementation\":{\"status\":\"pending\",\"agents_completed\":[]},\"quality\":{\"status\":\"pending\",\"agents_completed\":[]},\"release\":{\"status\":\"pending\",\"agents_completed\":[]}},\"checkpoints\":[],\"handoffs\":[]}\nEOF\nrm -f \"$CHECKPOINT_FILE\" 2>/dev/null; echo \"{\\\"addToPrompt\\\": \\\"[SDLC] Created state file: $STATE_FILE. Phase tracking is now active.\\\"}\"; fi'",
           "timeout": 5
         },
@@ -132,16 +117,6 @@
         {
           "type": "command",
           "command": "bash -c 'INPUT=$(cat); PROMPT=$(echo \"$INPUT\" | jq -r \".prompt // empty\" 2>/dev/null); STATE_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-state.json\"; if [ -f \"$STATE_FILE\" ]; then PHASE=$(jq -r \".current_phase // empty\" \"$STATE_FILE\" 2>/dev/null); if [ \"$PHASE\" = \"requirements\" ] && echo \"$PROMPT\" | grep -qiE \"(implement|code|build)\"; then echo \"{\\\"addToPrompt\\\": \\\"[SDLC Gate] Design phase must complete before implementation. Current phase: requirements.\\\"}\"; elif [ \"$PHASE\" = \"design\" ] && echo \"$PROMPT\" | grep -qiE \"(deploy|release|production)\"; then echo \"{\\\"addToPrompt\\\": \\\"[SDLC Gate] Implementation and quality phases must complete before release. Current phase: design.\\\"}\"; fi; fi'",
-          "timeout": 5
-        },
-        {
-          "type": "command",
-          "command": "bash -c 'INPUT=$(cat); PROMPT=$(echo \"$INPUT\" | jq -r \".prompt // empty\" 2>/dev/null); SYNC_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-doc-sync.json\"; if [ -f \"$SYNC_FILE\" ]; then PENDING=$(jq -r \".pending_sync // false\" \"$SYNC_FILE\" 2>/dev/null); if [ \"$PENDING\" = \"true\" ] && echo \"$PROMPT\" | grep -qiE \"(commit|push|deploy|release|done|complete|finish|merge|pr|pull.?request)\"; then CODE_COUNT=$(jq \".code_changes | length\" \"$SYNC_FILE\" 2>/dev/null); REQ_COUNT=$(jq \".requirements_changes | length\" \"$SYNC_FILE\" 2>/dev/null); echo \"{\\\"addToPrompt\\\": \\\"[SDLC DOC-SYNC REQUIRED]\\n\\nDocumentation is out of sync:\\n- Code files changed: $CODE_COUNT\\n- Requirements/plan files changed: $REQ_COUNT\\n\\nBefore proceeding with commit/deploy/release, you SHOULD:\\n1. Invoke documentation-engineer agent to update relevant docs\\n2. Or explicitly acknowledge: \\\\\\\"skip doc sync\\\\\\\" to proceed without updating\\n\\nSuggested command: Use Task tool with documentation-generator:technical-writer to sync documentation.\\\"}\"; fi; fi; exit 0'",
-          "timeout": 5
-        },
-        {
-          "type": "command",
-          "command": "bash -c 'INPUT=$(cat); PROMPT=$(echo \"$INPUT\" | jq -r \".prompt // empty\" 2>/dev/null); SYNC_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-doc-sync.json\"; if echo \"$PROMPT\" | grep -qiE \"skip doc.?sync\"; then if [ -f \"$SYNC_FILE\" ]; then jq \".pending_sync = false | .skipped_at = \\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\"\" \"$SYNC_FILE\" > \"${SYNC_FILE}.tmp\" && mv \"${SYNC_FILE}.tmp\" \"$SYNC_FILE\" 2>/dev/null; echo \"{\\\"addToPrompt\\\": \\\"[SDLC DOC-SYNC] Documentation sync skipped by user acknowledgment. Proceeding without doc update.\\\"}\"; fi; fi; exit 0'",
           "timeout": 5
         }
       ]
@@ -160,16 +135,6 @@
       ]
     },
     {
-      "matcher": "WebFetch",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "bash -c 'RESEARCH_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-research-active.json\"; BYPASS_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-research-bypass.json\"; CONFIRM_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-pending-confirm.json\"; INPUT=$(cat); URL=$(echo \"$INPUT\" | jq -r \".tool_input.url // empty\" 2>/dev/null); if echo \"$URL\" | grep -qiE \"github.com.*(skill|plugin|agent)\"; then if [ -f \"$CONFIRM_FILE\" ]; then echo \"{\\\"decision\\\": \\\"block\\\", \\\"reason\\\": \\\"[SDLC BLOCKED] Pending user confirmation. Ask user to choose workflow.\\\"}\"; elif [ ! -f \"$RESEARCH_FILE\" ] && [ ! -f \"$BYPASS_FILE\" ]; then echo \"{\\\"decision\\\": \\\"block\\\", \\\"reason\\\": \\\"[SDLC BLOCKED] Skill/plugin fetch requires research workflow or user bypass.\\\"}\"; fi; fi; exit 0'",
-          "timeout": 5
-        }
-      ]
-    },
-    {
       "matcher": "Bash",
       "hooks": [
         {
@@ -180,11 +145,6 @@
         {
           "type": "command",
           "command": "bash -c 'INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r \".tool_input.command // empty\" 2>/dev/null); if echo \"$CMD\" | grep -qE \"git commit\"; then STOP_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-stop-validation.json\"; if [ -f \"$STOP_FILE\" ]; then TESTS=$(jq -r \".checks.tests_pass // true\" \"$STOP_FILE\" 2>/dev/null); LINT=$(jq -r \".checks.lint_clean // true\" \"$STOP_FILE\" 2>/dev/null); if [ \"$TESTS\" = \"false\" ] || [ \"$LINT\" = \"false\" ]; then echo \"{\\\"addToPrompt\\\": \\\"[SDLC PRE-COMMIT WARNING]\\n\\nQuality checks failed:\\n- Tests: $([ \\\"$TESTS\\\" = \\\"true\\\" ] && echo \\\"PASS\\\" || echo \\\"FAIL\\\")\\n- Lint: $([ \\\"$LINT\\\" = \\\"true\\\" ] && echo \\\"PASS\\\" || echo \\\"FAIL\\\")\\n\\nConsider fixing issues before committing.\\\"}\"; fi; fi; fi; exit 0'",
-          "timeout": 5
-        },
-        {
-          "type": "command",
-          "command": "bash -c 'INPUT=$(cat); CMD=$(echo \"$INPUT\" | jq -r \".tool_input.command // empty\" 2>/dev/null); RESEARCH_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-research-active.json\"; BYPASS_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-research-bypass.json\"; if echo \"$CMD\" | grep -qiE \"git clone.*(skill|plugin|marketplace)\"; then if [ ! -f \"$RESEARCH_FILE\" ] && [ ! -f \"$BYPASS_FILE\" ]; then echo \"{\\\"decision\\\": \\\"block\\\", \\\"reason\\\": \\\"[SDLC BLOCKED] Cloning skills/plugins requires research workflow or user bypass. Ask user to confirm.\\\"}\"; fi; fi; exit 0'",
           "timeout": 5
         }
       ]
@@ -233,16 +193,6 @@
         {
           "type": "command",
           "command": "bash -c 'INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r \".tool_input.file_path // empty\" 2>/dev/null); SYNC_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-doc-sync.json\"; mkdir -p \"${CLAUDE_PROJECT_ROOT:-.}/.claude\"; if echo \"$FILE\" | grep -qE \"\\.(py|ts|tsx|js|jsx)$\"; then if [ ! -f \"$SYNC_FILE\" ]; then echo \"{\\\"code_changes\\\":[],\\\"requirements_changes\\\":[],\\\"pending_sync\\\":false,\\\"last_doc_update\\\":null}\" > \"$SYNC_FILE\"; fi; CURRENT=$(cat \"$SYNC_FILE\"); echo \"$CURRENT\" | jq \".code_changes += [{\\\"file\\\": \\\"$FILE\\\", \\\"timestamp\\\": \\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\"}] | .code_changes = (.code_changes | unique_by(.file) | .[-20:])\" > \"$SYNC_FILE\" 2>/dev/null; COUNT=$(jq \".code_changes | length\" \"$SYNC_FILE\" 2>/dev/null); DOC_UPDATE=$(jq -r \".last_doc_update // empty\" \"$SYNC_FILE\" 2>/dev/null); if [ \"$COUNT\" -ge 5 ] && [ -z \"$DOC_UPDATE\" ]; then jq \".pending_sync = true\" \"$SYNC_FILE\" > \"${SYNC_FILE}.tmp\" && mv \"${SYNC_FILE}.tmp\" \"$SYNC_FILE\"; echo \"{\\\"addToPrompt\\\": \\\"[SDLC DOC-SYNC] $COUNT code files modified without documentation update. Consider invoking documentation-engineer agent.\\\"}\"; fi; fi; exit 0'",
-          "timeout": 5
-        },
-        {
-          "type": "command",
-          "command": "bash -c 'INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r \".tool_input.file_path // empty\" 2>/dev/null); SYNC_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-doc-sync.json\"; if echo \"$FILE\" | grep -qiE \"(requirements|user.?stor|spec|plan|task|IMPLEMENTATION_PLAN)\\.md$\"; then mkdir -p \"$(dirname \"$SYNC_FILE\")\"; if [ ! -f \"$SYNC_FILE\" ]; then echo \"{\\\"code_changes\\\":[],\\\"requirements_changes\\\":[],\\\"pending_sync\\\":false,\\\"last_doc_update\\\":null}\" > \"$SYNC_FILE\"; fi; jq \".requirements_changes += [{\\\"file\\\": \\\"$FILE\\\", \\\"timestamp\\\": \\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\"}] | .requirements_changes = (.requirements_changes | unique_by(.file) | .[-10:]) | .pending_sync = true\" \"$SYNC_FILE\" > \"${SYNC_FILE}.tmp\" && mv \"${SYNC_FILE}.tmp\" \"$SYNC_FILE\" 2>/dev/null; echo \"{\\\"addToPrompt\\\": \\\"[SDLC DOC-SYNC] Requirements/plan file modified: $FILE. Documentation should be updated to stay in sync. Consider invoking documentation-engineer agent.\\\"}\"; fi; exit 0'",
-          "timeout": 5
-        },
-        {
-          "type": "command",
-          "command": "bash -c 'INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r \".tool_input.file_path // empty\" 2>/dev/null); SYNC_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-doc-sync.json\"; if echo \"$FILE\" | grep -qiE \"(README|CHANGELOG|docs/.*|documentation)\\.md$\"; then if [ -f \"$SYNC_FILE\" ]; then jq \".last_doc_update = \\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\" | .code_changes = [] | .requirements_changes = [] | .pending_sync = false\" \"$SYNC_FILE\" > \"${SYNC_FILE}.tmp\" && mv \"${SYNC_FILE}.tmp\" \"$SYNC_FILE\" 2>/dev/null; echo \"{\\\"addToPrompt\\\": \\\"[SDLC DOC-SYNC] Documentation updated. Sync state cleared.\\\"}\"; fi; fi; exit 0'",
           "timeout": 5
         }
       ]

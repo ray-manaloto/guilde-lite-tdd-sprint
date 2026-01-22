@@ -1,5 +1,16 @@
 """Integration test helpers package."""
 
+from .preflight import (
+    ServiceCheckResult,
+    ServiceStatus,
+    check_all_services,
+    check_backend_api,
+    check_postgresql,
+    check_redis,
+    check_websocket,
+    services_available,
+    skip_if_services_unavailable,
+)
 from .validation import (
     ArtifactExecutionResult,
     CandidateInfo,
@@ -17,6 +28,17 @@ from .validation import (
 )
 
 __all__ = [
+    # Preflight checks
+    "ServiceCheckResult",
+    "ServiceStatus",
+    "check_all_services",
+    "check_backend_api",
+    "check_postgresql",
+    "check_redis",
+    "check_websocket",
+    "services_available",
+    "skip_if_services_unavailable",
+    # Validation helpers
     "ArtifactExecutionResult",
     "CandidateInfo",
     "JudgeSelectionInfo",
