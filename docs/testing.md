@@ -80,6 +80,8 @@ Nightly gate (full backend + full frontend E2E):
 project cmd qa-nightly
 ```
 
+QA gate commands run `alembic upgrade head` for the backend before tests.
+
 Optional flags:
 
 ```bash

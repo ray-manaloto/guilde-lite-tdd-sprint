@@ -145,6 +145,7 @@ class JSONLBackend(TelemetryBackendHandler):
 
         # Append to file
         lines = [orjson.dumps(e.to_dict()).decode() + "\n" for e in self._buffer]
+        self.file_path.parent.mkdir(parents=True, exist_ok=True)
         with self.file_path.open("a") as f:
             f.writelines(lines)
 
@@ -238,12 +239,13 @@ class PrometheusBackend(TelemetryBackendHandler):
     Exposes metrics for scraping by Prometheus.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, service_name: str = "orchestration") -> None:
+        self.service_name = service_name
         self._counters: dict[str, Any] = {}
         self._histograms: dict[str, Any] = {}
         self._initialized = False
 
-    def _initialize(self) -> None:
+    def _ensure_initialized(self) -> None:
         """Lazy initialization of Prometheus metrics."""
         if self._initialized:
             return
@@ -273,7 +275,7 @@ class PrometheusBackend(TelemetryBackendHandler):
             pass
 
     async def record(self, event: TelemetryEvent) -> None:
-        self._initialize()
+        self._ensure_initialized()
         if not self._initialized:
             return
 

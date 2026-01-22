@@ -46,6 +46,7 @@ def qa_smoke(
         env["RUN_LIVE_TESTS"] = "1"
 
     if not skip_backend:
+        _run(["uv", "run", "alembic", "upgrade", "head"], repo_root / "backend", env)
         _run(["uv", "run", "pytest", "-m", "integration"], repo_root / "backend", env)
 
     if not skip_frontend:
@@ -74,6 +75,7 @@ def qa_nightly(
         env["RUN_LIVE_TESTS"] = "1"
 
     if not skip_backend:
+        _run(["uv", "run", "alembic", "upgrade", "head"], repo_root / "backend", env)
         _run(["uv", "run", "pytest"], repo_root / "backend", env)
 
     if not skip_frontend:

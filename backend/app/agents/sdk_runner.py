@@ -102,13 +102,15 @@ class AgentsSdkRunner:
     ) -> AgentsSdkRunResult:
         model = self._build_model(provider=provider, model_name=model_name)
         settings_override = model_settings or self.model_settings_cls(include_usage=True)
-        agent = self.agent_cls(
-            name=name,
-            instructions=instructions,
-            model=model,
-            model_settings=settings_override,
-            tools=tools or [],
-        )
+        agent_kwargs: dict[str, Any] = {
+            "name": name,
+            "instructions": instructions,
+            "model": model,
+            "model_settings": settings_override,
+        }
+        if tools is not None:
+            agent_kwargs["tools"] = tools
+        agent = self.agent_cls(**agent_kwargs)
         result = await self.runner_cls.run(agent, prompt)
         output_text = self._extract_output(result)
         output_json = None

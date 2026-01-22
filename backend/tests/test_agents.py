@@ -6,6 +6,7 @@ import pytest
 from pydantic_ai.models.test import TestModel
 
 from app.agents.assistant import AssistantAgent, Deps, get_agent
+from app.agents.prompts import DEFAULT_SYSTEM_PROMPT
 from app.agents.tools.datetime_tool import get_current_datetime
 
 
@@ -44,7 +45,7 @@ class TestAssistantAgent:
     def test_init_with_defaults(self):
         """Test AssistantAgent initializes with defaults."""
         agent = AssistantAgent()
-        assert agent.system_prompt == "You are a helpful assistant."
+        assert agent.system_prompt == DEFAULT_SYSTEM_PROMPT
         assert agent._agent is None
 
     def test_init_with_custom_values(self):
