@@ -19,6 +19,7 @@ class SprintStatus(StrEnum):
     PLANNED = "planned"
     ACTIVE = "active"
     COMPLETED = "completed"
+    FAILED = "failed"
 
 
 class SprintItemStatus(StrEnum):

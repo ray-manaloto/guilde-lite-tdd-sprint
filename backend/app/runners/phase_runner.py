@@ -1,12 +1,24 @@
 """Phase runner for automated sprint execution."""
 
 import asyncio
-import json
 import logging
+import time
 from uuid import UUID
 
 from app.api.routes.v1.ws import manager
 from app.core.config import settings
+from app.core.websocket_events import (
+    CandidateData,
+    CandidateGeneratedEvent,
+    CandidateStartedEvent,
+    JudgeDecidedEvent,
+    JudgeDecisionData,
+    JudgeStartedEvent,
+    PhaseCompletedEvent,
+    PhaseFailedEvent,
+    PhaseStartedEvent,
+    WorkflowStatusEvent,
+)
 from app.db.models.sprint import SprintStatus
 from app.db.session import get_db_context
 from app.schemas.agent_tdd import AgentTddRunCreate
@@ -41,18 +53,95 @@ class PhaseRunner:
         async def broadcast_status(
             status: str, phase: str | None = None, details: str | None = None
         ):
-            await manager.broadcast_to_room(
-                room,
-                json.dumps(
-                    {
-                        "type": "sprint_update",
-                        "sprint_id": room,
-                        "status": status,
-                        "phase": phase,
-                        "details": details,
-                    }
-                ),
+            """Broadcast legacy sprint_update event for backwards compatibility."""
+            await manager.broadcast_legacy_status(room, status, phase, details)
+
+        async def emit_workflow_status(
+            status: str, phase: str | None = None, details: str | None = None
+        ):
+            """Emit new workflow.status event."""
+            event = WorkflowStatusEvent.create(
+                sprint_id=sprint_id,
+                status=status,
+                phase=phase,
+                details=details,
             )
+            await manager.broadcast_event(room, event)
+
+        async def emit_phase_started(
+            phase: str, attempt: int | None = None, details: str | None = None
+        ):
+            """Emit phase.started event."""
+            event = PhaseStartedEvent.create(
+                sprint_id=sprint_id,
+                phase=phase,
+                attempt=attempt,
+                details=details,
+            )
+            await manager.broadcast_event(room, event)
+
+        async def emit_phase_completed(
+            phase: str,
+            duration_ms: int | None = None,
+            output: dict | None = None,
+            details: str | None = None,
+        ):
+            """Emit phase.completed event."""
+            event = PhaseCompletedEvent.create(
+                sprint_id=sprint_id,
+                phase=phase,
+                duration_ms=duration_ms,
+                output=output,
+                details=details,
+            )
+            await manager.broadcast_event(room, event)
+
+        async def emit_phase_failed(
+            phase: str, details: str | None = None, attempt: int | None = None
+        ):
+            """Emit phase.failed event."""
+            event = PhaseFailedEvent.create(
+                sprint_id=sprint_id,
+                phase=phase,
+                details=details,
+                attempt=attempt,
+            )
+            await manager.broadcast_event(room, event)
+
+        async def emit_candidate_started(provider: str, model_name: str | None, phase: str):
+            """Emit candidate.started event."""
+            event = CandidateStartedEvent.create(
+                sprint_id=sprint_id,
+                provider=provider,
+                model_name=model_name,
+                phase=phase,
+            )
+            await manager.broadcast_event(room, event)
+
+        async def emit_candidate_generated(candidate_data: CandidateData):
+            """Emit candidate.generated event."""
+            event = CandidateGeneratedEvent.create(
+                sprint_id=sprint_id,
+                candidate=candidate_data,
+            )
+            await manager.broadcast_event(room, event)
+
+        async def emit_judge_started(candidate_count: int, phase: str):
+            """Emit judge.started event."""
+            event = JudgeStartedEvent.create(
+                sprint_id=sprint_id,
+                candidate_count=candidate_count,
+                phase=phase,
+            )
+            await manager.broadcast_event(room, event)
+
+        async def emit_judge_decided(decision_data: JudgeDecisionData):
+            """Emit judge.decided event."""
+            event = JudgeDecidedEvent.create(
+                sprint_id=sprint_id,
+                decision=decision_data,
+            )
+            await manager.broadcast_event(room, event)
 
         async with get_db_context() as db:
             sprint_service = SprintService(db)
@@ -99,6 +188,7 @@ class PhaseRunner:
 
                 # --- Phase 1: Discovery ---
                 logger.info("Starting Phase 1: Discovery")
+                discovery_start_time = time.monotonic()
                 await tracker.start_phase(
                     "discovery",
                     model_config={
@@ -107,10 +197,24 @@ class PhaseRunner:
                     },
                     input_data={"goal": goal},
                 )
+                # Emit new granular events
+                await emit_phase_started(
+                    "discovery", details="Analyzing requirements and creating implementation plan"
+                )
+                await emit_workflow_status("active", "discovery", "Starting discovery phase")
+                # Emit legacy event for backwards compatibility
                 await broadcast_status(
                     "active",
                     "discovery",
                     "Analyzing requirements and creating implementation plan...",
+                )
+
+                # Emit candidate started events for expected providers
+                await emit_candidate_started(
+                    "openai", settings.model_for_provider("openai"), "discovery"
+                )
+                await emit_candidate_started(
+                    "anthropic", settings.model_for_provider("anthropic"), "discovery"
                 )
                 workspace_ref = None
 
@@ -135,19 +239,41 @@ class PhaseRunner:
                 )
                 workspace_ref = result_p1.run.workspace_ref
 
-                # Record candidates from discovery phase
+                # Record candidates from discovery phase and emit events
                 discovery_candidates = []
                 for candidate in result_p1.candidates:
-                    discovery_candidates.append({
-                        "provider": candidate.provider,
-                        "model": candidate.model_name,
-                        "trace_id": candidate.metrics.get("trace_id") if candidate.metrics else None,
-                        "duration_ms": candidate.metrics.get("duration_ms") if candidate.metrics else None,
-                        "success": candidate.metrics.get("status") == "ok" if candidate.metrics else False,
-                    })
+                    metrics = candidate.metrics or {}
+                    trace_id = metrics.get("trace_id") if isinstance(metrics, dict) else None
+                    duration_ms = metrics.get("duration_ms") if isinstance(metrics, dict) else None
+                    success = metrics.get("status") == "ok" if isinstance(metrics, dict) else False
+
+                    discovery_candidates.append(
+                        {
+                            "provider": candidate.provider,
+                            "model": candidate.model_name,
+                            "trace_id": trace_id,
+                            "duration_ms": duration_ms,
+                            "success": success,
+                        }
+                    )
+
+                    # Emit candidate.generated event
+                    await emit_candidate_generated(
+                        CandidateData(
+                            candidate_id=str(candidate.id) if candidate.id else None,
+                            provider=candidate.provider,
+                            model_name=candidate.model_name,
+                            agent_name=candidate.agent_name,
+                            output=candidate.output[:500] if candidate.output else None,
+                            duration_ms=duration_ms,
+                            trace_id=trace_id,
+                            success=success,
+                        )
+                    )
+
                 await tracker.record_candidates("discovery", discovery_candidates)
 
-                # Record judge decision if available
+                # Record judge decision if available and emit event
                 if result_p1.decision:
                     await tracker.record_judge_decision(
                         "discovery",
@@ -158,12 +284,36 @@ class PhaseRunner:
                             "model": result_p1.decision.model_name,
                         },
                     )
+                    # Emit judge.started before decision (candidates were already evaluated)
+                    await emit_judge_started(len(result_p1.candidates), "discovery")
+                    # Emit judge.decided event
+                    await emit_judge_decided(
+                        JudgeDecisionData(
+                            winner_candidate_id=str(result_p1.decision.candidate_id)
+                            if result_p1.decision.candidate_id
+                            else None,
+                            winner_model=result_p1.decision.model_name,
+                            score=result_p1.decision.score,
+                            rationale=result_p1.decision.rationale,
+                            model_name=result_p1.decision.model_name,
+                            trace_id=result_p1.decision.trace_id,
+                        )
+                    )
 
+                discovery_duration_ms = int((time.monotonic() - discovery_start_time) * 1000)
                 await tracker.end_phase(
                     "discovery",
                     output_data={"workspace_ref": workspace_ref},
                 )
                 logger.info(f"Phase 1 Complete. Workspace: {workspace_ref}")
+                # Emit new phase.completed event
+                await emit_phase_completed(
+                    "discovery",
+                    duration_ms=discovery_duration_ms,
+                    output={"workspace_ref": workspace_ref},
+                    details="Implementation plan created",
+                )
+                # Legacy event
                 await broadcast_status(
                     "active", "discovery", "Discovery complete. Implementation plan created."
                 )
@@ -175,12 +325,30 @@ class PhaseRunner:
                     )
 
                     # Phase 2: Coding
+                    coding_start_time = time.monotonic()
                     await tracker.start_phase(
                         f"coding_{attempt + 1}",
                         input_data={"attempt": attempt + 1, "workspace_ref": workspace_ref},
                     )
+                    # Emit new granular events
+                    await emit_phase_started(
+                        "coding",
+                        attempt=attempt + 1,
+                        details=f"Starting implementation attempt {attempt + 1}",
+                    )
+                    await emit_workflow_status(
+                        "active", "coding", f"Implementation attempt {attempt + 1}"
+                    )
+                    # Legacy event
                     await broadcast_status(
                         "active", "coding", f"Starting implementation (Attempt {attempt + 1})"
+                    )
+                    # Emit candidate started events
+                    await emit_candidate_started(
+                        "openai", settings.model_for_provider("openai"), "coding"
+                    )
+                    await emit_candidate_started(
+                        "anthropic", settings.model_for_provider("anthropic"), "coding"
                     )
 
                     coding_prompt = (
@@ -207,25 +375,69 @@ class PhaseRunner:
                         user_id=None,
                     )
 
-                    # Record coding candidates
+                    # Record coding candidates and emit events
                     coding_candidates = []
                     for candidate in result_p2.candidates:
-                        coding_candidates.append({
-                            "provider": candidate.provider,
-                            "model": candidate.model_name,
-                            "trace_id": candidate.metrics.get("trace_id") if candidate.metrics else None,
-                            "duration_ms": candidate.metrics.get("duration_ms") if candidate.metrics else None,
-                            "success": candidate.metrics.get("status") == "ok" if candidate.metrics else False,
-                        })
+                        metrics = candidate.metrics or {}
+                        trace_id = metrics.get("trace_id") if isinstance(metrics, dict) else None
+                        duration_ms = (
+                            metrics.get("duration_ms") if isinstance(metrics, dict) else None
+                        )
+                        success = (
+                            metrics.get("status") == "ok" if isinstance(metrics, dict) else False
+                        )
+
+                        coding_candidates.append(
+                            {
+                                "provider": candidate.provider,
+                                "model": candidate.model_name,
+                                "trace_id": trace_id,
+                                "duration_ms": duration_ms,
+                                "success": success,
+                            }
+                        )
+
+                        # Emit candidate.generated event
+                        await emit_candidate_generated(
+                            CandidateData(
+                                candidate_id=str(candidate.id) if candidate.id else None,
+                                provider=candidate.provider,
+                                model_name=candidate.model_name,
+                                agent_name=candidate.agent_name,
+                                output=candidate.output[:500] if candidate.output else None,
+                                duration_ms=duration_ms,
+                                trace_id=trace_id,
+                                success=success,
+                            )
+                        )
+
                     await tracker.record_candidates(f"coding_{attempt + 1}", coding_candidates)
 
+                    coding_duration_ms = int((time.monotonic() - coding_start_time) * 1000)
                     await tracker.end_phase(f"coding_{attempt + 1}")
+                    # Emit phase.completed for coding
+                    await emit_phase_completed(
+                        "coding",
+                        duration_ms=coding_duration_ms,
+                        details=f"Coding attempt {attempt + 1} complete",
+                    )
 
                     # Phase 3: Verification
+                    verification_start_time = time.monotonic()
                     await tracker.start_phase(
                         f"verification_{attempt + 1}",
                         input_data={"attempt": attempt + 1},
                     )
+                    # Emit new granular events
+                    await emit_phase_started(
+                        "verification",
+                        attempt=attempt + 1,
+                        details=f"Verifying implementation attempt {attempt + 1}",
+                    )
+                    await emit_workflow_status(
+                        "active", "verification", f"Verification attempt {attempt + 1}"
+                    )
+                    # Legacy event
                     await broadcast_status(
                         "active",
                         "verification",
@@ -267,6 +479,9 @@ class PhaseRunner:
 
                     verification_success = "VERIFICATION_SUCCESS" in output
 
+                    verification_duration_ms = int(
+                        (time.monotonic() - verification_start_time) * 1000
+                    )
                     await tracker.end_phase(
                         f"verification_{attempt + 1}",
                         status="completed" if verification_success else "failed",
@@ -283,6 +498,17 @@ class PhaseRunner:
                         # Complete workflow tracking
                         await tracker.complete_sprint(status="completed")
 
+                        # Emit new granular events
+                        await emit_phase_completed(
+                            "verification",
+                            duration_ms=verification_duration_ms,
+                            output={"success": True},
+                            details="Verification passed",
+                        )
+                        await emit_workflow_status(
+                            "completed", "verification", "Sprint successfully completed"
+                        )
+                        # Legacy event
                         await broadcast_status(
                             "completed",
                             "verification",
@@ -291,6 +517,13 @@ class PhaseRunner:
                         return
 
                     logger.warning(f"Verification Failed: {output}. Retrying...")
+                    # Emit phase.failed event
+                    await emit_phase_failed(
+                        "verification",
+                        details=output[:200] if output else "Verification failed",
+                        attempt=attempt + 1,
+                    )
+                    # Legacy event
                     await broadcast_status(
                         "active",
                         "verification",
@@ -299,14 +532,30 @@ class PhaseRunner:
 
                 logger.error(f"Sprint Failed: Max retries ({cls.MAX_RETRIES}) reached.")
                 await tracker.complete_sprint(status="failed")
+                # Emit workflow failed event
+                await emit_workflow_status(
+                    "failed", "error", f"Sprint failed after {cls.MAX_RETRIES} retries"
+                )
+                # Legacy event
                 await broadcast_status("failed", "error", "Sprint failed after max retries.")
 
             except Exception as e:
                 logger.error(f"PhaseRunner failed for sprint {sprint_id}: {e}", exc_info=True)
+                # Update sprint status to failed in database
+                try:
+                    await sprint_service.update(
+                        sprint_id, SprintUpdate(status=SprintStatus.FAILED)
+                    )
+                    await db.commit()
+                except Exception as db_error:
+                    logger.warning(f"Failed to update sprint status to failed: {db_error}")
                 # Try to save timeline on failure
                 try:
                     if "tracker" in locals():
                         await tracker.complete_sprint(status="failed")
                 except Exception as save_error:
                     logger.warning(f"Failed to save timeline on error: {save_error}")
+                # Emit workflow failed event
+                await emit_workflow_status("failed", "error", f"PhaseRunner error: {e!s}")
+                # Legacy event
                 await broadcast_status("failed", "error", f"PhaseRunner error: {e!s}")
