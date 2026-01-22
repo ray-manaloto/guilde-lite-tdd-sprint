@@ -118,3 +118,18 @@ backend/telemetry/
 
 # Dev control
 .run/
+
+# IDE and tool configs
+.agent/
+.agents/
+.codex/
+.cursor/
+.gemini/
+.opencode/
+
+# Local dev scripts
+trigger_*.py
+tools_trigger_*.py
+check_new_sprint.py
+find_sprint.py
+DOCUMENTATION_CREATED.md
