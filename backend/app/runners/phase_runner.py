@@ -453,9 +453,15 @@ class PhaseRunner:
                 discovery_prompt = (
                     f"Perform Discovery and Planning for the following Sprint Goal:\n"
                     f"'{goal}'\n\n"
-                    f"1. Analyze the requirements.\n"
-                    f"2. Create a file named 'implementation_plan.md' in the workspace.\n"
-                    f"3. Return 'Discovery Complete' when done."
+                    f"INSTRUCTIONS:\n"
+                    f"1. Analyze the requirements carefully.\n"
+                    f"2. Create 'implementation_plan.md' using `fs_write_file` with:\n"
+                    f"   - A list of ALL files to be created (with full paths)\n"
+                    f"   - Package/module structure if applicable\n"
+                    f"   - Step-by-step implementation order\n"
+                    f"   - Key functions/classes for each file\n"
+                    f"3. Use `fs_write_file` to create the implementation_plan.md file.\n"
+                    f"4. Return 'Discovery Complete' when done."
                 )
 
                 result_p1 = await agent_tdd_service.execute(
@@ -585,12 +591,16 @@ class PhaseRunner:
 
                     coding_prompt = (
                         f"Phase 2: Coding (Attempt {attempt + 1})\n"
-                        f"CRITICAL: YOU MUST NOW IMPLEMENT THE CODE.\n"
-                        f"1. Read 'implementation_plan.md' using `fs_read_file`.\n"
-                        f"2. IMMEDIATELY USE `fs_write_file` to create the python script (e.g., 'hello.py').\n"
-                        f"3. You are prohibited from finishing this turn without calling `fs_write_file`.\n"
-                        f"4. If you have already created the files, verify them with `fs_list_dir`.\n"
-                        f"5. Return 'Coding Complete' ONLY after the files are written to the filesystem."
+                        f"SPRINT GOAL: {goal[:500]}{'...' if len(goal) > 500 else ''}\n\n"
+                        f"CRITICAL INSTRUCTIONS:\n"
+                        f"1. Read 'implementation_plan.md' using `fs_read_file` to see the file list.\n"
+                        f"2. Create ALL files listed in the plan using `fs_write_file`.\n"
+                        f"3. For multi-file projects:\n"
+                        f"   - Create package directories (e.g., 'todo/__init__.py')\n"
+                        f"   - Create each module file with complete implementation\n"
+                        f"   - Include `__main__.py` if the plan calls for it\n"
+                        f"4. Use `fs_list_dir` to verify all files were created.\n"
+                        f"5. Return 'Coding Complete' ONLY after ALL planned files exist."
                     )
 
                     result_p2 = await agent_tdd_service.execute(
@@ -689,11 +699,15 @@ class PhaseRunner:
                     # Build verification prompt with feedback from previous attempts
                     base_verification_prompt = (
                         f"Phase 3: Verification (Attempt {attempt + 1})\n"
-                        f"1. Verify the implementation works as expected.\n"
-                        f"2. If it is a script, run it. If it is a library, write and run a test script.\n"
-                        f"3. Use the `run_tests()` tool without arguments to run tests in your CURRENT workspace.\n"
-                        f"4. CRITICAL: If verification SUCCEEDS, return the exact string 'VERIFICATION_SUCCESS'.\n"
-                        f"5. If verification FAILS, return 'VERIFICATION_FAILURE' and explain what to fix."
+                        f"SPRINT GOAL: {goal[:300]}{'...' if len(goal) > 300 else ''}\n\n"
+                        f"VERIFICATION STEPS:\n"
+                        f"1. Use `fs_list_dir` to see all created files.\n"
+                        f"2. Read 'implementation_plan.md' to check file list against created files.\n"
+                        f"3. For CLI tools: Create a test script that exercises the main functionality.\n"
+                        f"4. For packages: Verify the package can be imported and run.\n"
+                        f"5. Use `run_tests()` to execute any test files in the workspace.\n"
+                        f"6. CRITICAL: Return 'VERIFICATION_SUCCESS' only if the code works correctly.\n"
+                        f"7. Return 'VERIFICATION_FAILURE' with details if anything fails."
                     )
 
                     # Add feedback from previous attempts if available
