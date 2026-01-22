@@ -1,0 +1,232 @@
+# AI Self-Healing Workflow
+# Triggered by Sentry/Logfire webhooks or manual dispatch
+# Uses claude-code-action to automatically diagnose and fix issues
+
+name: AI Self-Heal
+
+on:
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      error_message:
+        description: 'Error message to diagnose'
+        required: true
+        type: string
+      error_file:
+        description: 'File where error occurred (optional)'
+        required: false
+        type: string
+      error_line:
+        description: 'Line number (optional)'
+        required: false
+        type: string
+
+  # Webhook from Sentry/Logfire (configured externally)
+  repository_dispatch:
+    types: [error-detected, anomaly-detected]
+
+  # When issues are labeled with 'ai-fix'
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  diagnose-and-fix:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'repository_dispatch' ||
+      (github.event_name == 'issues' && github.event.label.name == 'ai-fix')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract error context
+        id: context
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "error_message=${{ inputs.error_message }}" >> $GITHUB_OUTPUT
+            echo "error_file=${{ inputs.error_file }}" >> $GITHUB_OUTPUT
+            echo "error_line=${{ inputs.error_line }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            echo "error_message=${{ github.event.client_payload.error_message }}" >> $GITHUB_OUTPUT
+            echo "error_file=${{ github.event.client_payload.file }}" >> $GITHUB_OUTPUT
+            echo "error_line=${{ github.event.client_payload.line }}" >> $GITHUB_OUTPUT
+            echo "trace_id=${{ github.event.client_payload.trace_id }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "issues" ]; then
+            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "issue_title=${{ github.event.issue.title }}" >> $GITHUB_OUTPUT
+            echo "issue_body=${{ github.event.issue.body }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: AI Diagnosis and Fix
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            ## Self-Healing Task
+
+            An error has been detected in the system. Your job is to:
+
+            1. **Diagnose** the root cause
+            2. **Locate** the problematic code
+            3. **Fix** the issue
+            4. **Create a PR** with the fix
+
+            ### Error Context
+
+            ${{ github.event_name == 'workflow_dispatch' && format('
+            **Error Message:** {0}
+            **File:** {1}
+            **Line:** {2}
+            ', inputs.error_message, inputs.error_file, inputs.error_line) || '' }}
+
+            ${{ github.event_name == 'repository_dispatch' && format('
+            **Error Message:** {0}
+            **File:** {1}
+            **Line:** {2}
+            **Trace ID:** {3}
+            ', github.event.client_payload.error_message, github.event.client_payload.file, github.event.client_payload.line, github.event.client_payload.trace_id) || '' }}
+
+            ${{ github.event_name == 'issues' && format('
+            **Issue:** #{0} - {1}
+            **Description:** {2}
+            ', github.event.issue.number, github.event.issue.title, github.event.issue.body) || '' }}
+
+            ### Instructions
+
+            1. Read the error message and understand the issue
+            2. Search the codebase for the relevant file(s)
+            3. Identify the root cause
+            4. Implement a fix following project conventions (see CLAUDE.md)
+            5. Run tests to verify the fix: `cd backend && uv run pytest -x`
+            6. Create a branch named `ai-fix/error-{timestamp}`
+            7. Commit with message: `fix: [AI] {brief description}`
+            8. Create a PR with:
+               - Title: `[AI Fix] {brief description}`
+               - Body: Include diagnosis, root cause, and fix explanation
+               - Label: `ai-generated`
+
+            ### Project Context
+
+            - Backend: FastAPI + Python 3.12
+            - Frontend: Next.js 15 + TypeScript
+            - Use `uv run` for Python commands
+            - Follow patterns in `docs/patterns.md`
+            - Check `docs/testing.md` for test conventions
+
+          claude_args: |
+            --max-turns 15
+            --model claude-sonnet-4-20250514
+            --allowedTools Edit,Read,Write,Bash,Glob,Grep
+            --disallowedTools WebFetch,WebSearch
+
+      - name: Report result
+        if: always()
+        run: |
+          echo "## Self-Heal Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+
+  # Notify on PR creation for feedback loop
+  notify-pr-created:
+    runs-on: ubuntu-latest
+    needs: diagnose-and-fix
+    if: success()
+    steps:
+      - name: Find created PR
+        id: find-pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Find PRs created in the last hour by github-actions
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              sort: 'created',
+              direction: 'desc',
+              per_page: 5
+            });
+
+            const recentAIPR = prs.find(pr => {
+              const createdAt = new Date(pr.created_at);
+              const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+              return createdAt > hourAgo &&
+                     (pr.title.includes('[AI Fix]') ||
+                      pr.labels.some(l => l.name === 'ai-generated'));
+            });
+
+            if (recentAIPR) {
+              core.setOutput('pr_number', recentAIPR.number);
+              core.setOutput('pr_url', recentAIPR.html_url);
+              core.setOutput('pr_title', recentAIPR.title);
+              return recentAIPR;
+            }
+            return null;
+
+      - name: Add workflow summary
+        if: steps.find-pr.outputs.pr_number
+        run: |
+          echo "## PR Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **PR:** #${{ steps.find-pr.outputs.pr_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Title:** ${{ steps.find-pr.outputs.pr_title }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL:** ${{ steps.find-pr.outputs.pr_url }}" >> $GITHUB_STEP_SUMMARY
+
+  # Workflow failure notification
+  notify-failure:
+    runs-on: ubuntu-latest
+    needs: diagnose-and-fix
+    if: failure()
+    steps:
+      - name: Create failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `[Self-Heal Failure] ${new Date().toISOString().split('T')[0]}`;
+            const body = `## Self-Healing Workflow Failed
+
+            The AI self-healing workflow encountered an error and could not complete.
+
+            **Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+
+            **Trigger:** \`${{ github.event_name }}\`
+
+            **Error Context:**
+            ${{ github.event_name == 'repository_dispatch' && format('- Message: {0}', github.event.client_payload.error_message) || '' }}
+            ${{ github.event_name == 'workflow_dispatch' && format('- Message: {0}', inputs.error_message) || '' }}
+
+            **Next Steps:**
+            1. Review the workflow logs
+            2. Manually investigate the original error
+            3. Consider updating error classification rules
+
+            ---
+            *This issue was automatically created by the Self-Healing workflow.*`;
+
+            // Check for existing open issue
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'self-heal-failure'
+            });
+
+            if (issues.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['self-heal-failure', 'automated', 'needs-triage']
+              });
+            }
