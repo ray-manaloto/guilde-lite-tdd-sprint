@@ -5,7 +5,6 @@ The main conversational agent that can be extended with custom tools.
 
 import logging
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 from pydantic_ai import Agent, RunContext
@@ -25,14 +24,10 @@ from pydantic_ai.settings import ModelSettings
 from app.agents.deps import Deps
 from app.agents.prompts import DEFAULT_SYSTEM_PROMPT
 from app.agents.tools import fetch_url_content, get_current_datetime, run_agent_browser
-from app.agents.tools.filesystem import read_file, write_file, list_dir
-from app.agents.tools.agent_integration import run_codex_agent, run_claude_agent
+from app.agents.tools.filesystem import list_dir, read_file, write_file
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
-
-
-
 
 
 class AssistantAgent:
@@ -139,7 +134,7 @@ class AssistantAgent:
                 )
 
         if settings.AGENT_FS_ENABLED and settings.AUTOCODE_ARTIFACTS_DIR:
-            
+
             @agent.tool
             async def fs_read_file(ctx: RunContext[Deps], path: str) -> str:
                 """Read a file from your session workspace."""
@@ -154,16 +149,6 @@ class AssistantAgent:
             async def fs_list_dir(ctx: RunContext[Deps], path: str = ".") -> str:
                 """List files in your session workspace."""
                 return list_dir(ctx, path)
-
-        @agent.tool
-        async def call_codex_agent(ctx: RunContext[Deps], prompt: str) -> str:
-            """Delegate a task to the Codex CLI agent."""
-            return run_codex_agent(ctx, prompt)
-
-        @agent.tool
-        async def call_claude_agent(ctx: RunContext[Deps], prompt: str) -> str:
-            """Delegate a task to the Claude Code CLI agent."""
-            return run_claude_agent(ctx, prompt)
 
     @property
     def agent(self) -> Agent[Deps, str]:
@@ -199,7 +184,7 @@ class AssistantAgent:
                 model_history.append(ModelRequest(parts=[SystemPromptPart(content=msg["content"])]))
 
         agent_deps = deps if deps is not None else Deps()
-        
+
         # Initialize session-scoped artifact directory if configured
         if settings.AUTOCODE_ARTIFACTS_DIR and agent_deps.session_dir is None:
             # 9-digit precision emulation (microseconds + 000) or just standard high precision

@@ -10,7 +10,11 @@ RALPH_PLANNING_SYSTEM_PROMPT = (
     "Ask clarifying questions using the ask_user_question tool. "
     "Do not provide solutions, plans, or answers. "
     "Focus on JTBD, scope boundaries, constraints, edge cases, "
-    "and acceptance criteria."
+    "and acceptance criteria.\n\n"
+    "IMPORTANT: Keep asking questions until you have gathered enough information "
+    "to create a solution with NO AMBIGUITY. When the requirements are clear, "
+    "simple tasks need fewer questions; complex tasks need more. "
+    "Stop when you are confident the implementation path is unambiguous."
 )
 
 JUDGE_SYSTEM_PROMPT = (

@@ -129,9 +129,14 @@ async def _run_planning_agent(
         return "Question recorded. Ask the next question or finish."
 
     interview_prompt = (
-        "Interview the user using the ask_user_question tool. "
-        f"Ask up to {max_questions} questions about the sprint prompt below. "
-        "Do not answer the questions. Do not propose solutions or plans.\n\n"
+        "Interview the user using the ask_user_question tool.\n\n"
+        "CRITICAL INSTRUCTIONS:\n"
+        "1. Ask clarifying questions until the implementation path is UNAMBIGUOUS.\n"
+        "2. Simple tasks (like 'print hello world') may need only 1-2 questions.\n"
+        "3. Complex tasks need more questions to clarify scope, constraints, and edge cases.\n"
+        "4. Do NOT propose solutions or answers - only ask questions.\n"
+        f"5. Maximum allowed questions: {max_questions}\n"
+        "6. Stop early if requirements are already clear - don't ask unnecessary questions.\n\n"
         f"Sprint prompt:\n{prompt}"
     )
 
@@ -213,11 +218,7 @@ async def _run_dual_subagent_planning(
     )
 
     selected = next(
-        (
-            candidate
-            for candidate in successful_candidates
-            if candidate["provider"] == selected_key
-        ),
+        (candidate for candidate in successful_candidates if candidate["provider"] == selected_key),
         successful_candidates[0],
     )
 

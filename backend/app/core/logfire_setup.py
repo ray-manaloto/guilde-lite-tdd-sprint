@@ -15,6 +15,9 @@ def setup_logfire() -> None:
     if settings.LOGFIRE_TOKEN:
         config["token"] = settings.LOGFIRE_TOKEN
 
+    print(f"DEBUG: Logfire Config: {config}")
+    print(f"DEBUG: Token present? {bool(settings.LOGFIRE_TOKEN)}")
+
     logfire.configure(**config)
 
 

@@ -154,6 +154,7 @@ A FastAPI project
             "docs": "/docs" if docs_url else "disabled",
             "health": f"{settings.API_V1_STR}/health",
         }
+
     # Logfire instrumentation
     instrument_app(app)
 

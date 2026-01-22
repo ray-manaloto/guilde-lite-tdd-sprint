@@ -17,9 +17,7 @@ async def get_by_id(db: AsyncSession, sprint_id: UUID) -> Sprint | None:
 async def get_by_id_with_items(db: AsyncSession, sprint_id: UUID) -> Sprint | None:
     """Get sprint by ID with items loaded."""
     result = await db.execute(
-        select(Sprint)
-        .options(selectinload(Sprint.items))
-        .where(Sprint.id == sprint_id)
+        select(Sprint).options(selectinload(Sprint.items)).where(Sprint.id == sprint_id)
     )
     return result.scalars().first()
 

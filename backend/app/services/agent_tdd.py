@@ -10,6 +10,7 @@ from typing import Any
 from uuid import UUID
 
 from app.agents.assistant import AssistantAgent
+from app.agents.deps import Deps
 from app.agents.prompts import JUDGE_SYSTEM_PROMPT
 from app.core.config import settings
 from app.core.telemetry import telemetry_span
@@ -159,13 +160,21 @@ class AgentTddService:
             "model": settings.LLM_MODEL,
             "temperature": settings.AI_TEMPERATURE,
         }
+
+        # Ensure workspace_ref is generated if not provided
+        workspace_ref = data.workspace_ref
+        if not workspace_ref:
+            from datetime import datetime
+
+            workspace_ref = datetime.now().strftime("%Y-%m-%dT%H%M%S.%f")
+
         return await self.run_service.create_run(
             AgentRunCreate(
                 user_id=user_id,
                 status="pending",
                 input_payload=input_payload,
                 model_config_data=model_config,
-                workspace_ref=data.workspace_ref,
+                workspace_ref=workspace_ref,
                 fork_label=data.fork_label,
                 fork_reason=data.fork_reason,
             )
@@ -224,11 +233,12 @@ class AgentTddService:
         data: AgentTddRunCreate,
     ) -> _SubagentResult:
         model_name = cfg.model_name or settings.model_for_provider(cfg.provider)
-        
+
         # Resolve agent class based on agent_type in metadata
         agent_type = data.metadata.get("agent_type", "assistant")
         if agent_type == "sprint":
             from app.agents.sprint_agent import SprintAgent
+
             agent_class = SprintAgent
         else:
             agent_class = AssistantAgent
@@ -250,7 +260,14 @@ class AgentTddService:
             model_name=model_name,
         ) as (trace_id, span_id):
             try:
-                output, tool_events, _ = await agent.run(data.message, data.history)
+                # Initialize Deps with workspace_ref if provided to ensure persistence
+                deps = Deps()
+                if data.workspace_ref and settings.AUTOCODE_ARTIFACTS_DIR:
+                    deps.session_dir = settings.AUTOCODE_ARTIFACTS_DIR / data.workspace_ref
+
+                output, tool_events, _agent_deps = await agent.run(
+                    data.message, data.history, deps=deps
+                )
                 tool_calls = self._serialize_tool_events(tool_events)
                 metrics = {
                     "duration_ms": int((time.monotonic() - started_at) * 1000),
@@ -325,9 +342,7 @@ class AgentTddService:
             parsed = {
                 "candidate_id": candidates[0].id,
                 "score": None,
-                "rationale": (
-                    "Judge output could not be parsed; defaulted to first candidate."
-                ),
+                "rationale": ("Judge output could not be parsed; defaulted to first candidate."),
             }
 
         return await self.run_service.set_decision(

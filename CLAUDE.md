@@ -1,5 +1,37 @@
 # CLAUDE.md
 
+## SDLC Workflow (MANDATORY)
+
+This project uses **SDLC Orchestration** for all feature development. Before implementing any feature:
+
+```bash
+# Full feature workflow (parallel agents)
+/sdlc-orchestration:full-feature "feature description"
+
+# Or run specific phases
+/sdlc-orchestration:phase requirements "feature description"
+/sdlc-orchestration:phase design "feature description"
+/sdlc-orchestration:phase implement "feature description"
+/sdlc-orchestration:phase quality "feature description"
+/sdlc-orchestration:phase release "feature description"
+
+# Parallel research (3 agents)
+/sdlc-orchestration:research "topic"
+
+# Single role agent
+/sdlc-orchestration:role <role> "task"
+```
+
+**Phase Gates (Enforced):**
+- Requirements must complete before Design
+- Design must complete before Implementation
+- Quality (including code review) must pass before Release
+- Backpressure: lint/type errors trigger warnings
+
+See `conductor/workflow.md` for detailed workflow and `.claude/plugins/sdlc-orchestration/` for plugin docs.
+
+---
+
 ## Project Overview
 
 **guilde_lite_tdd_sprint** - FastAPI application generated with [Full-Stack FastAPI + Next.js Template](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template).

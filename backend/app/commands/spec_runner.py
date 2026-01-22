@@ -1,4 +1,3 @@
-# ruff: noqa: I001 - Imports structured for Jinja2 template conditionals
 """Spec workflow CLI command."""
 
 import asyncio

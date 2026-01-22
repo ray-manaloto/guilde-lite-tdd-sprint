@@ -3,9 +3,12 @@ import { backendFetch, BackendApiError } from "@/lib/server-api";
 import type { SprintItemCreate, SprintItem } from "@/types";
 import type { PaginatedResponse } from "@/types/api";
 
-const getAuthHeader = (request: NextRequest) => {
+const getAuthHeader = (request: NextRequest): Record<string, string> => {
   const accessToken = request.cookies.get("access_token")?.value;
-  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+  if (accessToken) {
+    return { Authorization: `Bearer ${accessToken}` };
+  }
+  return {};
 };
 
 interface RouteParams {

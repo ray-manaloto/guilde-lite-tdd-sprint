@@ -16,7 +16,11 @@ DEVCTL_MODE="${DEVCTL_MODE:-}"
 
 frontend_cmd="${FRONTEND_CMD}"
 if [[ -z "${frontend_cmd}" ]]; then
-  frontend_cmd="node ./node_modules/next/dist/bin/next dev -p ${FRONTEND_PORT}"
+  if command -v bun >/dev/null 2>&1; then
+    frontend_cmd="bun dev"
+  else
+    frontend_cmd="node ./node_modules/next/dist/bin/next dev -p ${FRONTEND_PORT}"
+  fi
 fi
 
 declare -a SERVICES=("backend" "agent-web" "frontend")
@@ -35,7 +39,15 @@ get_service_cmd() {
   case "$1" in
     "backend") echo "uv run uvicorn app.main:app --reload --port ${BACKEND_PORT}" ;;
     "agent-web") echo "uv run guilde_lite_tdd_sprint agent web --port ${AGENT_WEB_PORT}" ;;
-    "frontend") echo "node ./node_modules/next/dist/bin/next dev -p ${FRONTEND_PORT}" ;;
+    "frontend") 
+      if [[ -n "${FRONTEND_CMD}" ]]; then
+        echo "${FRONTEND_CMD}"
+      elif command -v bun >/dev/null 2>&1; then
+        echo "bun dev"
+      else
+        echo "node ./node_modules/next/dist/bin/next dev -p ${FRONTEND_PORT}"
+      fi
+      ;;
   esac
 }
 
@@ -334,14 +346,16 @@ if [[ -z "${cmd}" ]]; then
   exit 1
 fi
 
-targets=("${SERVICES[@]}")
-if [[ -n "${service}" ]]; then
-  if [[ ! " ${SERVICES[*]} " =~ " ${service} " ]]; then
-    echo "Unknown service: ${service}"
-    usage
-    exit 1
+if [[ "${cmd}" != "infra" ]]; then
+  targets=("${SERVICES[@]}")
+  if [[ -n "${service}" ]]; then
+    if [[ ! " ${SERVICES[*]} " =~ " ${service} " ]]; then
+      echo "Unknown service: ${service}"
+      usage
+      exit 1
+    fi
+    targets=("${service}")
   fi
-  targets=("${service}")
 fi
 
 case "${cmd}" in

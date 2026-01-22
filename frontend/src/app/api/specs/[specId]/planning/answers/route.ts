@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { backendFetch, BackendApiError } from "@/lib/server-api";
 import type { SpecPlanningAnswers, SpecPlanningResponse } from "@/types";
 
-const getAuthHeader = (request: NextRequest) => {
+const getAuthHeader = (request: NextRequest): Record<string, string> => {
   const accessToken = request.cookies.get("access_token")?.value;
-  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+  if (accessToken) {
+    return { Authorization: `Bearer ${accessToken}` };
+  }
+  return {};
 };
 
 interface RouteParams {

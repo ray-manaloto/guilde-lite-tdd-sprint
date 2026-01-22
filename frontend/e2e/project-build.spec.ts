@@ -72,7 +72,7 @@ test('Project Build & Run Flow', async ({ page }) => {
         const stdout = execSync(`python3 "${filePath}"`).toString().trim();
         console.log(`Script Output: ${stdout}`);
         expect(stdout).toBe(expectedOutput);
-    } catch (e) {
-        throw new Error(`Failed to execute generated script: ${e.message}`);
+    } catch (e: any) {
+        throw new Error(`Failed to execute generated script: ${e?.message || String(e)}`);
     }
 });

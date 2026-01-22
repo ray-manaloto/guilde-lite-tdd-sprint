@@ -3,6 +3,7 @@
 import logging
 import subprocess
 from pathlib import Path
+
 from pydantic_ai import Agent, RunContext
 
 from app.agents.assistant import AssistantAgent
@@ -26,6 +27,7 @@ You have access to the session workspace through filesystem tools.
 Always ensure your code adheres to project standards and includes appropriate tests.
 """
 
+
 class SprintAgent(AssistantAgent):
     """Specialized agent for sprint tasks."""
 
@@ -40,22 +42,41 @@ class SprintAgent(AssistantAgent):
         super()._register_tools(agent)
 
         @agent.tool
-        async def run_tests(ctx: RunContext[Deps], path: str = "tests") -> str:
+        async def run_tests(ctx: RunContext[Deps], path: str | None = None) -> str:
             """Run tests in the workspace and return the output.
-            
+
             Args:
-                path: Path to the test file or directory.
+                path: Optional path to the test file. If not provided, it will look for tests
+                      in the current session directory.
             """
             try:
-                # Use uv to run pytest in the backend directory
-                # Note: In a real agentic flow, we'd need to be careful about environment paths
                 backend_dir = Path(settings.BACKEND_DIR or ".")
+
+                # If no path provided, try to find tests in the session directory
+                if path is None:
+                    if ctx.deps.session_dir:
+                        path = str(ctx.deps.session_dir)
+                    else:
+                        return "Error: No path provided and no session directory found."
+
+                # Safety: Ensure we don't accidentally run the entire project's test suite
+                # which might include recursive E2E tests.
+                cmd = [
+                    "uv",
+                    "run",
+                    "pytest",
+                    path,
+                    "-c",
+                    "/dev/null",
+                ]  # Use empty config to avoid picking up root conftest if needed
+
+                # If path is just "tests", we should probably block it to be safe
+                # or ensure it's restricted.
+                if path == "tests":
+                    return "Error: Running all tests in 'tests/' is disabled for safety. Please specify a file or subdirectory."
+
                 result = subprocess.run(
-                    ["uv", "run", "pytest", path],
-                    cwd=backend_dir,
-                    capture_output=True,
-                    text=True,
-                    timeout=60
+                    cmd, cwd=backend_dir, capture_output=True, text=True, timeout=60
                 )
                 output = result.stdout + result.stderr
                 return f"Test Results (Exit Code: {result.returncode}):\n{output}"
@@ -67,8 +88,8 @@ class SprintAgent(AssistantAgent):
         # Ensure filesystem tools are available even if disabled in base settings
         # for the specialized sprint agent
         if not settings.AGENT_FS_ENABLED:
-            from app.agents.tools.filesystem import read_file, write_file, list_dir
-            
+            from app.agents.tools.filesystem import list_dir, read_file, write_file
+
             @agent.tool
             async def fs_read_file(ctx: RunContext[Deps], path: str) -> str:
                 """Read a file from your session workspace."""

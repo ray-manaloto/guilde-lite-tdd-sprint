@@ -8,6 +8,156 @@
 4. **High Code Coverage:** Aim for >80% code coverage for all modules
 5. **User Experience First:** Every decision should prioritize user experience
 6. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools (tests, linters) to ensure single execution.
+7. **SDLC Role-Based Development:** Use appropriate SDLC agents for specialized tasks
+
+---
+
+## SDLC Orchestration Integration
+
+This project uses the **SDLC Orchestration Plugin** for role-based, parallelized development. Each track follows a 5-phase lifecycle with specialized agents.
+
+### SDLC Phases
+
+| Phase | Agents | Purpose | Parallel |
+|-------|--------|---------|----------|
+| **1. Requirements** | CEO/Stakeholder, Business Analyst, Research Scientist | Define business goals, user stories, technical feasibility | Yes |
+| **2. Design** | Software Architect, Data Scientist, Network Engineer | System design, API contracts, infrastructure | Yes |
+| **3. Implementation** | Staff/Senior/Junior Engineer, DevOps | Build features, CI/CD setup | Yes |
+| **4. Quality** | QA Automation, Code Reviewer, Performance Engineer | Testing, reviews, optimization | Yes |
+| **5. Release** | CI/CD Engineer, Canary User, Documentation Engineer | Deploy, validate, document | Sequential |
+
+### Using SDLC Agents
+
+**Full workflow (new features):**
+```
+/sdlc-orchestration:full-feature "feature description"
+```
+
+**Single role (targeted tasks):**
+```
+/sdlc-orchestration:role <role> "task description"
+```
+
+**Available roles:** `ceo`, `pm`, `architect`, `ba`, `research`, `staff`, `senior`, `junior`, `qa`, `reviewer`, `devops`, `network`, `cicd`, `canary`, `docs`, `perf`, `data`
+
+### Phase-to-TDD Mapping
+
+| SDLC Phase | TDD Alignment | When to Use |
+|------------|---------------|-------------|
+| Requirements | Before coding | Clarify acceptance criteria |
+| Design | Architecture spike | Define contracts before implementation |
+| Implementation | Red → Green → Refactor | Core development cycle |
+| Quality | Test coverage + review | Validation before release |
+| Release | Deployment + docs | Production readiness |
+
+### Track Plan Structure (SDLC-Aligned)
+
+Each track's `plan.md` should follow this structure:
+
+```markdown
+# Implementation Plan: [Track Name]
+
+## Phase 1: Requirements [@ba, @research]
+- [ ] Task: Define acceptance criteria
+- [ ] Task: Technical feasibility analysis
+
+## Phase 2: Design [@architect]
+- [ ] Task: System design / API contracts
+- [ ] Task: Database schema (if applicable)
+
+## Phase 3: Implementation [@senior, @junior]
+- [ ] Task: Write failing tests (Red)
+- [ ] Task: Implement feature (Green)
+- [ ] Task: Refactor and polish
+
+## Phase 4: Quality [@qa, @reviewer]
+- [ ] Task: Run test suite
+- [ ] Task: Code review
+- [ ] Task: Performance validation (if needed)
+
+## Phase 5: Release [@cicd, @docs]
+- [ ] Task: Deploy to staging
+- [ ] Task: Manual verification
+- [ ] Task: Update documentation
+```
+
+### Role Annotations
+
+Use `[@role]` annotations in task names to indicate which SDLC agent should handle the task:
+
+- `[@architect]` - System design, API contracts
+- `[@senior]` - Feature implementation
+- `[@junior]` - UI components, utilities
+- `[@qa]` - Test strategy and automation
+- `[@reviewer]` - Code review
+- `[@docs]` - Documentation updates
+
+### Code Review Integration
+
+**Mandatory Review Gate:** Before any track moves to Release phase, code review must be completed and approved.
+
+#### Review Checkpoint Protocol
+
+1. **Trigger Review:** When Implementation phase completes:
+   ```
+   /sdlc-orchestration:role code-reviewer "Review implementation for [track]"
+   ```
+
+2. **Store Review Output:** Save review findings to track directory:
+   ```
+   conductor/tracks/[track]/review.md
+   ```
+
+3. **Mark Checkpoint:** Update plan.md with review status:
+   ```markdown
+   ## Phase 4: Quality [@qa, @reviewer]
+   - [x] Task: Run test suite
+   - [x] Task: Code review [review: approved | changes-requested]
+   - [ ] Task: Performance validation
+   ```
+
+4. **Gate Enforcement:**
+   - If `review: approved` → Proceed to Release
+   - If `review: changes-requested` → Return to Implementation, address feedback
+
+#### Review Output Format
+
+```markdown
+# Code Review: [Track Name]
+
+## Summary
+- Files reviewed: [count]
+- Issues found: [count]
+- Severity: [critical/major/minor]
+
+## Findings
+
+### Critical (Must Fix)
+- [ ] [File:line] Description of issue
+
+### Major (Should Fix)
+- [ ] [File:line] Description of issue
+
+### Minor (Consider)
+- [ ] [File:line] Description of issue
+
+## Recommendation
+- [ ] APPROVED - Ready for release
+- [ ] CHANGES REQUESTED - Address findings above
+```
+
+#### Parallel Review Strategy
+
+For large tracks, run review agents in parallel:
+
+```python
+# Run these in ONE message:
+Task(subagent_type="sdlc-orchestration:code-reviewer", prompt="Review backend code for: {track}")
+Task(subagent_type="sdlc-orchestration:qa-automation", prompt="Review test coverage for: {track}")
+Task(subagent_type="sdlc-orchestration:performance-engineer", prompt="Review performance for: {track}")
+```
+
+---
 
 ## Task Workflow
 

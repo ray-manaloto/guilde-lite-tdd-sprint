@@ -1,0 +1,3 @@
+web: cd frontend && bun dev
+backend: cd backend && uv run uvicorn app.main:app --reload --port 8000
+agent: cd backend && uv run guilde_lite_tdd_sprint agent web --port 8001

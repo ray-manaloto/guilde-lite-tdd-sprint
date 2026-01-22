@@ -5,8 +5,8 @@ from __future__ import annotations
 import shlex
 import subprocess
 
-
 from app.core.telemetry import telemetry_span
+
 
 def run_agent_browser(command: str, timeout_seconds: int | None = 60) -> str:
     """Run an agent-browser CLI command and return its output."""
@@ -15,7 +15,7 @@ def run_agent_browser(command: str, timeout_seconds: int | None = 60) -> str:
 
     args = ["agent-browser", *shlex.split(command)]
 
-    with telemetry_span("agent_browser.cli", command=command) as (trace_id, span_id):
+    with telemetry_span("agent_browser.cli", command=command) as (_trace_id, _span_id):
         try:
             result = subprocess.run(
                 args,
@@ -31,10 +31,10 @@ def run_agent_browser(command: str, timeout_seconds: int | None = 60) -> str:
 
         stdout = result.stdout.strip()
         stderr = result.stderr.strip()
-        
+
         # Add result attributes to the span
-        # Note: We can't easily update the span attributes after creation with this helper, 
-        # but the error tracking will catch exceptions. 
+        # Note: We can't easily update the span attributes after creation with this helper,
+        # but the error tracking will catch exceptions.
         # Ideally telemetry_span would allow updating, but for now we trace the execution.
 
         if result.returncode != 0:

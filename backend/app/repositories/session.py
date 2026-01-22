@@ -1,10 +1,9 @@
 """Session repository (PostgreSQL async)."""
 
 from datetime import UTC, datetime
+from inspect import isawaitable
 from typing import Any, cast
 from uuid import UUID
-
-from inspect import isawaitable
 
 from sqlalchemy import select, update
 from sqlalchemy.engine import CursorResult

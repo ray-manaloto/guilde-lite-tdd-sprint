@@ -1,6 +1,7 @@
 """AI Agent WebSocket routes with streaming support (PydanticAI)."""
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -22,10 +23,8 @@ from pydantic_ai.messages import (
     UserPromptPart,
 )
 
-from app.agents.deps import Deps
 from app.agents.assistant import get_agent
-from datetime import datetime
-
+from app.agents.deps import Deps
 from app.core.config import settings
 from app.core.logfire_links import build_logfire_payload
 from app.core.telemetry import get_trace_context
@@ -104,6 +103,7 @@ def resolve_candidate_trace_id(candidate) -> str | None:
         if isinstance(trace_id, str):
             return trace_id
     return None
+
 
 @router.websocket("/ws/agent")
 async def agent_websocket(
@@ -278,7 +278,10 @@ async def agent_websocket(
                                                 },
                                             )
                                             # Send initial content from TextPart if present
-                                            if isinstance(event.part, TextPart) and event.part.content:
+                                            if (
+                                                isinstance(event.part, TextPart)
+                                                and event.part.content
+                                            ):
                                                 await manager.send_event(
                                                     websocket,
                                                     "text_delta",

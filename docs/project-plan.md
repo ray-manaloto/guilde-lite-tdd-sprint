@@ -1,21 +1,51 @@
 # Project Plan
 
+> **SDLC Orchestration MANDATORY** - All features must use the SDLC workflow
+>
+> **Quick Start:**
+> - `/sdlc-orchestration:full-feature "description"` - Full 5-phase workflow with parallel agents
+> - `/sdlc-orchestration:research "topic"` - Parallel research with 3 agents
+> - `/sdlc-orchestration:phase <phase> "context"` - Run specific phase
+>
+> **Enforcement:** Phase gates, backpressure hooks, and code review integration are active.
+> See `conductor/workflow.md` and `.claude/plugins/sdlc-orchestration/` for details.
+
 ## Goals
 
 - Port Auto-Claude workflows onto the full-stack FastAPI + Next.js template.
 - Provide sprint planning with an optional Kanban view.
 - Keep agent UX parity where it matters (agent runs, review loops, UI).
 
-## Milestones
+## Milestones (SDLC-Aligned)
 
-1. Sprint planning API + web UI (done)
-2. PydanticAI Web UI integration (done)
-3. Testing automation + validation gates (in progress)
-4. Codex skills for test automation (in progress)
-5. Agent-browser + SDK parity (OpenAI/Anthropic) (in progress)
-6. Kanban board parity (planned)
-7. Ralph playbook agentic loop (planning + build) (planned)
-8. Auto-Claude workflow parity (planned)
+| # | Milestone | Status | SDLC Phase | Lead Role |
+|---|-----------|--------|------------|-----------|
+| 1 | Sprint planning API + web UI | done | Released | @architect |
+| 2 | PydanticAI Web UI integration | done | Released | @senior |
+| 3 | Testing automation + validation gates | in progress | Quality | @qa |
+| 4 | Codex skills for test automation | in progress | Implementation | @senior |
+| 5 | Agent-browser + SDK parity | in progress | Implementation | @staff |
+| 6 | Kanban board parity | planned | Requirements | @ba |
+| 7 | Ralph playbook agentic loop | planned | Design | @architect |
+| 8 | Auto-Claude workflow parity | planned | Requirements | @ceo |
+
+### Milestone Details
+
+**M6: Kanban Board Parity** [@ba → @architect → @senior → @qa]
+- Requirements: Drag-drop cards, swimlanes, WIP limits
+- Design: React DnD integration, state management
+- Implementation: Board component, real-time sync
+- Quality: E2E tests for drag operations
+
+**M7: Ralph Playbook Agentic Loop** [@architect → @staff → @qa]
+- Design: Agent orchestration architecture
+- Implementation: Playbook executor, phase tracking
+- Quality: Integration tests, replay capability
+
+**M8: Auto-Claude Workflow Parity** [@ceo → @ba → @architect → @senior]
+- Requirements: Feature parity analysis
+- Design: Migration strategy
+- Implementation: Port existing workflows
 
 ## Current Sprint (Foundation)
 
@@ -55,16 +85,19 @@
 - CI must run unit + integration + Playwright smoke.
 - LLM-dependent checks are explicitly gated (no hidden network calls).
 
-## Next Up
+## Next Up (SDLC Role Assignments)
 
-- Integration test matrix + CI gating
-- Logfire log review + provider/model validation
-- Agent-browser tool integration + usage doc (done)
-- OpenAI/Anthropic SDK usage doc + smoke tests (done)
-- HTTP fetch tool for link access (done)
-- Dual-subagent + judge workflow for all prompts
-- Checkpoint-level history + chosen model metadata (done)
-- Spec workflow API + CLI entrypoints
-- Kanban board UX + drag/drop
-- Sprint metrics (velocity, burndown)
-- Auto-Claude spec runner + phase tracking
+| Task | SDLC Role | Command |
+|------|-----------|---------|
+| Integration test matrix + CI gating | @qa | `/sdlc-orchestration:role qa "design integration test matrix"` |
+| Dual-subagent + judge workflow | @architect | `/sdlc-orchestration:role architect "design dual-subagent judge workflow"` |
+| Spec workflow API + CLI entrypoints | @senior | `/sdlc-orchestration:role senior "implement spec workflow API"` |
+| Kanban board UX + drag/drop | @junior | `/sdlc-orchestration:role junior "implement Kanban drag-drop UI"` |
+| Sprint metrics (velocity, burndown) | @data | `/sdlc-orchestration:role data "design sprint metrics calculations"` |
+| Auto-Claude spec runner | @staff | `/sdlc-orchestration:role staff "implement Auto-Claude spec runner"` |
+
+### Completed Tasks
+- [x] Agent-browser tool integration + usage doc
+- [x] OpenAI/Anthropic SDK usage doc + smoke tests
+- [x] HTTP fetch tool for link access
+- [x] Checkpoint-level history + chosen model metadata

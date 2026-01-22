@@ -3,6 +3,51 @@
 Sprint planning and execution tracking is handled by a dedicated API and a Sprint board in the
 Next.js dashboard.
 
+## Requirements
+
+The sprint workflow must satisfy these requirements:
+
+### Functional Requirements
+
+1. **Sprint Interview**: User initiates a planning interview with a prompt
+2. **Question Answering**: User answers generated clarifying questions
+3. **Sprint Creation**: User provides sprint name, dates, and clicks "Create Sprint"
+4. **Automated Execution**: Code is built and validated automatically (PhaseRunner)
+5. **Completion**: When code is complete and executable, sprint status becomes COMPLETED
+
+### AI Execution Requirements
+
+At each AI interaction step:
+
+1. **Dual-Provider Execution**: Same prompt sent to both OpenAI and Anthropic SDKs
+2. **Response Storage**: Each provider's response stored with full metadata
+3. **LLM-as-Judge**: A judge model selects the best response
+4. **Model Tracking**: Store which model was used for each AI call
+
+### Telemetry Requirements (Per AI Call)
+
+| Data Point | Storage Location | Description |
+|------------|------------------|-------------|
+| Provider | `AgentCandidate.provider` | "openai" or "anthropic" |
+| Model Name | `AgentCandidate.model_name` | Full model identifier |
+| Tool Calls | `AgentCandidate.tool_calls` | Serialized tool invocations |
+| Duration | `AgentCandidate.metrics.duration_ms` | Execution time |
+| Trace ID | `AgentCandidate.trace_id` | Logfire trace link |
+| Judge Decision | `AgentDecision.candidate_id` | Which response was selected |
+| Judge Rationale | `AgentDecision.rationale` | Why it was selected |
+| Judge Model | `AgentDecision.model_name` | Judge model used |
+
+### SDK Requirements
+
+All AI interactions use **pure API SDK calls** (no web components):
+
+- **OpenAI**: `pydantic_ai.models.openai.OpenAIResponsesModel`
+- **Anthropic**: `pydantic_ai.models.anthropic.AnthropicModel`
+
+The `agent_browser` tool (if enabled) uses CLI subprocess, NOT browser automation.
+
+---
+
 ## End-to-End Workflow (Idea → Sprint)
 
 1. Enter a sprint prompt in the Sprint planning interview.
@@ -24,9 +69,27 @@ Next.js dashboard.
 ## Planning Interview Expectations
 
 - The planning interview runs before sprint creation and must succeed.
-- The interview produces 1-10 questions (default 5).
 - Answers are validated for non-empty input.
 - If the interview fails to produce questions, sprint creation is blocked.
+
+### Dynamic Question Generation
+
+The AI generates questions **dynamically based on complexity**, not a hardcoded number:
+
+| Requirement | Behavior |
+|-------------|----------|
+| Simple tasks | 1-3 questions (e.g., "print hello world") |
+| Standard tasks | 3-5 questions (typical features) |
+| Complex tasks | 5-10 questions (integrations, architecture) |
+| Maximum limit | 10 questions (configurable via `max_questions`) |
+
+**Key Principle**: The AI keeps asking questions until it has gathered enough information
+to create a solution with **NO AMBIGUITY**. It stops early if requirements are already clear.
+
+The system prompt instructs the AI to:
+1. Focus on JTBD (Jobs to Be Done), scope boundaries, constraints, edge cases
+2. Ask questions until the implementation path is unambiguous
+3. Stop when confident - don't ask unnecessary questions for simple tasks
 
 ## Model-as-Judge (Dual-Subagent Planning)
 
@@ -74,6 +137,51 @@ Logfire setup details are in `backend/docs/observability.md`.
 - Sprint item status: `todo`, `in_progress`, `blocked`, `done`
 - Priority: `1` (high), `2` (medium), `3` (low)
 - Optional `spec_id` links a sprint to its planning interview/spec.
+
+## Automated Execution (PhaseRunner)
+
+When a sprint is created, the `PhaseRunner` background task executes automatically:
+
+### Phase 1: Discovery
+- **Input**: Sprint goal
+- **Action**: Analyze requirements and create `implementation_plan.md`
+- **AI Calls**: Dual-provider (OpenAI + Anthropic) → Judge selects best plan
+- **Output**: `workspace_ref` directory with implementation plan
+
+### Phase 2: Coding (Retries up to 3x)
+- **Input**: Implementation plan
+- **Action**: Write code files using `fs_write_file` tool
+- **AI Calls**: Dual-provider → Judge selects best implementation
+- **Output**: Code files in workspace (e.g., `hello.py`)
+
+### Phase 3: Verification (Retries up to 3x)
+- **Input**: Code files
+- **Action**: Run tests using `run_tests` tool, verify execution
+- **AI Calls**: Dual-provider → Judge selects best verification result
+- **Output**: `VERIFICATION_SUCCESS` or `VERIFICATION_FAILURE`
+
+### Completion Criteria
+- Sprint status → `COMPLETED` when `VERIFICATION_SUCCESS` is found
+- Code must be in local filesystem and executable
+- All phases must complete successfully
+
+### Database Records Created
+
+| Table | Per Phase | Data |
+|-------|-----------|------|
+| `agent_runs` | 1 | Run metadata, workspace_ref |
+| `agent_candidates` | 2 | OpenAI + Anthropic responses |
+| `agent_decisions` | 1 | Judge selection |
+| `agent_checkpoints` | 3+ | start, candidate:*, decision |
+
+### File Artifacts Created
+
+```
+AUTOCODE_ARTIFACTS_DIR/{workspace_ref}/
+├── implementation_plan.md    (Phase 1: Discovery)
+├── hello.py                  (Phase 2: Coding)
+└── test_hello.py             (Phase 3: Verification, if needed)
+```
 
 ## API Endpoints
 

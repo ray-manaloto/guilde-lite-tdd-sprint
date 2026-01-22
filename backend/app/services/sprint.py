@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError, ValidationError
 from app.db.models.sprint import Sprint, SprintItem
-from app.repositories import spec_repo, sprint_repo, sprint_item_repo
+from app.repositories import spec_repo, sprint_item_repo, sprint_repo
 from app.schemas.sprint import (
     SprintCreate,
     SprintItemCreate,
@@ -60,7 +60,9 @@ class SprintService:
         if sprint_in.spec_id:
             spec = await spec_repo.get_by_id(self.db, sprint_in.spec_id)
             if not spec:
-                raise NotFoundError(message="Spec not found", details={"spec_id": str(sprint_in.spec_id)})
+                raise NotFoundError(
+                    message="Spec not found", details={"spec_id": str(sprint_in.spec_id)}
+                )
         return await sprint_repo.create(
             self.db,
             spec_id=sprint_in.spec_id,
@@ -100,10 +102,14 @@ class SprintService:
             raise NotFoundError(message="Sprint not found", details={"sprint_id": str(sprint_id)})
         return sprint
 
-    async def list_items(self, sprint_id: UUID, *, skip: int = 0, limit: int = 100) -> list[SprintItem]:
+    async def list_items(
+        self, sprint_id: UUID, *, skip: int = 0, limit: int = 100
+    ) -> list[SprintItem]:
         """List items for a sprint."""
         await self.get_by_id(sprint_id)
-        return await sprint_item_repo.get_by_sprint(self.db, sprint_id=sprint_id, skip=skip, limit=limit)
+        return await sprint_item_repo.get_by_sprint(
+            self.db, sprint_id=sprint_id, skip=skip, limit=limit
+        )
 
     async def create_item(self, sprint_id: UUID, item_in: SprintItemCreate) -> SprintItem:
         """Create a sprint item."""

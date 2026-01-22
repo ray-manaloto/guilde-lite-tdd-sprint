@@ -3,7 +3,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, BackgroundTasks, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
@@ -35,9 +35,6 @@ async def list_sprints(
     return await paginate(db, query)
 
 
-from fastapi import APIRouter, status, BackgroundTasks
-from app.runners.phase_runner import PhaseRunner
-
 @router.post("", response_model=SprintRead, status_code=status.HTTP_201_CREATED)
 async def create_sprint(
     sprint_in: SprintCreate,
@@ -45,8 +42,24 @@ async def create_sprint(
     background_tasks: BackgroundTasks,
 ):
     """Create a sprint and trigger automated phase runner."""
+    from app.runners.phase_runner import PhaseRunner
+
     sprint = await sprint_service.create(sprint_in)
-    await sprint_service.db.commit() # Force commit so background task can see it
+    await sprint_service.db.commit()  # Force commit so background task can see it
+    background_tasks.add_task(PhaseRunner.start, sprint.id)
+    return sprint
+
+
+@router.post("/{sprint_id}/resume", response_model=SprintRead)
+async def resume_sprint(
+    sprint_id: UUID,
+    sprint_service: SprintSvc,
+    background_tasks: BackgroundTasks,
+):
+    """Resume or restart the automated phase runner for a sprint."""
+    from app.runners.phase_runner import PhaseRunner
+
+    sprint = await sprint_service.get_by_id(sprint_id)
     background_tasks.add_task(PhaseRunner.start, sprint.id)
     return sprint
 
