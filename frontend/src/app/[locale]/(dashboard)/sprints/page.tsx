@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label } from "@/components/ui";
 import { apiClient } from "@/lib/api-client";
+import { useSprintWebSocket, type SprintPhaseInfo } from "@/hooks";
 import type {
   PaginatedResponse,
   Spec,
@@ -16,12 +17,13 @@ import type {
   SprintStatus,
   SprintWithItems,
 } from "@/types";
-import { CheckCircle2, Flag, Loader2, Plus, Target } from "lucide-react";
+import { CheckCircle2, Flag, Loader2, Plus, Target, Wifi, WifiOff } from "lucide-react";
 
 const STATUS_LABELS: Record<SprintStatus, string> = {
   planned: "Planned",
   active: "Active",
   completed: "Completed",
+  failed: "Failed",
 };
 
 const ITEM_COLUMNS: Array<{ status: SprintItemStatus; label: string; hint: string }> = [
@@ -34,6 +36,7 @@ const ITEM_COLUMNS: Array<{ status: SprintItemStatus; label: string; hint: strin
 const statusBadgeVariant = (status: SprintStatus) => {
   if (status === "active") return "default";
   if (status === "completed") return "secondary";
+  if (status === "failed") return "destructive";
   return "outline";
 };
 
@@ -106,6 +109,37 @@ export default function SprintsPage() {
     : specPlanningMetadata
       ? "Sprint history"
       : null;
+
+  // WebSocket subscription for real-time sprint updates
+  const handleStatusChange = useCallback(
+    (newStatus: SprintStatus) => {
+      // Update sprint in list
+      setSprints((prev) =>
+        prev.map((sprint) =>
+          sprint.id === selectedSprintId ? { ...sprint, status: newStatus } : sprint
+        )
+      );
+      // Update selected sprint detail
+      setSelectedSprint((prev) => (prev ? { ...prev, status: newStatus } : prev));
+    },
+    [selectedSprintId]
+  );
+
+  const handlePhaseChange = useCallback((phase: SprintPhaseInfo) => {
+    console.log(`[Sprint] Phase update: ${phase.phase} - ${phase.status}`, phase.details);
+  }, []);
+
+  const {
+    isConnected: wsConnected,
+    currentPhase,
+    currentStatus: wsStatus,
+    events: wsEvents,
+  } = useSprintWebSocket({
+    sprintId: selectedSprintId,
+    onStatusChange: handleStatusChange,
+    onPhaseChange: handlePhaseChange,
+    autoConnect: true,
+  });
 
   const renderTelemetryPanel = (
     metadata: SpecPlanningResponse["planning"]["metadata"] | null,
@@ -772,10 +806,44 @@ export default function SprintsPage() {
                     <Badge variant={statusBadgeVariant(selectedSprint.status)}>
                       {STATUS_LABELS[selectedSprint.status]}
                     </Badge>
+                    {/* WebSocket connection indicator */}
+                    <span
+                      className="flex items-center gap-1 text-xs"
+                      title={wsConnected ? "Live updates active" : "Connecting..."}
+                    >
+                      {wsConnected ? (
+                        <Wifi className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <WifiOff className="h-3 w-3 text-muted-foreground" />
+                      )}
+                    </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {selectedSprint.goal || "No sprint goal set yet."}
                   </p>
+                  {/* Real-time phase status */}
+                  {currentPhase && selectedSprint.status === "active" && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <span className="text-sm font-medium capitalize">
+                          {currentPhase.phase}
+                          {currentPhase.attempt ? ` (Attempt ${currentPhase.attempt})` : ""}
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          {currentPhase.status}
+                        </Badge>
+                      </div>
+                      {currentPhase.details && (
+                        <p className="mt-1 text-xs text-muted-foreground">{currentPhase.details}</p>
+                      )}
+                      {currentPhase.duration_ms && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Duration: {(currentPhase.duration_ms / 1000).toFixed(1)}s
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                     <span>Start: {formatDate(selectedSprint.start_date)}</span>
                     <span>End: {formatDate(selectedSprint.end_date)}</span>
@@ -787,6 +855,27 @@ export default function SprintsPage() {
                       "No telemetry recorded for this sprint yet. Run the planning interview to capture it.",
                     sourceLabel: specPlanningMetadata ? "Sprint history" : null,
                   })}
+                  {/* Recent WebSocket events for debugging */}
+                  {wsEvents.length > 0 && (
+                    <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">
+                        Live Events ({wsEvents.length})
+                      </p>
+                      <div className="max-h-32 space-y-1 overflow-y-auto">
+                        {wsEvents.slice(-5).map((event, idx) => (
+                          <div
+                            key={`${event.type}-${idx}`}
+                            className="text-xs text-muted-foreground"
+                          >
+                            <span className="font-mono">{event.type}</span>
+                            {"phase" in event && event.phase && (
+                              <span className="ml-1">({event.phase})</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">

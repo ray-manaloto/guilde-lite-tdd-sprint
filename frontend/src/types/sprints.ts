@@ -1,4 +1,4 @@
-export type SprintStatus = "planned" | "active" | "completed";
+export type SprintStatus = "planned" | "active" | "completed" | "failed";
 export type SprintItemStatus = "todo" | "in_progress" | "blocked" | "done";
 
 export interface Sprint {
