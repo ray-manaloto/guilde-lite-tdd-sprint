@@ -21,6 +21,12 @@ from app.core.websocket_events import (
 )
 from app.db.models.sprint import SprintStatus
 from app.db.session import get_db_context
+from app.runners.evaluators import (
+    EvaluationResult,
+    EvaluatorRegistry,
+    FeedbackMemory,
+    create_default_registry,
+)
 from app.schemas.agent_tdd import AgentTddRunCreate
 from app.schemas.sprint import SprintUpdate
 from app.services.agent_tdd import AgentTddService
@@ -35,6 +41,233 @@ class PhaseRunner:
     """Orchestrates the automated software development lifecycle phases."""
 
     MAX_RETRIES = 3
+    _evaluator_registry: EvaluatorRegistry | None = None
+
+    @classmethod
+    def get_evaluator_registry(cls) -> EvaluatorRegistry:
+        """Get or create the evaluator registry."""
+        if cls._evaluator_registry is None:
+            cls._evaluator_registry = create_default_registry()
+        return cls._evaluator_registry
+
+    @classmethod
+    async def evaluate_phase_output(
+        cls,
+        phase: str,
+        output: str,
+        context: dict,
+        deterministic_only: bool = False,
+    ) -> list[EvaluationResult]:
+        """Evaluate phase output using registered evaluators.
+
+        Args:
+            phase: Name of the phase (e.g., "coding", "verification")
+            output: The phase output to evaluate
+            context: Evaluation context (workspace_ref, goal, etc.)
+            deterministic_only: If True, skip LLM-based evaluators
+
+        Returns:
+            List of EvaluationResult from all applicable evaluators
+        """
+        registry = cls.get_evaluator_registry()
+
+        if deterministic_only:
+            evaluators = registry.get_deterministic_evaluators(phase)
+        else:
+            evaluators = registry.get_evaluators(phase)
+
+        results = []
+        for evaluator in evaluators:
+            try:
+                result = await evaluator.evaluate(phase, output, context)
+                results.append(result)
+
+                logger.info(
+                    f"Evaluator {evaluator.name} for phase {phase}: "
+                    f"passed={result.passed}, score={result.score:.2f}"
+                )
+            except Exception as e:
+                logger.error(f"Evaluator {evaluator.name} failed: {e}")
+                # Don't block on evaluator failures
+                continue
+
+        return results
+
+    @classmethod
+    async def run_phase_with_evaluation(
+        cls,
+        phase: str,
+        sprint_id: UUID,
+        workspace_ref: str,
+        goal: str,
+        prompt: str,
+        agent_tdd_service: AgentTddService,
+        tracker: WorkflowTracker,
+        broadcast_fn,
+        emit_phase_started,
+        emit_phase_completed,
+        emit_phase_failed,
+        max_retries: int = 3,
+    ) -> tuple[bool, str, list[EvaluationResult]]:
+        """Run a phase with evaluation and retry logic.
+
+        Args:
+            phase: Phase name
+            sprint_id: Sprint ID
+            workspace_ref: Workspace reference
+            goal: Sprint goal
+            prompt: Base prompt for the phase
+            agent_tdd_service: Service for agent execution
+            tracker: Workflow tracker
+            broadcast_fn: Function to broadcast status updates
+            emit_phase_started: Function to emit phase started events
+            emit_phase_completed: Function to emit phase completed events
+            emit_phase_failed: Function to emit phase failed events
+            max_retries: Maximum retry attempts
+
+        Returns:
+            Tuple of (success: bool, output: str, evaluations: list[EvaluationResult])
+        """
+        feedback_memory = FeedbackMemory(
+            sprint_id=sprint_id,
+            phase=phase,
+            original_goal=goal,
+            max_attempts=max_retries,
+        )
+
+        all_evaluations: list[EvaluationResult] = []
+
+        for attempt in range(max_retries):
+            logger.info(f"Phase {phase} attempt {attempt + 1}/{max_retries}")
+
+            # Build prompt with feedback from previous attempts
+            if attempt > 0:
+                feedback_summary = feedback_memory.get_summary_for_prompt()
+                optimized_prompt = f"{feedback_summary}\n\n{prompt}"
+            else:
+                optimized_prompt = prompt
+
+            # Emit phase started
+            await emit_phase_started(
+                phase,
+                attempt=attempt + 1,
+                details=f"Starting {phase} attempt {attempt + 1}",
+            )
+
+            # Execute phase
+            result = await agent_tdd_service.execute(
+                AgentTddRunCreate(
+                    message=optimized_prompt,
+                    workspace_ref=workspace_ref,
+                    metadata={
+                        "sprint_id": str(sprint_id),
+                        "phase": phase,
+                        "attempt": attempt,
+                    },
+                ),
+                user_id=None,
+            )
+
+            # Get output
+            output = ""
+            if result.decision and result.decision.candidate_id:
+                for c in result.candidates:
+                    if c.id == result.decision.candidate_id:
+                        output = c.output or ""
+                        break
+            elif result.candidates:
+                output = result.candidates[0].output or ""
+
+            # Evaluate output (deterministic only for speed)
+            eval_results = await cls.evaluate_phase_output(
+                phase=phase,
+                output=output,
+                context={
+                    "workspace_ref": workspace_ref,
+                    "goal": goal,
+                    "attempt": attempt,
+                },
+                deterministic_only=True,
+            )
+            all_evaluations.extend(eval_results)
+
+            # Record attempt
+            feedback_memory.add_attempt(
+                phase_output=output,
+                evaluation_results=eval_results,
+                optimization_prompt=optimized_prompt if attempt > 0 else None,
+            )
+
+            # Check if all evaluations passed
+            all_passed = all(e.passed for e in eval_results) if eval_results else True
+
+            if all_passed:
+                logger.info(f"Phase {phase} passed on attempt {attempt + 1}")
+
+                # Record evaluation in tracker
+                await tracker.record_event(
+                    event_type="evaluation_passed",
+                    phase=phase,
+                    metadata={
+                        "attempt": attempt + 1,
+                        "evaluations": [e.model_dump() for e in eval_results],
+                    },
+                )
+
+                await emit_phase_completed(
+                    phase,
+                    details=f"Phase {phase} completed successfully",
+                )
+
+                return True, output, all_evaluations
+
+            # Log failed evaluations
+            failed_evals = [e for e in eval_results if not e.passed]
+            for eval_result in failed_evals:
+                logger.warning(
+                    f"Evaluation failed: {eval_result.evaluator_name} - {eval_result.feedback}"
+                )
+
+            # Record failure
+            await tracker.record_event(
+                event_type="evaluation_failed",
+                phase=phase,
+                metadata={
+                    "attempt": attempt + 1,
+                    "evaluations": [e.model_dump() for e in eval_results],
+                    "will_retry": feedback_memory.can_retry,
+                },
+            )
+
+            if not feedback_memory.can_retry:
+                break
+
+            await emit_phase_failed(
+                phase,
+                details=f"Evaluation failed on attempt {attempt + 1}. Retrying...",
+                attempt=attempt + 1,
+            )
+            await broadcast_fn(
+                "active",
+                phase,
+                f"Evaluation failed on attempt {attempt + 1}. Retrying...",
+            )
+
+        # All retries exhausted
+        feedback_memory.escalate(
+            f"Phase {phase} failed after {max_retries} attempts"
+        )
+
+        await tracker.record_event(
+            event_type="phase_escalated",
+            phase=phase,
+            metadata={
+                "reason": feedback_memory.escalation_reason,
+                "attempts": feedback_memory.to_dict(),
+            },
+        )
+
+        return False, output, all_evaluations
 
     @classmethod
     async def start(cls, sprint_id: UUID) -> None:
@@ -260,7 +493,7 @@ class PhaseRunner:
                     await emit_candidate_generated(
                         CandidateData(
                             candidate_id=str(candidate.id) if candidate.id else None,
-                            provider=candidate.provider,
+                            provider=candidate.provider or "unknown",
                             model_name=candidate.model_name,
                             agent_name=candidate.agent_name,
                             output=candidate.output[:500] if candidate.output else None,
@@ -400,7 +633,7 @@ class PhaseRunner:
                         await emit_candidate_generated(
                             CandidateData(
                                 candidate_id=str(candidate.id) if candidate.id else None,
-                                provider=candidate.provider,
+                                provider=candidate.provider or "unknown",
                                 model_name=candidate.model_name,
                                 agent_name=candidate.agent_name,
                                 output=candidate.output[:500] if candidate.output else None,
