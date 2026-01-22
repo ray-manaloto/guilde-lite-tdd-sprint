@@ -9,6 +9,12 @@ from typing import Any
 
 import click
 
+from app.agents.deep_research import (
+    DeepResearchRunner,
+    has_research_artifact,
+    should_run_deep_research,
+    write_deep_research_artifacts,
+)
 from app.agents.sdk_runner import AgentsSdkRunner
 from app.commands import command, error, info, success
 from app.conductor.store import ConductorStore
@@ -75,6 +81,21 @@ def _parse_markdown_sections(output: str) -> tuple[str, str]:
     spec_content = spec_part.replace(spec_marker, "", 1).strip()
     plan_content = plan_part.strip()
     return f"# Spec\n\n{spec_content}", f"# Plan\n\n{plan_content}"
+
+
+async def _run_deep_research(
+    track_id: str,
+    task: str,
+    conductor_root: Path,
+) -> None:
+    runner = DeepResearchRunner()
+    result = await runner.run(query=task, output_format="markdown")
+    artifacts = write_deep_research_artifacts(
+        track_id=track_id,
+        result=result,
+        conductor_root=conductor_root,
+    )
+    success(f"Deep research digest written: {artifacts.research_path}")
 
 
 async def _run_planning_questions(
@@ -161,6 +182,11 @@ async def _run_spec_plan(
     default=None,
     help="Override Conductor root directory",
 )
+@click.option(
+    "--force-research",
+    is_flag=True,
+    help="Run deep research even if a research artifact already exists",
+)
 def conductor_plan(
     track_id: str,
     task: str | None,
@@ -169,6 +195,7 @@ def conductor_plan(
     output_format: str,
     output_schema: Path | None,
     conductor_root: Path | None,
+    force_research: bool,
 ) -> None:
     """Generate a Conductor spec and plan from a CLI interview."""
     if not task and not task_file:
@@ -183,8 +210,15 @@ def conductor_plan(
         raise SystemExit(1)
 
     runner = AgentsSdkRunner()
-    store = ConductorStore(root=conductor_root or _default_conductor_root())
+    root = conductor_root or _default_conductor_root()
+    store = ConductorStore(root=root)
     schema_override = _load_schema(output_schema)
+
+    if should_run_deep_research(task) and (
+        force_research or not has_research_artifact(track_id, root)
+    ):
+        info("Running deep research...")
+        asyncio.run(_run_deep_research(track_id, task, root))
 
     info("Running planning interview...")
     planning_payload = asyncio.run(_run_planning_questions(runner, task, max_questions))

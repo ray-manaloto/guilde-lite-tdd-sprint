@@ -64,9 +64,16 @@ judge:
 - OpenAI agent uses `OPENAI_MODEL`
 - Anthropic agent uses `ANTHROPIC_MODEL`
 - Judge uses `JUDGE_MODEL` (must start with `openai-responses:`)
+- Deep research (planning evidence) uses `DEEP_RESEARCH_MODEL` when set.
 
 The judge scores helpfulness and correctness, then selects the best candidate.
 Selection is stored in `artifacts.planning.metadata.selected_candidate`.
+
+## Cloud Subagent Offload (Optional)
+
+For heavy tasks (large test suites, deep analysis, unsafe code execution),
+delegate to cloud subagents. Cloud agents must return diffs and reports only,
+which are reviewed and applied locally via Conductor.
 
 ### Telemetry
 
@@ -89,6 +96,14 @@ see `backend/docs/observability.md` for setup details.
 ## CLI
 
 - `uv run --directory backend guilde_lite_tdd_sprint cmd spec-run --task "..."` to create a spec draft
+
+## Workflow Commands
+
+- `project cmd codex-guard --track-id <id>` validate workflow prerequisites
+- `project cmd snapshot-state --track-id <id>` write recovery snapshot
+- `project cmd sync-docs --track-id <id>` write doc sync report
+- `project cmd qa-smoke` run smoke QA gate
+- `project cmd qa-nightly` run nightly QA gate
 
 ## Tests
 

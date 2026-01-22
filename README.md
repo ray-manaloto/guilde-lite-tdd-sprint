@@ -126,6 +126,7 @@ cp frontend/.env.example frontend/.env.local
 Update `.env` with at least:
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL=openai-responses:<model>`
+- `DEEP_RESEARCH_MODEL=o3-deep-research` (optional; overrides deep research default)
 - `ANTHROPIC_API_KEY`
 - `ANTHROPIC_MODEL=anthropic:<model>`
 - `JUDGE_MODEL=openai-responses:<model>`
@@ -475,6 +476,8 @@ Set provider-specific model names in `.env` (OpenAI uses the Responses API):
 ```bash
 # OpenAI example
 OPENAI_MODEL=openai-responses:gpt-5.2-codex
+# Deep research override (optional)
+DEEP_RESEARCH_MODEL=o3-deep-research
 # Anthropic example (optional `anthropic:` prefix)
 ANTHROPIC_MODEL=anthropic:claude-opus-4-5-20251101
 # Provider selection

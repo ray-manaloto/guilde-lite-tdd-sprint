@@ -1,11 +1,4 @@
 {
-  "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true,
-    "ui-design@claude-code-workflows": true,
-    "conductor@claude-code-workflows": true,
-    "reverse-engineering@claude-code-workflows": true,
-    "superpowers@claude-plugins-official": true
-  },
   "hooks": {
     "UserPromptSubmit": [
       {

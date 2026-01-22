@@ -44,6 +44,7 @@ Configuration:
 
 - `DUAL_SUBAGENT_ENABLED=true` (default)
 - `OPENAI_MODEL=openai-responses:gpt-5.2-codex` (example)
+- `DEEP_RESEARCH_MODEL=o3-deep-research` (optional)
 - `ANTHROPIC_MODEL=anthropic:claude-opus-4-5-20251101` (example)
 - `JUDGE_MODEL=openai-responses:gpt-5.2-codex` (required in dual-subagent mode)
 

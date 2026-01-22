@@ -66,6 +66,27 @@ uv run pytest -v
 uv run pytest -x
 ```
 
+## QA Gate Commands (CLI)
+
+Smoke gate (backend integration + frontend smoke E2E):
+
+```bash
+project cmd qa-smoke
+```
+
+Nightly gate (full backend + full frontend E2E):
+
+```bash
+project cmd qa-nightly
+```
+
+Optional flags:
+
+```bash
+project cmd qa-smoke --live
+project cmd qa-nightly --skip-frontend
+```
+
 ## Pytest Standards (PEP + modern pytest)
 
 - Follow PEP 8 for naming (`test_*.py`, `test_*` functions) and PEP 257 for

@@ -70,13 +70,22 @@ class AgentsSdkRunner:
                 api_key=self.anthropic_api_key,
                 base_url=self.litellm_proxy_base_url,
             )
-        return model_name or self.openai_model
+        return self._normalize_openai_model(model_name or self.openai_model)
 
     @staticmethod
     def _load_litellm_model() -> Callable[..., "LitellmModel"]:
         from agents.extensions.models.litellm_model import LitellmModel
 
         return LitellmModel
+
+    @staticmethod
+    def _normalize_openai_model(model_name: str) -> str:
+        """Normalize OpenAI model strings for Agents SDK."""
+        if model_name.startswith("openai-responses:"):
+            return model_name.split(":", 1)[1]
+        if model_name.startswith("openai:"):
+            raise ValueError("OpenAI chat models are disabled; use openai-responses:<model>.")
+        return model_name
 
     async def run_agent(
         self,
@@ -88,13 +97,17 @@ class AgentsSdkRunner:
         model_name: str | None = None,
         output_format: str = "markdown",
         output_schema: dict[str, Any] | None = None,
+        tools: list[Any] | None = None,
+        model_settings: ModelSettings | None = None,
     ) -> AgentsSdkRunResult:
         model = self._build_model(provider=provider, model_name=model_name)
+        settings_override = model_settings or self.model_settings_cls(include_usage=True)
         agent = self.agent_cls(
             name=name,
             instructions=instructions,
             model=model,
-            model_settings=self.model_settings_cls(include_usage=True),
+            model_settings=settings_override,
+            tools=tools or [],
         )
         result = await self.runner_cls.run(agent, prompt)
         output_text = self._extract_output(result)

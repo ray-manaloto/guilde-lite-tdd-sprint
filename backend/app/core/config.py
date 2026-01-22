@@ -170,6 +170,7 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = ""
     OPENAI_BASE_URL: str | None = None
     OPENAI_ORG: str | None = None
+    DEEP_RESEARCH_MODEL: str = ""
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = ""
     ANTHROPIC_BASE_URL: str | None = None
