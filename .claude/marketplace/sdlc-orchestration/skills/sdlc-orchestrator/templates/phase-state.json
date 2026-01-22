@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SDLC Phase State",
+  "description": "State management template for tracking SDLC phase progress and handoffs",
+
+  "example": {
+    "track_id": "feature-auth-oauth2",
+    "current_phase": "implementation",
+    "phases": {
+      "requirements": {
+        "status": "completed",
+        "started_at": "2024-01-21T10:00:00Z",
+        "completed_at": "2024-01-21T11:30:00Z",
+        "agents_completed": ["ceo-stakeholder", "business-analyst", "research-scientist"],
+        "artifacts": {
+          "business_goals": "requirements/business-goals.md",
+          "user_stories": "requirements/user-stories.md",
+          "feasibility": "requirements/feasibility.md"
+        },
+        "gates_passed": ["all_agents_complete", "artifacts_validated", "stakeholder_approved"]
+      },
+      "design": {
+        "status": "completed",
+        "started_at": "2024-01-21T12:00:00Z",
+        "completed_at": "2024-01-21T14:00:00Z",
+        "agents_completed": ["software-architect", "data-scientist", "network-engineer"],
+        "artifacts": {
+          "adr": "design/ADR-001.md",
+          "api_spec": "design/api-spec.yaml",
+          "schema": "design/schema.sql",
+          "infrastructure": "design/infra-diagram.md"
+        },
+        "gates_passed": ["architecture_reviewed", "api_contract_approved"]
+      },
+      "implementation": {
+        "status": "in_progress",
+        "started_at": "2024-01-21T14:30:00Z",
+        "completed_at": null,
+        "agents_completed": ["staff-engineer", "senior-engineer"],
+        "agents_pending": ["junior-engineer", "devops-engineer"],
+        "artifacts": {
+          "core_module": "src/auth/core.py",
+          "api_routes": "src/auth/routes.py"
+        },
+        "gates_passed": []
+      },
+      "quality": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      },
+      "release": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      }
+    },
+    "handoffs": [
+      {
+        "from_phase": "requirements",
+        "to_phase": "design",
+        "handoff_at": "2024-01-21T12:00:00Z",
+        "summary": "Requirements complete. 5 user stories, OAuth2 approach validated."
+      },
+      {
+        "from_phase": "design",
+        "to_phase": "implementation",
+        "handoff_at": "2024-01-21T14:30:00Z",
+        "summary": "Architecture approved. JWT + refresh tokens, PostgreSQL backend."
+      }
+    ]
+  },
+
+  "template": {
+    "track_id": "",
+    "current_phase": "requirements",
+    "phases": {
+      "requirements": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      },
+      "design": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      },
+      "implementation": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      },
+      "quality": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      },
+      "release": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "agents_completed": [],
+        "artifacts": {},
+        "gates_passed": []
+      }
+    },
+    "handoffs": []
+  },
+
+  "gates": {
+    "requirements": ["all_agents_complete", "artifacts_validated", "stakeholder_approved"],
+    "design": ["architecture_reviewed", "api_contract_approved", "security_reviewed"],
+    "implementation": ["code_complete", "unit_tests_pass", "lint_pass", "type_check_pass"],
+    "quality": ["integration_tests_pass", "code_review_approved", "performance_validated", "security_scan_pass"],
+    "release": ["staging_deployed", "canary_validated", "docs_updated", "production_approved"]
+  },
+
+  "agents_by_phase": {
+    "requirements": ["ceo-stakeholder", "business-analyst", "research-scientist"],
+    "design": ["software-architect", "data-scientist", "network-engineer"],
+    "implementation": ["staff-engineer", "senior-engineer", "junior-engineer", "devops-engineer"],
+    "quality": ["qa-automation", "code-reviewer", "performance-engineer"],
+    "release": ["cicd-engineer", "canary-user", "documentation-engineer", "devops-engineer"]
+  }
+}

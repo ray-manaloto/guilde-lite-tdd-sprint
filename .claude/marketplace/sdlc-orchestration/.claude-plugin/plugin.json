@@ -1,0 +1,18 @@
+{
+  "name": "sdlc-orchestration",
+  "version": "1.0.0",
+  "description": "Parallelized software development lifecycle with role-based agents. Orchestrates CEO, PM, architects, engineers, QA, DevOps, and documentation roles working in parallel phases.",
+  "author": {
+    "name": "guilde-lite-tdd-sprint"
+  },
+  "repository": "https://github.com/pagerguild/guilde-lite-tdd-sprint",
+  "keywords": [
+    "sdlc",
+    "software development",
+    "agile",
+    "parallel execution",
+    "role-based",
+    "orchestration",
+    "multi-agent"
+  ]
+}

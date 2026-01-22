@@ -1,0 +1,120 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd backend && uv run pytest:*)",
+      "Bash(cd backend && uv run ruff:*)",
+      "Bash(cd backend && uv run alembic:*)",
+      "Bash(cd backend && uv run mypy:*)",
+      "Bash(cd backend && uv run bandit:*)",
+      "Bash(cd frontend && bun run:*)",
+      "Bash(cd frontend && bun test:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "for f in $CLAUDE_FILE_PATHS; do if [[ \"$f\" == .env* || \"$f\" == */.env* ]]; then echo 'Blocked: Edit .env files manually to avoid exposing secrets' && exit 1; fi; done"
+          },
+          {
+            "type": "command",
+            "command": "for f in $CLAUDE_FILE_PATHS; do if [[ \"$f\" == */bun.lock || \"$f\" == */uv.lock || \"$f\" == */package-lock.json ]]; then echo 'Blocked: Lock files should only change via package manager' && exit 1; fi; done"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "for f in $CLAUDE_FILE_PATHS; do if [[ \"$f\" == */alembic/versions/*.py ]]; then echo \"Blocked: Don't edit existing migrations. Create a new one with /gen-migration instead.\" && exit 1; fi; done"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "for f in $CLAUDE_FILE_PATHS; do if [[ \"$f\" == *.py ]]; then cd /Users/ray.manaloto.guilde/dev/github/pagerguild/guilde-lite-tdd-sprint/backend && uv run ruff format \"$f\" 2>/dev/null && uv run ruff check --fix \"$f\" 2>/dev/null; fi; done"
+          },
+          {
+            "type": "command",
+            "command": "for f in $CLAUDE_FILE_PATHS; do if [[ \"$f\" == *.ts || \"$f\" == *.tsx ]]; then cd /Users/ray.manaloto.guilde/dev/github/pagerguild/guilde-lite-tdd-sprint/frontend && bun run prettier --write \"$f\" 2>/dev/null; fi; done"
+          },
+          {
+            "type": "command",
+            "command": "for f in $CLAUDE_FILE_PATHS; do if [[ \"$f\" == *.ts || \"$f\" == *.tsx ]]; then cd /Users/ray.manaloto.guilde/dev/github/pagerguild/guilde-lite-tdd-sprint/frontend && bun run type-check 2>&1 | head -15; break; fi; done"
+          },
+          {
+            "type": "command",
+            "command": "for f in $CLAUDE_FILE_PATHS; do if [[ \"$f\" == *.py ]]; then cd /Users/ray.manaloto.guilde/dev/github/pagerguild/guilde-lite-tdd-sprint/backend && uv run mypy \"$f\" --ignore-missing-imports 2>&1 | grep -v \"^Success\" | head -10; fi; done"
+          },
+          {
+            "type": "command",
+            "command": "for f in $CLAUDE_FILE_PATHS; do if [[ \"$f\" == *.py ]]; then cd /Users/ray.manaloto.guilde/dev/github/pagerguild/guilde-lite-tdd-sprint/backend && uv run bandit -q \"$f\" 2>&1 | head -10; fi; done"
+          },
+          {
+            "type": "command",
+            "command": "for f in $CLAUDE_FILE_PATHS; do if [[ \"$f\" == */backend/app/*.py && \"$f\" != *__pycache__* ]]; then module=$(echo \"$f\" | sed 's|.*/backend/app/||' | sed 's|/|.|g' | sed 's|\\.py$||'); test_pattern=\"test_${module##*.}\"; cd /Users/ray.manaloto.guilde/dev/github/pagerguild/guilde-lite-tdd-sprint/backend && uv run pytest -x -q -k \"$test_pattern\" 2>&1 | tail -8 || true; fi; done"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "superpowers@superpowers-marketplace": true,
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
+    "semgrep-rule-creator@trailofbits": true,
+    "static-analysis@trailofbits": true,
+    "differential-review@trailofbits": true,
+    "ask-questions-if-underspecified@trailofbits": true,
+    "python-architecture-review@rknall-custom-skills": true,
+    "ui-design-review@rknall-custom-skills": true,
+    "docker-validation@rknall-custom-skills": true,
+    "web-design-builder@rknall-custom-skills": true,
+    "backend-development@claude-code-workflows": true,
+    "frontend-mobile-development@claude-code-workflows": true,
+    "tdd-workflows@claude-code-workflows": true,
+    "code-review-ai@claude-code-workflows": true,
+    "unit-testing@claude-code-workflows": true,
+    "debugging-toolkit@claude-code-workflows": true,
+    "prompts.chat@prompts.chat": true,
+    "beagle@existential-birds": true,
+    "git-workflow@claude-code-templates": true,
+    "testing-suite@claude-code-templates": true,
+    "security-pro@claude-code-templates": true,
+    "documentation-generator@claude-code-templates": true,
+    "performance-optimizer@claude-code-templates": true,
+    "ai-ml-toolkit@claude-code-templates": true,
+    "artifacts-builder@awesome-claude-skills": true,
+    "mcp-builder@awesome-claude-skills": true,
+    "skill-creator@awesome-claude-skills": true,
+    "webapp-testing@awesome-claude-skills": true,
+    "changelog-generator@awesome-claude-skills": true,
+    "theme-factory@awesome-claude-skills": true,
+    "context-master@claude-plugin-marketplace": true,
+    "plugin-master@claude-plugin-marketplace": true,
+    "bash-master@claude-plugin-marketplace": true,
+    "git-master@claude-plugin-marketplace": true,
+    "docker-master@claude-plugin-marketplace": true,
+    "test-master@claude-plugin-marketplace": true,
+    "python-master@claude-plugin-marketplace": true,
+    "react-master@claude-plugin-marketplace": true,
+    "nextjs-master@claude-plugin-marketplace": true,
+    "tailwindcss-master@claude-plugin-marketplace": true,
+    "terraform-master@claude-plugin-marketplace": true,
+    "plugin-dev@claude-plugins-official": true,
+    "sdlc-orchestration@guilde-lite-local": true
+  }
+}

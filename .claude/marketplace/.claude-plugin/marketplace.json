@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "guilde-lite-local",
+  "description": "Local plugins for guilde-lite-tdd-sprint project",
+  "owner": {
+    "name": "pagerguild",
+    "email": "dev@pagerguild.com"
+  },
+  "plugins": [
+    {
+      "name": "sdlc-orchestration",
+      "description": "Parallelized software development lifecycle with role-based agents",
+      "version": "1.0.0",
+      "author": {
+        "name": "guilde-lite-tdd-sprint"
+      },
+      "source": "./sdlc-orchestration"
+    }
+  ]
+}
