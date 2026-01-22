@@ -1,15 +1,18 @@
 """Spec workflow service."""
 
 from dataclasses import dataclass
+from pathlib import Path
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.ralph_planner import run_planning_interview
+from app.core.config import settings
 from app.core.exceptions import BadRequestError, NotFoundError, ValidationError
 from app.db.models.spec import Spec, SpecComplexity, SpecStatus
-from app.agents.ralph_planner import run_planning_interview
 from app.repositories import spec_repo
 from app.schemas.spec import SpecCreate, SpecPlanningAnswer
+from app.services.spec_exporter import SpecExporter
 
 
 @dataclass
@@ -258,3 +261,78 @@ class SpecService:
             update_data={"artifacts": artifacts},
         )
         return updated, planning
+
+    async def export_to_disk(
+        self,
+        spec_id: UUID,
+        sprint_dir: Path | None = None,
+    ) -> tuple[Path, Path] | None:
+        """Export spec and related artifacts to disk.
+
+        Args:
+            spec_id: The spec UUID
+            sprint_dir: Base directory for the sprint (uses workspace_ref if not provided)
+
+        Returns:
+            Tuple of (json_path, markdown_path) or None if no artifacts dir
+        """
+        spec = await self.get_by_id(spec_id)
+
+        if sprint_dir is None:
+            if not settings.AUTOCODE_ARTIFACTS_DIR:
+                return None
+            # Use spec ID as directory name if no sprint_dir provided
+            sprint_dir = settings.AUTOCODE_ARTIFACTS_DIR / str(spec_id)
+
+        exporter = SpecExporter(sprint_dir)
+
+        # Export main spec
+        json_path, md_path = await exporter.export_spec(
+            spec_id=spec.id,
+            title=spec.title,
+            task=spec.task,
+            complexity=spec.complexity.value,
+            status=spec.status.value,
+            phases=spec.phases or [],
+            artifacts=spec.artifacts or {},
+            created_at=spec.created_at,
+            updated_at=spec.updated_at,
+        )
+
+        # Export questionnaire if planning exists
+        artifacts = spec.artifacts or {}
+        planning = artifacts.get("planning", {})
+        if planning:
+            questions = planning.get("questions", [])
+            answers = planning.get("answers", [])
+
+            # Build candidates from metadata if dual-subagent mode was used
+            candidates = {}
+            metadata = planning.get("metadata", {})
+            if metadata.get("mode") == "dual_subagent":
+                for candidate in metadata.get("candidates", []):
+                    provider = candidate.get("provider")
+                    if provider:
+                        candidates[provider] = {
+                            "questions": candidate.get("questions", questions),
+                            "trace_id": candidate.get("trace_id"),
+                            "trace_url": candidate.get("trace_url"),
+                            "error": candidate.get("error"),
+                        }
+
+            # Build judge result
+            judge_result = metadata.get("judge", {})
+
+            await exporter.export_questionnaire(
+                questions=questions,
+                candidates=candidates,
+                judge_result=judge_result,
+                answers=answers,
+            )
+
+        # Export assessment if exists
+        assessment = artifacts.get("assessment")
+        if assessment:
+            await exporter.export_assessment(assessment)
+
+        return json_path, md_path

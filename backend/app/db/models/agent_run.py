@@ -1,8 +1,9 @@
 """Agent run models for checkpointing (PostgreSQL)."""
 
 import uuid
+from datetime import datetime
 
-from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,6 +42,11 @@ class AgentRun(Base, TimestampMixin):
     fork_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     span_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    # Workflow tracking timestamps
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     candidates: Mapped[list["AgentCandidate"]] = relationship(
         "AgentCandidate",
@@ -81,6 +87,11 @@ class AgentCandidate(Base, TimestampMixin):
     metrics: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     span_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    # Workflow tracking timestamps
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     run: Mapped["AgentRun"] = relationship("AgentRun", back_populates="candidates")
 
@@ -130,6 +141,10 @@ class AgentCheckpoint(Base, TimestampMixin):
     workspace_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
     trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     span_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    # Phase timing for workflow tracking
+    phase_start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    phase_end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     run: Mapped["AgentRun"] = relationship(
         "AgentRun",

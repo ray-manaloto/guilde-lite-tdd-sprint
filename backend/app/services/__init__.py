@@ -17,6 +17,8 @@ from app.services.agent_run import AgentRunService
 from app.services.agent_tdd import AgentTddService
 from app.services.sprint import SprintService
 from app.services.spec import SpecService
+from app.services.workflow_tracker import WorkflowTracker
+from app.services.spec_exporter import SpecExporter
 
 __all__ = [
     "UserService",
@@ -27,4 +29,6 @@ __all__ = [
     "AgentTddService",
     "SprintService",
     "SpecService",
+    "WorkflowTracker",
+    "SpecExporter",
 ]
