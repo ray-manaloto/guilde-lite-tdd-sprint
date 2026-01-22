@@ -263,7 +263,10 @@ class AgentTddService:
                 # Initialize Deps with workspace_ref if provided to ensure persistence
                 deps = Deps()
                 if data.workspace_ref and settings.AUTOCODE_ARTIFACTS_DIR:
-                    deps.session_dir = settings.AUTOCODE_ARTIFACTS_DIR / data.workspace_ref
+                    session_path = settings.AUTOCODE_ARTIFACTS_DIR / data.workspace_ref
+                    # Create the session directory if it doesn't exist
+                    session_path.mkdir(parents=True, exist_ok=True)
+                    deps.session_dir = session_path
 
                 output, tool_events, _agent_deps = await agent.run(
                     data.message, data.history, deps=deps
