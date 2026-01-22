@@ -98,6 +98,16 @@ Phase 5: Release (Sequential with Parallel Monitoring)
 | Canary Users | Beta testing, user feedback, validation | Release |
 | Documentation Engineer | User guides, API docs, architecture docs | Release |
 
+### UI/UX Layer
+
+| Role | Responsibilities | Parallel Phase |
+|------|-----------------|----------------|
+| UI Designer | Visual design, component styling, design systems | Design |
+| UX Researcher | User research, usability testing, personas | Requirements |
+| Accessibility Specialist | WCAG compliance, a11y auditing, inclusive design | Quality |
+| Frontend Architect | Frontend architecture, performance, state management | Design |
+| Design System Engineer | Component libraries, design tokens, documentation | Design |
+
 ## Workflow Invocation
 
 ### Full SDLC Workflow
@@ -172,6 +182,11 @@ Agents communicate via structured artifacts:
 | Documentation Engineer | `sdlc-orchestration:documentation-engineer` |
 | Performance Engineer | `sdlc-orchestration:performance-engineer` |
 | Data Scientist | `sdlc-orchestration:data-scientist` |
+| UI Designer | `sdlc-orchestration:ui-designer` |
+| UX Researcher | `sdlc-orchestration:ux-researcher` |
+| Accessibility Specialist | `sdlc-orchestration:accessibility-specialist` |
+| Frontend Architect | `sdlc-orchestration:frontend-architect` |
+| Design System Engineer | `sdlc-orchestration:design-system-engineer` |
 
 ### Parallel Execution Example
 
@@ -266,6 +281,37 @@ Hooks automatically enforce gates:
 ```
 
 ---
+
+## Evaluator-Optimizer Pattern
+
+The SDLC orchestration integrates an **Evaluator-Optimizer pattern** for structured validation.
+
+### Evaluation Flow
+
+1. **Phase Completes** → Output generated
+2. **Evaluators Run** → Multiple evaluators assess output
+   - Deterministic: Ruff lint, pytest, type check
+   - LLM-based: Quality assessment
+3. **Pass/Fail** → If pass, proceed; if fail, retry with feedback
+4. **Feedback Memory** → Accumulates context across retries
+5. **Escalation** → After 3 failures, escalate to human
+
+### FeedbackMemory
+
+Tracks retry history with exponentially increasing context:
+- Attempt 1: Original task only
+- Attempt 2: Task + previous feedback
+- Attempt 3: Task + full history + analysis
+
+### Available Evaluators
+
+| Evaluator | Type | Phases | Checks |
+|-----------|------|--------|--------|
+| RuffLintEvaluator | Deterministic | All | Python linting |
+| PytestEvaluator | Deterministic | Verification, Coding | Test execution |
+| TypeCheckEvaluator | Deterministic | Coding | Type validation |
+
+See `backend/app/runners/evaluators/` for implementation.
 
 ## Integration with Sprint Workflow
 
