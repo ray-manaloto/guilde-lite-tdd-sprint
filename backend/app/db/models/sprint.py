@@ -41,6 +41,7 @@ class Sprint(Base, TimestampMixin):
         ForeignKey("specs.id", ondelete="SET NULL"),
         nullable=True,
     )
+    track_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     goal: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[SprintStatus] = mapped_column(

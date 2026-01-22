@@ -20,7 +20,7 @@ skill's `scripts/` directory.
 ### Package the local skill
 
 ```bash
-python /Users/rmanaloto/.codex/skills/.system/skill-creator/scripts/package_skill.py \
+uv run --project backend python /Users/rmanaloto/.codex/skills/.system/skill-creator/scripts/package_skill.py \
   /Users/rmanaloto/dev/github/ray-manaloto/guilde-lite-tdd-sprint/skills/testing-automation
 ```
 
@@ -31,19 +31,19 @@ Install the resulting `.skill` file via Codex, then restart Codex.
 Use the skill installer to add these at project scope (requires network access):
 
 ```bash
-python /Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+uv run --project backend python /Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
   --repo vercel-labs/agent-browser \
   --path skills/agent-browser \
   --dest /Users/rmanaloto/dev/github/ray-manaloto/guilde-lite-tdd-sprint/skills
 
-python /Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+uv run --project backend python /Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
   --repo vercel-labs/agent-skills \
   --path skills/react-best-practices \
   --path skills/web-design-guidelines \
   --path skills/claude.ai/vercel-deploy-claimable \
   --dest /Users/rmanaloto/dev/github/ray-manaloto/guilde-lite-tdd-sprint/skills
 
-python /Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+uv run --project backend python /Users/rmanaloto/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
   --repo vercel-labs/add-skill \
   --path skills/add-skill \
   --dest /Users/rmanaloto/dev/github/ray-manaloto/guilde-lite-tdd-sprint/skills

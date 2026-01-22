@@ -52,4 +52,4 @@ Implement `read_file`, `write_file`, `list_dir` tools that are scoped to a uniqu
     3.  Check if `timestamp_test.txt` exists there.
 
 ## Verification
-*   Run `python scripts/validate-recursive-fs.py`.
+*   Run `uv run --project backend python scripts/validate-recursive-fs.py`.

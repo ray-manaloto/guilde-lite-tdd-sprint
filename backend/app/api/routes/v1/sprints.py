@@ -1,14 +1,17 @@
 # ruff: noqa: I001 - Imports structured for Jinja2 template conditionals
 """Sprint routes."""
 
+import logging
+
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, BackgroundTasks, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 
 from app.api.deps import DBSession, SprintSvc
+from app.core.config import settings
 from app.db.models.sprint import Sprint, SprintStatus
 from app.schemas.sprint import (
     SprintCreate,
@@ -21,6 +24,7 @@ from app.schemas.sprint import (
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=Page[SprintRead])
@@ -35,8 +39,8 @@ async def list_sprints(
     return await paginate(db, query)
 
 
-from fastapi import APIRouter, status, BackgroundTasks
 from app.runners.phase_runner import PhaseRunner
+
 
 @router.post("", response_model=SprintRead, status_code=status.HTTP_201_CREATED)
 async def create_sprint(
@@ -44,11 +48,27 @@ async def create_sprint(
     sprint_service: SprintSvc,
     background_tasks: BackgroundTasks,
 ):
-    """Create a sprint and trigger automated phase runner."""
+    """Create a sprint."""
     sprint = await sprint_service.create(sprint_in)
     await sprint_service.db.commit() # Force commit so background task can see it
-    background_tasks.add_task(PhaseRunner.start, sprint.id)
     return sprint
+
+
+@router.post("/{sprint_id}/run", status_code=status.HTTP_202_ACCEPTED)
+async def run_sprint(
+    sprint_id: UUID,
+    sprint_service: SprintSvc,
+    background_tasks: BackgroundTasks,
+    mode: str | None = None,
+):
+    """Run the phase runner for a sprint."""
+    await sprint_service.get_by_id(sprint_id)
+    run_mode = (mode or settings.PHASE_RUNNER_MODE).lower()
+    if run_mode == "sync":
+        await PhaseRunner.start(sprint_id)
+        return {"status": "completed", "mode": run_mode}
+    background_tasks.add_task(PhaseRunner.start, sprint_id)
+    return {"status": "started", "mode": run_mode}
 
 
 @router.get("/{sprint_id}", response_model=SprintReadWithItems)

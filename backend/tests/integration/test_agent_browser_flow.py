@@ -4,6 +4,8 @@ import shutil
 import pytest
 from app.agents.assistant import AssistantAgent
 
+pytestmark = pytest.mark.integration
+
 @pytest.mark.anyio
 async def test_agent_browser_google_title_flow():
     """

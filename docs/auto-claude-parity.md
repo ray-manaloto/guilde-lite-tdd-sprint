@@ -110,6 +110,6 @@ Status legend:
   but it does not implement Auto-Claude's spec-driven planning, QA loop, worktree isolation, or
   merge automation.
 - Sprint planning UI is now available in the web app, but Kanban and agent terminals remain gaps.
-- PydanticAI Web UI is available for agent demos via CLI; it is not a replacement for Auto-Claude's desktop UX.
+- Legacy: PydanticAI Web UI is available for agent demos via CLI; it is not a replacement for Auto-Claude's desktop UX.
 - If full parity is required, the missing capabilities above represent substantial new feature
   work (not configuration changes).

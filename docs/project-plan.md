@@ -31,6 +31,8 @@
 - [x] Verify provider/model selection matches env + docs (Confirmed `gpt-4o-mini` usage)
 - [ ] Integration test matrix + coverage for auth/sprints/chat
 - [ ] CI: run backend tests + Playwright smoke
+- [ ] E2E: devctl restart + sprint interview -> hello world artifact validation + execution
+- [ ] Integration test requirements (source of truth): docs/requirements/integration-tests.md
 - [x] Install agent-browser + agent-skills (project scope)
 - [x] Integrate agent-browser tool (default on, allow all URLs)
 - [x] Add direct OpenAI + Anthropic SDK clients (response API) with smoke tests

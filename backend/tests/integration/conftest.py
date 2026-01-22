@@ -8,6 +8,19 @@ from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
+pytestmark = pytest.mark.integration
+
+_DISALLOWED_FIXTURES = {"monkeypatch", "mocker"}
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    disallowed = _DISALLOWED_FIXTURES.intersection(getattr(item, "fixturenames", []))
+    if disallowed:
+        names = ", ".join(sorted(disallowed))
+        raise pytest.UsageError(
+            f"Integration tests must not use mocks/patch fixtures: {names}"
+        )
+
 
 @pytest.fixture
 async def db_session() -> AsyncGenerator[AsyncSession, None]:

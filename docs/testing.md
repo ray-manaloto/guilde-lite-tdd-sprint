@@ -53,8 +53,11 @@ uv run pytest tests/api/test_health.py::test_health_check -v
 # Run only unit tests
 uv run pytest tests/unit/
 
-# Run only integration tests
+# Run only integration tests by path (legacy)
 uv run pytest tests/integration/
+
+# Run only integration tests by marker (preferred)
+uv run pytest -m integration
 
 # Run with verbose output
 uv run pytest -v
@@ -62,6 +65,15 @@ uv run pytest -v
 # Stop on first failure
 uv run pytest -x
 ```
+
+## Pytest Standards (PEP + modern pytest)
+
+- Follow PEP 8 for naming (`test_*.py`, `test_*` functions) and PEP 257 for
+  docstrings when they add clarity.
+- Use pytest markers for test intent. Integration tests must be explicitly
+  marked with `@pytest.mark.integration` and avoid mocks.
+- Keep integration coverage non-empty so `pytest -m integration` remains a
+  reliable gate (pytest exits with code 5 if zero tests are collected).
 
 ## Local Dev Services
 
@@ -170,9 +182,10 @@ bun run test:e2e
 bun run test:e2e:headed
 ```
 
-Chat streaming tests (PydanticAI WebSocket) are gated by an env flag to avoid
-LLM calls during standard runs. Enable them when the backend is configured with
-valid LLM credentials:
+Chat streaming tests (legacy PydanticAI WebSocket) are gated by an env flag to
+avoid LLM calls during standard runs. Enable them only until the Agents SDK
+websocket migration is complete and the backend is configured with valid LLM
+credentials:
 
 ```bash
 E2E_ALLOW_LLM=true bun run test:e2e
@@ -263,7 +276,7 @@ Notes:
 - If `ANTHROPIC_MODEL` starts with `anthropic:`, the prefix is stripped before the SDK call.
 - This script makes a paid API call.
 
-## PydanticAI OpenAI Models List
+## PydanticAI OpenAI Models List (Legacy)
 
 Use PydanticAI's OpenAI provider to list available models for the configured key.
 
@@ -276,7 +289,7 @@ Notes:
 - Reads `OPENAI_API_KEY` and `OPENAI_BASE_URL` from repo `.env` if not set in the shell.
 - Uses `pydantic_ai.providers.openai.OpenAIProvider` and its async client.
 
-## OpenAI Model Permutation Test
+## OpenAI Model Permutation Test (Legacy PydanticAI + SDK)
 
 Verify which OpenAI model string formats work across the OpenAI SDK and
 PydanticAI model classes.

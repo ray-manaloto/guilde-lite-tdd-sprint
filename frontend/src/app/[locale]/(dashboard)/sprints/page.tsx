@@ -377,6 +377,9 @@ export default function SprintsPage() {
       setDraftSprint({ spec_id: null, name: "", goal: "", status: "planned", start_date: "", end_date: "" });
       setSprints((prev) => [created, ...prev]);
       setSelectedSprintId(created.id);
+      void apiClient.post(`/sprints/${created.id}/run?mode=sync`).catch((err) => {
+        console.error("Failed to start sprint runner", err);
+      });
       setPlanningPrompt("");
       setPlanningQuestions([]);
       setPlanningAnswers([]);

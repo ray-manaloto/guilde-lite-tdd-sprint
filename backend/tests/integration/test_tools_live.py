@@ -7,10 +7,13 @@ from pydantic_ai import RunContext
 from unittest.mock import MagicMock
 
 # Skip all tests in this module unless RUN_LIVE_TESTS is set
-pytestmark = pytest.mark.skipif(
-    os.getenv("RUN_LIVE_TESTS") != "1",
-    reason="Skipping live integration tests. Set RUN_LIVE_TESTS=1 to run."
-)
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        os.getenv("RUN_LIVE_TESTS") != "1",
+        reason="Skipping live integration tests. Set RUN_LIVE_TESTS=1 to run.",
+    ),
+]
 
 @pytest.fixture
 def mock_run_context():

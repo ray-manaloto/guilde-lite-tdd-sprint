@@ -47,11 +47,13 @@ class AssistantAgent:
         temperature: float | None = None,
         system_prompt: str | None = None,
         llm_provider: str | None = None,
+        allow_cli_tools: bool | None = None,
     ):
         self.llm_provider = (llm_provider or settings.LLM_PROVIDER).lower()
         self.model_name = model_name or settings.model_for_provider(self.llm_provider)
         self.temperature = temperature or settings.AI_TEMPERATURE
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
+        self.allow_cli_tools = True if allow_cli_tools is None else allow_cli_tools
         self._agent: Agent[Deps, str] | None = None
 
     def _create_agent(self) -> Agent[Deps, str]:
@@ -155,15 +157,17 @@ class AssistantAgent:
                 """List files in your session workspace."""
                 return list_dir(ctx, path)
 
-        @agent.tool
-        async def call_codex_agent(ctx: RunContext[Deps], prompt: str) -> str:
-            """Delegate a task to the Codex CLI agent."""
-            return run_codex_agent(ctx, prompt)
+        if self.allow_cli_tools:
 
-        @agent.tool
-        async def call_claude_agent(ctx: RunContext[Deps], prompt: str) -> str:
-            """Delegate a task to the Claude Code CLI agent."""
-            return run_claude_agent(ctx, prompt)
+            @agent.tool
+            async def call_codex_agent(ctx: RunContext[Deps], prompt: str) -> str:
+                """Delegate a task to the Codex CLI agent."""
+                return run_codex_agent(ctx, prompt)
+
+            @agent.tool
+            async def call_claude_agent(ctx: RunContext[Deps], prompt: str) -> str:
+                """Delegate a task to the Claude Code CLI agent."""
+                return run_claude_agent(ctx, prompt)
 
     @property
     def agent(self) -> Agent[Deps, str]:

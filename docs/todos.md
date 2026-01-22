@@ -8,6 +8,8 @@
 - [ ] Define integration test matrix for critical endpoints (auth, sprints, chat, tdd runs).
 - [ ] Add integration tests for sprint + chat flows in backend.
 - [ ] Add tests for spec workflow (complexity + API endpoints).
+- [ ] Add agent-browser sprint interview E2E: restart services via `scripts/devctl.sh`, run sprint interview to build a hello-world Python script, validate file exists under `AUTOCODE_ARTIFACTS_DIR`, and verify execution output.
+- [ ] Integration test requirements (source of truth): docs/requirements/integration-tests.md
 - [ ] Wire CI to run backend tests + Playwright smoke (LLM-gated).
 - [ ] Add validation checklist to PR template or docs.
 - [x] Validate Logfire token with logfire-mcp workflow.

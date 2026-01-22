@@ -13,6 +13,7 @@ from app.db.models.agent_run import (
 )
 from app.db.models.sprint import Sprint, SprintItem
 from app.db.models.spec import Spec
+from app.db.models.conductor_file import ConductorFile
 
 __all__ = [
     "User",
@@ -27,4 +28,5 @@ __all__ = [
     "Sprint",
     "SprintItem",
     "Spec",
+    "ConductorFile",
 ]

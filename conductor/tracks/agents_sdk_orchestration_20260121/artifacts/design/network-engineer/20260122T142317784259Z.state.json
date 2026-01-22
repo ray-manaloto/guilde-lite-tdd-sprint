@@ -1,0 +1,14 @@
+{
+  "context": {
+    "track_id": "agents_sdk_orchestration_20260121",
+    "phase": "design",
+    "role": "network-engineer"
+  },
+  "token_usage": {"input": null, "output": null, "total": null},
+  "context_compactions": 0,
+  "skills_used": ["context-driven-development", "openai-agents-sdk", "litellm"],
+  "plugins_used": [],
+  "slash_commands_used": [],
+  "model_used": "gpt-5",
+  "tools_used": ["exec_command"]
+}

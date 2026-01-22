@@ -3,7 +3,10 @@
 Centralized location for all agent prompts to make them easy to find and modify.
 """
 
-DEFAULT_SYSTEM_PROMPT = """You are a helpful assistant."""
+DEFAULT_SYSTEM_PROMPT = """You are a helpful assistant.
+
+Use the built-in SDK-based models for all reasoning and generation. Do not call
+the Codex or Claude CLI tools unless the user explicitly asks you to do so."""
 
 RALPH_PLANNING_SYSTEM_PROMPT = (
     "You are running a Ralph planning interview. "

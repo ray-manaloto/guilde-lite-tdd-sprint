@@ -46,8 +46,8 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "python3 is required to install AI research skills." >&2
+if ! command -v uv >/dev/null 2>&1; then
+  echo "uv is required to install AI research skills." >&2
   exit 1
 fi
 
@@ -62,7 +62,8 @@ if [[ ! -f "${marketplace_json}" ]]; then
   exit 1
 fi
 
-ROOT_DIR="${ROOT_DIR}" TMPDIR="${tmpdir}" FORCE="${FORCE}" REF="${REF}" python3 - <<'PY'
+ROOT_DIR="${ROOT_DIR}" TMPDIR="${tmpdir}" FORCE="${FORCE}" REF="${REF}" \
+  uv run --directory "${ROOT_DIR}/backend" python - <<'PY'
 import json
 import os
 import shutil

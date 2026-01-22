@@ -10,12 +10,13 @@ if [[ ! -f "${MANIFEST_PATH}" ]]; then
   exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "python3 is required to validate AI research skills." >&2
+if ! command -v uv >/dev/null 2>&1; then
+  echo "uv is required to validate AI research skills." >&2
   exit 1
 fi
 
-ROOT_DIR="${ROOT_DIR}" MANIFEST_PATH="${MANIFEST_PATH}" python3 - <<'PY'
+ROOT_DIR="${ROOT_DIR}" MANIFEST_PATH="${MANIFEST_PATH}" \
+  uv run --directory "${ROOT_DIR}/backend" python - <<'PY'
 import json
 import os
 from pathlib import Path

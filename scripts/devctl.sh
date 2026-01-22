@@ -16,7 +16,7 @@ DEVCTL_MODE="${DEVCTL_MODE:-}"
 
 frontend_cmd="${FRONTEND_CMD}"
 if [[ -z "${frontend_cmd}" ]]; then
-  frontend_cmd="node ./node_modules/next/dist/bin/next dev -p ${FRONTEND_PORT}"
+  frontend_cmd="bunx next dev -p ${FRONTEND_PORT}"
 fi
 
 declare -a SERVICES=("backend" "agent-web" "frontend")
@@ -35,7 +35,7 @@ get_service_cmd() {
   case "$1" in
     "backend") echo "uv run uvicorn app.main:app --reload --port ${BACKEND_PORT}" ;;
     "agent-web") echo "uv run guilde_lite_tdd_sprint agent web --port ${AGENT_WEB_PORT}" ;;
-    "frontend") echo "node ./node_modules/next/dist/bin/next dev -p ${FRONTEND_PORT}" ;;
+    "frontend") echo "bunx next dev -p ${FRONTEND_PORT}" ;;
   esac
 }
 

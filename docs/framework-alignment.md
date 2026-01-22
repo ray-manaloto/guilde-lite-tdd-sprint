@@ -8,12 +8,14 @@ This summarizes how the port aligns with the referenced frameworks/templates.
 | --- | --- | --- | --- |
 | vstorm-co/full-stack-fastapi-nextjs-llm-template | Aligned | `backend/`, `frontend/`, `README.md` | Base template structure and CLI are retained. |
 | vstorm-co/pydantic-deepagents | Not integrated | `frontend/README.md` | Referenced only; no deepagents code in backend. |
-| pydantic/pydantic-ai | Integrated | `backend/app/agents/assistant.py`, `backend/app/api/routes/v1/agent.py` | PydanticAI agent + streaming used. |
+| pydantic/pydantic-ai | Legacy (migration in progress) | `backend/app/agents/assistant.py`, `backend/app/api/routes/v1/agent.py` | Still used by current WS flow; do not add new usage. |
 | AndyMik90/Auto-Claude | Partial parity | `docs/auto-claude-parity.md` | Spec runner, QA loop, worktrees still missing or in progress. |
 
 ## Notes
 
-- Deepagents integration is a future decision; currently we rely on PydanticAI.
+- Deepagents integration is a future decision.
+- PydanticAI remains in place until the Agents SDK migration completes; avoid
+  adding new PydanticAI usage in orchestration/planning.
 - Auto-Claude parity remains an ongoing roadmap item.
 - Upstream PydanticAI version pins for the referenced frameworks are summarized below.
 

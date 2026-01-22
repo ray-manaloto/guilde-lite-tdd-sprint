@@ -2,9 +2,35 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
 
+
+const envFiles = [
+    path.resolve(process.cwd(), ".env"),
+    path.resolve(process.cwd(), "../.env"),
+    path.resolve(process.cwd(), "../backend/.env"),
+];
+
+const loadEnvFile = (filePath: string) => {
+    if (!fs.existsSync(filePath)) return {};
+    const output: Record<string, string> = {};
+    for (const raw of fs.readFileSync(filePath, "utf-8").split(/\r?\n/)) {
+        const line = raw.trim();
+        if (!line || line.startsWith("#") || !line.includes("=")) continue;
+        const [key, ...rest] = line.split("=");
+        output[key] = rest.join("=").replace(/^['"]|['"]$/g, "");
+    }
+    return output;
+};
+
+const fileEnv = envFiles.reduce<Record<string, string>>(
+    (acc, filePath) => ({ ...acc, ...loadEnvFile(filePath) }),
+    {}
+);
+
+const resolveEnv = (key: string) => process.env[key] ?? fileEnv[key];
 
 test.use({ storageState: '.playwright/.auth/user.json' });
 
@@ -16,8 +42,11 @@ test('Project Build & Run Flow', async ({ page }) => {
     page.on('pageerror', err => console.log(`BROWSER ERROR: ${err.message}`));
 
     // --- Config ---
-    // This must match backend/app/core/config.py AUTOCODE_ARTIFACTS_DIR
-    const ARTIFACTS_ROOT = "/Users/ray.manaloto.guilde/dev/tmp/guilde-lite-tdd-sprint-filesystem";
+    const ARTIFACTS_ROOT = resolveEnv("AUTOCODE_ARTIFACTS_DIR");
+    if (!ARTIFACTS_ROOT) {
+        throw new Error("AUTOCODE_ARTIFACTS_DIR not found in environment or .env files.");
+    }
+    const backendDir = path.resolve(process.cwd(), "../backend");
 
     // 1. Navigate to Chat (User is already logged in via storageState)
     await page.goto('/chat');
@@ -67,9 +96,13 @@ test('Project Build & Run Flow', async ({ page }) => {
     }
 
     // 7. Execution (Terminal Side)
-    console.log(`Executing: python3 ${filePath}`);
+    console.log(`Executing: uv run --directory ${backendDir} python ${filePath}`);
     try {
-        const stdout = execSync(`python3 "${filePath}"`).toString().trim();
+        const stdout = execFileSync(
+            "uv",
+            ["run", "--directory", backendDir, "python", filePath],
+            { encoding: "utf-8" }
+        ).trim();
         console.log(`Script Output: ${stdout}`);
         expect(stdout).toBe(expectedOutput);
     } catch (e) {

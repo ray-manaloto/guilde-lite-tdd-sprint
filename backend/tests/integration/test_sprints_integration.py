@@ -10,6 +10,8 @@ from app.db.models.sprint import SprintItemStatus, SprintStatus
 from app.schemas.sprint import SprintCreate, SprintItemCreate, SprintUpdate
 from app.services.sprint import SprintService
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.mark.anyio
 async def test_sprint_lifecycle(db_session):

@@ -15,6 +15,7 @@ from app.repositories import agent_run as agent_run_repo
 from app.repositories import sprint as sprint_repo
 from app.repositories import sprint_item as sprint_item_repo
 from app.repositories import spec as spec_repo
+from app.repositories import conductor_files as conductor_file_repo
 
 __all__ = [
     "BaseRepository",
@@ -26,4 +27,5 @@ __all__ = [
     "sprint_repo",
     "sprint_item_repo",
     "spec_repo",
+    "conductor_file_repo",
 ]

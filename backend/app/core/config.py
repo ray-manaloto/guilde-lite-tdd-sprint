@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     LOGFIRE_SEND_TO_LOGFIRE: bool | Literal["if-token-present"] = "if-token-present"
     LOGFIRE_TRACE_URL_TEMPLATE: str | None = None
     TELEMETRY_FILE: str | None = None
+    CONDUCTOR_ROOT: Path = Path(__file__).resolve().parents[3] / "conductor"
 
     @field_validator("LOGFIRE_SEND_TO_LOGFIRE", mode="before")
     @classmethod
@@ -186,6 +187,7 @@ class Settings(BaseSettings):
     HTTP_FETCH_TIMEOUT_SECONDS: int = 15
     HTTP_FETCH_MAX_CHARS: int = 12000
     DUAL_SUBAGENT_ENABLED: bool = True
+    PHASE_RUNNER_MODE: Literal["async", "sync"] = "async"
     AGENT_FS_ENABLED: bool = True
     AUTOCODE_ARTIFACTS_DIR: Path | None = Path("/Users/ray.manaloto.guilde/dev/tmp/guilde-lite-tdd-sprint-filesystem")
 

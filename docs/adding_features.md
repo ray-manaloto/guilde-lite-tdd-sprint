@@ -86,7 +86,11 @@ def my_command(name: str):
 
 Run with: `uv run guilde_lite_tdd_sprint cmd my-command --name test`
 
-## Adding an AI Agent Tool (PydanticAI)
+## Adding an AI Agent Tool (Legacy PydanticAI)
+
+Use this only for existing PydanticAI-backed flows. New orchestration and
+planning work should target the OpenAI Agents SDK (with LiteLLM for Anthropic)
+and avoid adding new PydanticAI usage until migration is complete.
 
 ```python
 # app/agents/assistant.py

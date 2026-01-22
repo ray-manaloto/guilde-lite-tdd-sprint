@@ -5,11 +5,14 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from datetime import datetime
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
 from app.agents.assistant import AssistantAgent
+from app.agents.deps import Deps
 from app.agents.prompts import JUDGE_SYSTEM_PROMPT
 from app.core.config import settings
 from app.core.telemetry import telemetry_span
@@ -53,7 +56,15 @@ class AgentTddService:
         user_id: UUID | None,
     ) -> AgentTddRunResult:
         settings.validate_dual_subagent_settings()
+        workspace_ref = data.workspace_ref
+        if not workspace_ref and settings.AUTOCODE_ARTIFACTS_DIR:
+            workspace_ref = self._init_workspace()
+            if workspace_ref:
+                data = data.model_copy(update={"workspace_ref": workspace_ref})
         run = await self._resolve_run(data, user_id=user_id)
+        if not workspace_ref and run.workspace_ref:
+            workspace_ref = run.workspace_ref
+            data = data.model_copy(update={"workspace_ref": workspace_ref})
         run = await self.run_service.update_run(run.id, AgentRunUpdate(status="running"))
 
         existing_checkpoints, _ = await self.run_service.list_checkpoints(run.id)
@@ -135,6 +146,16 @@ class AgentTddService:
             checkpoints=checkpoints,
             errors=subagent_errors,
         )
+
+    @staticmethod
+    def _init_workspace() -> str | None:
+        """Create a workspace directory and return its path."""
+        if not settings.AUTOCODE_ARTIFACTS_DIR:
+            return None
+        timestamp = datetime.now().strftime("%Y-%m-%dT%H%M%S.%f")
+        session_path = settings.AUTOCODE_ARTIFACTS_DIR / timestamp
+        session_path.mkdir(parents=True, exist_ok=True)
+        return str(session_path)
 
     async def _resolve_run(
         self,
@@ -229,6 +250,7 @@ class AgentTddService:
             temperature=cfg.temperature,
             system_prompt=cfg.system_prompt,
             llm_provider=cfg.provider,
+            allow_cli_tools=bool(data.metadata.get("allow_cli_tools", True)),
         )
         tool_calls: dict[str, Any] = {}
         metrics: dict[str, Any] = {}
@@ -241,7 +263,12 @@ class AgentTddService:
             model_name=model_name,
         ) as (trace_id, span_id):
             try:
-                output, tool_events, _ = await agent.run(data.message, data.history)
+                deps = None
+                if data.workspace_ref:
+                    session_dir = Path(data.workspace_ref)
+                    session_dir.mkdir(parents=True, exist_ok=True)
+                    deps = Deps(session_dir=session_dir)
+                output, tool_events, _ = await agent.run(data.message, data.history, deps=deps)
                 tool_calls = self._serialize_tool_events(tool_events)
                 metrics = {
                     "duration_ms": int((time.monotonic() - started_at) * 1000),

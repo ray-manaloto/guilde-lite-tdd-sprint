@@ -106,6 +106,7 @@ async def _run_planning_agent(
         system_prompt=RALPH_PLANNING_SYSTEM_PROMPT,
         llm_provider=provider,
         temperature=0.2,
+        allow_cli_tools=False,
     )
 
     questions: list[dict[str, str]] = []

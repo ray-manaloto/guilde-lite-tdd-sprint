@@ -35,7 +35,7 @@ Validate the internal execution via Logfire telemetry.
     *   **Assert:** At least one span returned.
 
 ### 3. Execution
-Run `python scripts/validate-recursive-flow.py`.
+Run `uv run --project backend python scripts/validate-recursive-flow.py`.
 
 ## Pre-requisites
 *   Frontend running on `:3000`.
