@@ -1,0 +1,24 @@
+{
+  "context": {
+    "track_id": "agentic_sdlc_enhancements_20260122",
+    "phase": "design",
+    "role": "documentation-engineer"
+  },
+  "token_usage": {
+    "input": null,
+    "output": null,
+    "total": null
+  },
+  "context_compactions": 0,
+  "skills_used": [
+    "track-management",
+    "executing-plans"
+  ],
+  "plugins_used": [],
+  "slash_commands_used": [],
+  "model_used": "o3-deep-research",
+  "tools_used": [],
+  "sources": [
+    "conductor/tracks/agentic_sdlc_enhancements_20260122/research.md"
+  ]
+}

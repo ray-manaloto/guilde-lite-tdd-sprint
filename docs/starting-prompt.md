@@ -21,6 +21,7 @@ to eliminate vagueness.
 - https://www.anthropic.com/engineering/code-execution-with-mcp
 - https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills
 - https://github.com/ClaytonFarr/ralph-playbook
+- https://cookbook.openai.com/articles/codex_exec_plans
 
 ## Project Goal (Immediate)
 

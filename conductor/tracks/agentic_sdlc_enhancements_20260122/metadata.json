@@ -1,0 +1,34 @@
+{
+  "id": "agentic_sdlc_enhancements_20260122",
+  "title": "Agentic SDLC Enhancements",
+  "type": "chore",
+  "status": "in_progress",
+  "priority": "high",
+  "created": "2026-01-22T17:10:00Z",
+  "updated": "2026-01-22T22:40:03Z",
+  "started": "2026-01-22T18:42:58Z",
+  "completed": null,
+  "assignee": "@team",
+  "phases": {
+    "total": 5,
+    "current": 0,
+    "completed": 0
+  },
+  "tasks": {
+    "total": 0,
+    "completed": 0,
+    "in_progress": 0,
+    "pending": 0
+  },
+  "checkpoints": [],
+  "dependencies": [
+    "agents_sdk_orchestration_20260121"
+  ],
+  "tags": [
+    "sdlc",
+    "process",
+    "automation",
+    "qa",
+    "ux"
+  ]
+}

@@ -9,9 +9,23 @@ This project references the following external resources and related projects.
 - https://github.com/pydantic/pydantic-ai
 - https://github.com/AndyMik90/Auto-Claude
 
+## Agentic Workflow Kits
+
+- https://github.com/affaan-m/everything-claude-code
+- Internal review: `docs/everything-claude-code-review.md`
+
+## Codex Planning
+
+- https://cookbook.openai.com/articles/codex_exec_plans
+
+## Cloud Subagents (AWS)
+
+- https://aws.amazon.com/solutions/guidance/multi-agent-orchestration-on-aws/
+
 ## Pydantic AI Web UI
 
 - https://ai.pydantic.dev/web/
+  - Legacy reference only; not used for orchestration in this repo.
 
 ## Testing Automation & Skills
 

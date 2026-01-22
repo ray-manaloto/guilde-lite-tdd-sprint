@@ -1,0 +1,25 @@
+{
+  "context": {
+    "track_id": "agentic_sdlc_enhancements_20260122",
+    "phase": "design",
+    "role": "hook-strategy"
+  },
+  "token_usage": {
+    "input": null,
+    "output": null,
+    "total": null
+  },
+  "context_compactions": 0,
+  "skills_used": [
+    "track-management",
+    "executing-plans"
+  ],
+  "plugins_used": [],
+  "slash_commands_used": [],
+  "model_used": "manual",
+  "tools_used": [],
+  "sources": [
+    "docs/conductor-alignment.md",
+    "conductor/tracks/agentic_sdlc_enhancements_20260122/research.md"
+  ]
+}
