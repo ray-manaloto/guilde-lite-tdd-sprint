@@ -26,7 +26,8 @@ async def test_phase_runner_start_success():
          patch("app.runners.phase_runner.SpecService") as mock_spec_service_cls, \
          patch("app.runners.phase_runner.WorkflowTracker") as mock_tracker_cls, \
          patch("app.runners.phase_runner.settings") as mock_settings, \
-         patch("app.runners.phase_runner.manager") as mock_manager:
+         patch("app.runners.phase_runner.manager") as mock_manager, \
+         patch.object(PhaseRunner, "evaluate_phase_output", new_callable=AsyncMock) as mock_evaluate:
 
         # Mock DB context
         mock_db = AsyncMock()
@@ -60,6 +61,9 @@ async def test_phase_runner_start_success():
         mock_manager.broadcast_to_room = AsyncMock()
         mock_manager.broadcast_legacy_status = AsyncMock()
         mock_manager.broadcast_event = AsyncMock()
+
+        # Mock evaluators to return empty list (all pass)
+        mock_evaluate.return_value = []
 
         # Mock AgentTddService
         mock_agent_tdd_service = mock_agent_tdd_service_cls.return_value

@@ -158,7 +158,29 @@ When a sprint is created, the `PhaseRunner` background task executes automatical
 - **Input**: Code files
 - **Action**: Run tests using `run_tests` tool, verify execution
 - **AI Calls**: Dual-provider → Judge selects best verification result
+- **Evaluators**: Deterministic evaluators (Ruff, pytest, type check) validate output
 - **Output**: `VERIFICATION_SUCCESS` or `VERIFICATION_FAILURE`
+
+### Evaluator-Optimizer Integration
+
+Each phase uses the **Evaluator-Optimizer pattern** for structured validation:
+
+1. **Evaluators Run** after phase completion:
+   - RuffLintEvaluator (global, all phases)
+   - PytestEvaluator (verification, coding phases)
+   - TypeCheckEvaluator (coding phase)
+
+2. **FeedbackMemory** tracks retry history:
+   - Attempt 1: Original task only
+   - Attempt 2: Task + previous feedback
+   - Attempt 3: Task + full history + detailed analysis
+
+3. **Pass/Retry Decision**:
+   - All evaluators pass → Proceed to next phase
+   - Any evaluator fails → Retry with accumulated feedback
+   - 3 failures → Escalate to human review
+
+See `backend/app/runners/evaluators/` for implementation.
 
 ### Completion Criteria
 - Sprint status → `COMPLETED` when `VERIFICATION_SUCCESS` is found

@@ -20,11 +20,22 @@ This project uses the **SDLC Orchestration Plugin** for role-based, parallelized
 
 | Phase | Agents | Purpose | Parallel |
 |-------|--------|---------|----------|
-| **1. Requirements** | CEO/Stakeholder, Business Analyst, Research Scientist | Define business goals, user stories, technical feasibility | Yes |
-| **2. Design** | Software Architect, Data Scientist, Network Engineer | System design, API contracts, infrastructure | Yes |
-| **3. Implementation** | Staff/Senior/Junior Engineer, DevOps | Build features, CI/CD setup | Yes |
-| **4. Quality** | QA Automation, Code Reviewer, Performance Engineer | Testing, reviews, optimization | Yes |
+| **1. Requirements** | CEO/Stakeholder, Business Analyst, Research Scientist, UX Researcher | Define business goals, user stories, technical feasibility, user research | Yes |
+| **2. Design** | Software Architect, Data Scientist, Network Engineer, UI Designer, Accessibility Specialist, Frontend Architect | System design, API contracts, infrastructure, UI specs, a11y | Yes |
+| **3. Implementation** | Staff/Senior/Junior Engineer, DevOps, Design System Engineer | Build features, CI/CD setup, design tokens | Yes |
+| **4. Quality** | QA Automation, Code Reviewer, Performance Engineer, Accessibility Specialist | Testing, reviews, optimization, a11y audit | Yes |
 | **5. Release** | CI/CD Engineer, Canary User, Documentation Engineer | Deploy, validate, document | Sequential |
+
+### Evaluator-Optimizer Integration
+
+After each phase, the **Evaluator-Optimizer pattern** validates outputs:
+
+1. **Deterministic Evaluators** (fast): Ruff lint, pytest, type check
+2. **LLM Evaluators** (deep): Quality assessment, completeness
+3. **FeedbackMemory**: Accumulates context across retry attempts
+4. **Escalation**: After 3 failures, escalate to human review
+
+See `.claude/plugins/sdlc-orchestration/docs/evaluator-optimizer.md` for details.
 
 ### Using SDLC Agents
 
@@ -38,7 +49,7 @@ This project uses the **SDLC Orchestration Plugin** for role-based, parallelized
 /sdlc-orchestration:role <role> "task description"
 ```
 
-**Available roles:** `ceo`, `pm`, `architect`, `ba`, `research`, `staff`, `senior`, `junior`, `qa`, `reviewer`, `devops`, `network`, `cicd`, `canary`, `docs`, `perf`, `data`
+**Available roles:** `ceo`, `pm`, `architect`, `ba`, `research`, `staff`, `senior`, `junior`, `qa`, `reviewer`, `devops`, `network`, `cicd`, `canary`, `docs`, `perf`, `data`, `ui-designer`, `ux-researcher`, `accessibility-specialist`, `frontend-architect`, `design-system-engineer`
 
 ### Phase-to-TDD Mapping
 

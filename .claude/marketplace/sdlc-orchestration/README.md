@@ -4,13 +4,14 @@ Parallelized software development lifecycle with role-based agents working in pa
 
 ## Overview
 
-This plugin implements a complete software development lifecycle using 17 specialized role-based agents that work in parallel within each phase. Inspired by the [wshobson/agents](https://github.com/wshobson/agents) multi-agent workflow patterns.
+This plugin implements a complete software development lifecycle using 22 specialized role-based agents that work in parallel within each phase. Inspired by the [wshobson/agents](https://github.com/wshobson/agents) multi-agent workflow patterns and enhanced with the [Anthropic Evaluator-Optimizer pattern](https://github.com/anthropics/anthropic-cookbook).
 
 ## Features
 
-- **17 Role-Based Agents** - From CEO to Junior Engineer
+- **22 Role-Based Agents** - From CEO to Junior Engineer, including UI/UX specialists
 - **5 SDLC Phases** - Requirements, Design, Implementation, Quality, Release
 - **Parallel Execution** - Agents within each phase run concurrently
+- **Evaluator-Optimizer Pattern** - Structured evaluation with feedback-driven retry loops
 - **Model Optimization** - Opus for critical decisions, Sonnet for complex tasks, Haiku for fast operations
 - **Workflow Enforcement** - Hooks ensure proper SDLC discipline
 
@@ -57,6 +58,15 @@ This plugin implements a complete software development lifecycle using 17 specia
 | Canary User | haiku | Beta testing, user feedback |
 | Documentation Engineer | sonnet | User guides, API docs |
 
+### UI/UX Layer
+| Role | Model | Responsibilities |
+|------|-------|-----------------|
+| UI Designer | sonnet | Visual design, component styling, design systems |
+| UX Researcher | sonnet | User research, usability testing, journey mapping |
+| Accessibility Specialist | sonnet | WCAG compliance, a11y testing, inclusive design |
+| Frontend Architect | opus | Frontend architecture, performance, state management |
+| Design System Engineer | sonnet | Component libraries, design tokens, documentation |
+
 ## Commands
 
 ### Full Feature Workflow
@@ -91,12 +101,16 @@ Executes all 5 phases with parallel agent coordination.
 │  Phase 1: REQUIREMENTS (Parallel)                            │
 │  ├── CEO/Stakeholder  → Business goals                      │
 │  ├── Business Analyst → User stories                        │
-│  └── Research Scientist → Feasibility                       │
+│  ├── Research Scientist → Feasibility                       │
+│  └── UX Researcher → User research (if UI feature)          │
 │                         ↓                                    │
 │  Phase 2: DESIGN (Parallel)                                  │
 │  ├── Software Architect → System design                     │
 │  ├── Data Scientist → Data models                           │
-│  └── Network Engineer → Infrastructure                      │
+│  ├── Network Engineer → Infrastructure                      │
+│  ├── UI Designer → Visual design (if UI feature)            │
+│  ├── Frontend Architect → Frontend architecture             │
+│  └── Design System Engineer → Component specs               │
 │                         ↓                                    │
 │  Phase 3: IMPLEMENT (Parallel by Layer)                      │
 │  ├── Staff Engineer → Core architecture                     │
@@ -107,13 +121,20 @@ Executes all 5 phases with parallel agent coordination.
 │  Phase 4: QUALITY (Parallel)                                 │
 │  ├── QA Automation → Test suites                            │
 │  ├── Code Reviewer → PR reviews                             │
-│  └── Performance Engineer → Load tests                      │
+│  ├── Performance Engineer → Load tests                      │
+│  └── Accessibility Specialist → A11y testing                │
 │                         ↓                                    │
 │  Phase 5: RELEASE (Sequential)                               │
 │  ├── CI/CD Engineer → Build & deploy                        │
 │  ├── Canary User → Beta testing                             │
 │  ├── Documentation Engineer → Docs                          │
 │  └── DevOps Engineer → Production                           │
+│                                                              │
+│  [Evaluator-Optimizer Loop]                                  │
+│  After each phase, evaluators validate output:               │
+│  ├── Deterministic: Ruff lint, pytest, type check           │
+│  └── LLM-based: Quality assessment, completeness            │
+│  Failed evaluations trigger retry with feedback memory       │
 │                                                              │
 └──────────────────────────────────────────────────────────────┘
 ```

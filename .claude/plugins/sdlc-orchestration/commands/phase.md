@@ -63,13 +63,16 @@ Gather and document all requirements with parallel agents.
 | CEO/Stakeholder | `ceo-stakeholder` | Business goals, ROI, priority |
 | Business Analyst | `business-analyst` | User stories, acceptance criteria |
 | Research Scientist | `research-scientist` | Technical feasibility |
+| UX Researcher | `ux-researcher` | User research, personas (if UI feature) |
 
 **Parallel Execution Pattern:**
 ```python
-# Invoke these 3 Task tools in ONE message:
+# Invoke these 3-4 Task tools in ONE message:
 Task(subagent_type="sdlc-orchestration:ceo-stakeholder", prompt="Define business goals for: {feature}")
 Task(subagent_type="sdlc-orchestration:business-analyst", prompt="Create user stories for: {feature}")
 Task(subagent_type="sdlc-orchestration:research-scientist", prompt="Evaluate feasibility for: {feature}")
+# Optional for UI features:
+Task(subagent_type="sdlc-orchestration:ux-researcher", prompt="Research user needs for: {feature}")
 ```
 
 **Output:**
@@ -92,13 +95,20 @@ Create technical design with parallel architecture agents.
 | Software Architect | `software-architect` | System design, API contracts |
 | Data Scientist | `data-scientist` | Data models, ML requirements |
 | Network Engineer | `network-engineer` | Infrastructure, security |
+| UI Designer | `ui-designer` | Visual design, component styling (if UI feature) |
+| Frontend Architect | `frontend-architect` | Frontend architecture, state management |
+| Design System Engineer | `design-system-engineer` | Component specs, design tokens |
 
 **Parallel Execution Pattern:**
 ```python
-# Invoke these 3 Task tools in ONE message:
+# Invoke these 3-6 Task tools in ONE message:
 Task(subagent_type="sdlc-orchestration:software-architect", prompt="Design system architecture for: {feature}")
 Task(subagent_type="sdlc-orchestration:data-scientist", prompt="Define data models for: {feature}")
 Task(subagent_type="sdlc-orchestration:network-engineer", prompt="Plan infrastructure for: {feature}")
+# Optional for UI features:
+Task(subagent_type="sdlc-orchestration:ui-designer", prompt="Create visual design for: {feature}")
+Task(subagent_type="sdlc-orchestration:frontend-architect", prompt="Design frontend architecture for: {feature}")
+Task(subagent_type="sdlc-orchestration:design-system-engineer", prompt="Specify components for: {feature}")
 ```
 
 **Output:**
@@ -154,13 +164,16 @@ Validate quality with parallel testing and review agents.
 | QA Automation | `qa-automation` | Test suites, coverage |
 | Code Reviewer | `code-reviewer` | PR reviews, standards |
 | Performance Engineer | `performance-engineer` | Load tests, optimization |
+| Accessibility Specialist | `accessibility-specialist` | WCAG compliance, a11y testing (if UI feature) |
 
 **Parallel Execution Pattern:**
 ```python
-# Invoke these 3 Task tools in ONE message:
+# Invoke these 3-4 Task tools in ONE message:
 Task(subagent_type="sdlc-orchestration:qa-automation", prompt="Create and run test suite for: {feature}")
 Task(subagent_type="sdlc-orchestration:code-reviewer", prompt="Review implementation of: {feature}")
 Task(subagent_type="sdlc-orchestration:performance-engineer", prompt="Performance test: {feature}")
+# Optional for UI features:
+Task(subagent_type="sdlc-orchestration:accessibility-specialist", prompt="Audit accessibility for: {feature}")
 ```
 
 **Output:**
