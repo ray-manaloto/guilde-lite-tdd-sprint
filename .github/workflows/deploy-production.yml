@@ -308,11 +308,54 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.PRODUCTION_API_URL }}
 
+  run-migrations:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: [build-backend, validate]
+    if: ${{ always() && needs.build-backend.result == 'success' }}
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --directory backend --dev
+
+      - name: Run database migrations
+        run: uv run --directory backend alembic upgrade head
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+
+      - name: Verify migration status
+        run: uv run --directory backend alembic current
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend, validate]
-    if: ${{ always() && needs.build-backend.result == 'success' }}
+    needs: [build-backend, build-frontend, validate, run-migrations]
+    if: ${{ always() && needs.build-backend.result == 'success' && needs.run-migrations.result == 'success' }}
     environment:
       name: production
       url: ${{ vars.PRODUCTION_URL }}

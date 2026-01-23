@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Cookie, Query, WebSocket, WebSocketDisconnect
 from pydantic_ai import (
     Agent,
     FinalResultEvent,
@@ -27,10 +27,12 @@ from app.agents.assistant import get_agent
 from app.agents.deps import Deps
 from app.core.config import settings
 from app.core.logfire_links import build_logfire_payload
+from app.core.security import verify_token
 from app.core.telemetry import get_trace_context
 from app.db.session import get_db_context
 from app.schemas.agent_tdd import AgentTddJudgeConfig, AgentTddRunCreate, AgentTddSubagentConfig
 from app.services.agent_tdd import AgentTddService
+from app.services.user import UserService
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +110,14 @@ def resolve_candidate_trace_id(candidate) -> str | None:
 @router.websocket("/ws/agent")
 async def agent_websocket(
     websocket: WebSocket,
+    token: str | None = Query(None, alias="token"),
+    access_token: str | None = Cookie(None),
 ) -> None:
     """WebSocket endpoint for AI agent with full event streaming.
+
+    Requires authentication via:
+    - Query parameter: ws://...?token=<jwt>
+    - Cookie: access_token cookie (set by HTTP login)
 
     Uses PydanticAI iter() to stream all agent events including:
     - user_prompt: When user input is received
@@ -128,6 +136,40 @@ async def agent_websocket(
         "history": [{"role": "user|assistant|system", "content": "..."}]
     }
     """
+    from uuid import UUID
+
+    # Authenticate the WebSocket connection
+    auth_token = token or access_token
+
+    if not auth_token:
+        await websocket.close(code=4001, reason="Authentication required")
+        return
+
+    payload = verify_token(auth_token)
+    if payload is None:
+        await websocket.close(code=4001, reason="Invalid or expired token")
+        return
+
+    if payload.get("type") != "access":
+        await websocket.close(code=4001, reason="Invalid token type")
+        return
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        await websocket.close(code=4001, reason="Invalid token payload")
+        return
+
+    # Validate user exists and is active
+    try:
+        async with get_db_context() as db:
+            user_service = UserService(db)
+            user = await user_service.get_by_id(UUID(user_id))
+            if not user.is_active:
+                await websocket.close(code=4001, reason="User account is disabled")
+                return
+    except Exception:
+        await websocket.close(code=4001, reason="Authentication failed")
+        return
 
     await manager.connect(websocket)
 

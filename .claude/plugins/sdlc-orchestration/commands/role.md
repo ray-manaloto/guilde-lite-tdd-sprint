@@ -2,7 +2,7 @@
 name: role
 description: |
   Invoke a specific SDLC role agent directly for targeted tasks.
-  Available roles: ceo, pm, architect, ba, research, staff, senior, junior, qa, reviewer, devops, network, cicd, canary, docs, perf, data.
+  Available roles: ceo, pm, architect, ba, research, staff, senior, junior, qa, reviewer, devops, network, cicd, canary, docs, perf, data, debugger.
 ---
 
 # Role-Specific Agent Invocation
@@ -36,6 +36,7 @@ Invoke a specific role-based agent for targeted tasks without running the full S
 | `docs` | Documentation Engineer | sonnet | Technical writing, API docs |
 | `perf` | Performance Engineer | opus | Load testing, optimization |
 | `data` | Data Scientist | opus | Data requirements, ML models |
+| `debugger` | Debugger | opus | Root cause analysis, bug investigation |
 
 ## Examples
 
@@ -67,6 +68,11 @@ Invoke a specific role-based agent for targeted tasks without running the full S
 ### Test Strategy
 ```
 /sdlc-orchestration:role qa "Design test strategy for the payment integration"
+```
+
+### Debugging Issues
+```
+/sdlc-orchestration:role debugger "Investigate why the checkout API returns 500 errors intermittently"
 ```
 
 ### Beta Testing

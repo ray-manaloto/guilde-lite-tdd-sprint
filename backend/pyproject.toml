@@ -106,6 +106,12 @@ disallow_any_generics = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
+markers = [
+    "timeout: mark test with a timeout (requires pytest-timeout)",
+    "integration: mark as integration test (may require external services)",
+    "slow: mark test as slow running",
+    "agent_browser: mark test as requiring agent-browser CLI",
+]
 
 [tool.fastapi-fullstack]
 generator_version = "0.1.14"

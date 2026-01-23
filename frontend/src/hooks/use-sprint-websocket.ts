@@ -349,7 +349,8 @@ export function useSprintWebSocket({
       wsRef.current.close();
     }
 
-    const wsUrl = `${WS_URL}/api/v1/ws/${sprintId}`;
+    // Use the public sprint WebSocket endpoint (no auth required)
+    const wsUrl = `${WS_URL}/api/v1/ws/sprint/${sprintId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

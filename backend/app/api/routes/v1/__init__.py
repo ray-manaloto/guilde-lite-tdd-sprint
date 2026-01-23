@@ -16,6 +16,7 @@ from app.api.routes.v1 import tdd_runs
 from app.api.routes.v1 import sprints
 from app.api.routes.v1 import specs
 from app.api.routes.v1 import workflow
+from app.api.routes.v1 import self_heal
 
 v1_router = APIRouter()
 
@@ -60,3 +61,6 @@ v1_router.include_router(specs.router, prefix="/specs", tags=["specs"])
 
 # Workflow visualization routes (nested under sprints)
 v1_router.include_router(workflow.router, prefix="/sprints", tags=["workflow"])
+
+# Self-healing webhook routes
+v1_router.include_router(self_heal.router, prefix="/self-heal", tags=["self-heal"])

@@ -14,6 +14,11 @@
         },
         {
           "type": "command",
+          "command": "bash -c 'HEALTH_SCRIPT=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/scripts/health-check.sh\"; if [ -x \"$HEALTH_SCRIPT\" ]; then $HEALTH_SCRIPT 2>&1 || echo \"{\\\"addToPrompt\\\": \\\"[CLAUDE CODE CLI HEALTH CHECK FAILED]\\n\\nRun self-healing: ${CLAUDE_PROJECT_ROOT:-.}/.claude/scripts/self-heal-cli.sh\\\"}\"; fi; exit 0'",
+          "timeout": 10
+        },
+        {
+          "type": "command",
           "command": "bash -c 'CHECKPOINT_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-checkpoint.json\"; if [ -f \"$CHECKPOINT_FILE\" ]; then RECOVERED=$(jq -r \".recovery_pending // false\" \"$CHECKPOINT_FILE\" 2>/dev/null); if [ \"$RECOVERED\" = \"true\" ]; then PHASE=$(jq -r \".phase\" \"$CHECKPOINT_FILE\" 2>/dev/null); TRACK=$(jq -r \".track_id\" \"$CHECKPOINT_FILE\" 2>/dev/null); echo \"{\\\"addToPrompt\\\": \\\"[SDLC RECOVERY AVAILABLE]\\n\\nPrevious session checkpoint detected:\\n- Track: $TRACK\\n- Phase: $PHASE\\n- Status: Incomplete\\n\\nUse /sdlc-orchestration:resume to continue from checkpoint, or start fresh.\\\"}\"; fi; fi; exit 0'",
           "timeout": 5
         }
@@ -29,6 +34,11 @@
           "type": "command",
           "command": "bash -c 'STATE_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-state.json\"; CHECKPOINT_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-checkpoint.json\"; if [ -f \"$STATE_FILE\" ]; then PHASE=$(jq -r \".current_phase // empty\" \"$STATE_FILE\" 2>/dev/null); STATUS=$(jq -r \".phases.$PHASE.status // empty\" \"$STATE_FILE\" 2>/dev/null); if [ \"$STATUS\" = \"in_progress\" ]; then mkdir -p \"$(dirname \"$CHECKPOINT_FILE\")\"; jq \". + {\\\"recovery_pending\\\": true, \\\"checkpoint_at\\\": \\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\", \\\"session_id\\\": \\\"$(echo $RANDOM | md5sum | head -c 8 2>/dev/null || echo $RANDOM)\\\"} | .phase = \\\"$PHASE\\\"\" \"$STATE_FILE\" > \"$CHECKPOINT_FILE\" 2>/dev/null; echo \"[SDLC] Session checkpoint created for phase: $PHASE\" >> \"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-activity.log\"; fi; fi; exit 0'",
           "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash -c 'SYNC_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-doc-sync.json\"; if [ -f \"$SYNC_FILE\" ]; then CODE_COUNT=$(jq \".code_changes | length\" \"$SYNC_FILE\" 2>/dev/null || echo 0); if [ \"$CODE_COUNT\" -ge 3 ]; then echo \"{\\\"addToPrompt\\\": \\\"[CLAUDE.MD REVIEW SUGGESTED]\\n\\n$CODE_COUNT code files modified this session. Consider running /revise-claude-md to capture learnings.\\\"}\"; fi; fi; exit 0'",
+          "timeout": 5
         }
       ]
     }
@@ -61,6 +71,11 @@
         {
           "type": "command",
           "command": "bash -c 'STOP_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-stop-validation.json\"; if [ -f \"$STOP_FILE\" ]; then TESTS=$(jq -r \".checks.tests_pass // true\" \"$STOP_FILE\" 2>/dev/null); LINT=$(jq -r \".checks.lint_clean // true\" \"$STOP_FILE\" 2>/dev/null); DOCS=$(jq -r \".checks.docs_synced // true\" \"$STOP_FILE\" 2>/dev/null); WARNINGS=\"\"; if [ \"$TESTS\" = \"false\" ]; then WARNINGS=\"${WARNINGS}\\n- Tests are failing\"; fi; if [ \"$LINT\" = \"false\" ]; then WARNINGS=\"${WARNINGS}\\n- Lint issues detected\"; fi; if [ \"$DOCS\" = \"false\" ]; then WARNINGS=\"${WARNINGS}\\n- Documentation out of sync\"; fi; if [ -n \"$WARNINGS\" ]; then jq \".task_complete = false | .warnings = \\\"$WARNINGS\\\"\" \"$STOP_FILE\" > \"${STOP_FILE}.tmp\" && mv \"${STOP_FILE}.tmp\" \"$STOP_FILE\"; echo \"{\\\"addToPrompt\\\": \\\"[SDLC STOP VALIDATION]\\n\\nTask completion checks:$WARNINGS\\n\\nRecommendation: Address these issues before marking task complete.\\\"}\"; else jq \".task_complete = true\" \"$STOP_FILE\" > \"${STOP_FILE}.tmp\" && mv \"${STOP_FILE}.tmp\" \"$STOP_FILE\"; echo \"{\\\"addToPrompt\\\": \\\"[SDLC STOP VALIDATION] All checks passed. Task verified complete.\\\"}\"; fi; fi; exit 0'",
+          "timeout": 5
+        },
+        {
+          "type": "command",
+          "command": "bash -c 'STATE_FILE=\"${CLAUDE_PROJECT_ROOT:-.}/.claude/sdlc-state.json\"; if [ -f \"$STATE_FILE\" ]; then PHASE=$(jq -r \".current_phase // empty\" \"$STATE_FILE\" 2>/dev/null); if [ \"$PHASE\" = \"release\" ]; then echo \"{\\\"addToPrompt\\\": \\\"[PROJECT MEMORY CHECK]\\n\\nRelease phase complete. Before marking done:\\n1. Run /revise-claude-md to capture session learnings\\n2. Or use claude-md-improver skill for full audit\\n3. Or acknowledge: skip claude-md update\\\"}\"; fi; fi; exit 0'",
           "timeout": 5
         }
       ]

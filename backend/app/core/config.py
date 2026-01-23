@@ -1,10 +1,12 @@
 """Application configuration using Pydantic BaseSettings."""
 # ruff: noqa: I001 - Imports structured for Jinja2 template conditionals
 
+import os
+import tempfile
 from pathlib import Path
 from typing import Literal
 
-from pydantic import computed_field, field_validator, model_validator, ValidationInfo
+from pydantic import computed_field, Field, field_validator, model_validator, ValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -165,6 +167,12 @@ class Settings(BaseSettings):
     S3_BUCKET: str = "guilde_lite_tdd_sprint"
     S3_REGION: str = "us-east-1"
 
+    # === GitHub Integration (Self-Healing) ===
+    GITHUB_TOKEN: str | None = None
+    GITHUB_REPO: str | None = None  # Format: "owner/repo"
+    SELF_HEAL_ENABLED: bool = True
+    SELF_HEAL_AUTO_FIX_CONFIDENCE_THRESHOLD: float = 0.6
+
     # === AI Agent (pydantic_ai) ===
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = ""
@@ -188,8 +196,13 @@ class Settings(BaseSettings):
     HTTP_FETCH_MAX_CHARS: int = 12000
     DUAL_SUBAGENT_ENABLED: bool = True
     AGENT_FS_ENABLED: bool = True
-    AUTOCODE_ARTIFACTS_DIR: Path | None = Path(
-        "/Users/ray.manaloto.guilde/dev/tmp/guilde-lite-tdd-sprint-filesystem"
+    AUTOCODE_ARTIFACTS_DIR: Path = Field(
+        default_factory=lambda: Path(
+            os.environ.get(
+                "AUTOCODE_ARTIFACTS_DIR",
+                str(Path(tempfile.gettempdir()) / "guilde-artifacts"),
+            )
+        )
     )
 
     @model_validator(mode="after")

@@ -4,11 +4,11 @@ Parallelized software development lifecycle with role-based agents working in pa
 
 ## Overview
 
-This plugin implements a complete software development lifecycle using 22 specialized role-based agents that work in parallel within each phase. Inspired by the [wshobson/agents](https://github.com/wshobson/agents) multi-agent workflow patterns and enhanced with the [Anthropic Evaluator-Optimizer pattern](https://github.com/anthropics/anthropic-cookbook).
+This plugin implements a complete software development lifecycle using 23 specialized role-based agents that work in parallel within each phase. Inspired by the [wshobson/agents](https://github.com/wshobson/agents) multi-agent workflow patterns and enhanced with the [Anthropic Evaluator-Optimizer pattern](https://github.com/anthropics/anthropic-cookbook).
 
 ## Features
 
-- **22 Role-Based Agents** - From CEO to Junior Engineer, including UI/UX specialists
+- **23 Role-Based Agents** - From CEO to Junior Engineer, including UI/UX specialists and Debugger
 - **5 SDLC Phases** - Requirements, Design, Implementation, Quality, Release
 - **Parallel Execution** - Agents within each phase run concurrently
 - **Evaluator-Optimizer Pattern** - Structured evaluation with feedback-driven retry loops
@@ -49,6 +49,7 @@ This plugin implements a complete software development lifecycle using 22 specia
 | QA Automation | sonnet | Test strategy, automation, coverage |
 | Code Reviewer | opus | PR reviews, standards enforcement |
 | Performance Engineer | opus | Load testing, optimization |
+| Debugger | opus | Root cause analysis, bug investigation |
 
 ### Operations Layer
 | Role | Model | Responsibilities |
@@ -122,7 +123,8 @@ Executes all 5 phases with parallel agent coordination.
 │  ├── QA Automation → Test suites                            │
 │  ├── Code Reviewer → PR reviews                             │
 │  ├── Performance Engineer → Load tests                      │
-│  └── Accessibility Specialist → A11y testing                │
+│  ├── Accessibility Specialist → A11y testing                │
+│  └── Debugger → Root cause analysis                         │
 │                         ↓                                    │
 │  Phase 5: RELEASE (Sequential)                               │
 │  ├── CI/CD Engineer → Build & deploy                        │
@@ -204,6 +206,19 @@ Blocks research tools (WebSearch, WebFetch) until user confirms workflow choice.
 
 ### documentation-sync
 Monitors code, requirements, and documentation changes to ensure they stay in sync. Triggers documentation subagent when drift is detected.
+
+### claude-md-management
+Integrates with the `claude-md-management@claude-plugins-official` plugin for project memory management:
+
+| Trigger | Hook | Action |
+|---------|------|--------|
+| 3+ code files modified | SessionStop | Suggests `/revise-claude-md` |
+| Release phase complete | Stop | Prompts for claude-md audit |
+| Periodic staleness | SessionStart | Suggests audit if >7 days |
+
+**Commands:**
+- `/revise-claude-md` - Capture session learnings (quick)
+- `claude-md-improver` skill - Full quality audit (comprehensive)
 
 ## Documentation
 

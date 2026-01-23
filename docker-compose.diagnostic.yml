@@ -1,0 +1,152 @@
+# Diagnostic tooling overlay for development
+# Usage: docker-compose -f docker-compose.dev.yml -f docker-compose.diagnostic.yml up -d
+#
+# This overlay adds self-diagnostic tooling to the development environment:
+# - dev3000: MCP-based development debugging server
+# - circuit-state: Isolated Redis for circuit breaker state
+# - agent-web: AI agent web interface with diagnostic mode
+#
+# Note: Requires base services from docker-compose.dev.yml
+
+services:
+  # Override app service with diagnostic environment variables
+  app:
+    environment:
+      # Diagnostic mode
+      - DIAGNOSTIC_MODE=${DIAGNOSTIC_MODE:-true}
+      - DIAGNOSTIC_VERBOSE=${DIAGNOSTIC_VERBOSE:-false}
+      # Circuit breaker configuration
+      - CIRCUIT_BREAKER_ENABLED=${CIRCUIT_BREAKER_ENABLED:-true}
+      - CIRCUIT_BREAKER_REDIS_URL=redis://circuit-state:6379/0
+      - CIRCUIT_BREAKER_FAILURE_THRESHOLD=${CIRCUIT_BREAKER_FAILURE_THRESHOLD:-5}
+      - CIRCUIT_BREAKER_RECOVERY_TIMEOUT=${CIRCUIT_BREAKER_RECOVERY_TIMEOUT:-30}
+      - CIRCUIT_BREAKER_HALF_OPEN_REQUESTS=${CIRCUIT_BREAKER_HALF_OPEN_REQUESTS:-3}
+      # Enhanced observability
+      - LOGFIRE_DIAGNOSTIC_SPANS=${LOGFIRE_DIAGNOSTIC_SPANS:-true}
+      - SENTRY_TRACES_SAMPLE_RATE=${SENTRY_TRACES_SAMPLE_RATE:-1.0}
+      - SENTRY_PROFILES_SAMPLE_RATE=${SENTRY_PROFILES_SAMPLE_RATE:-0.1}
+      # Health check enhancements
+      - HEALTH_CHECK_INCLUDE_DETAILS=${HEALTH_CHECK_INCLUDE_DETAILS:-true}
+      - HEALTH_DEEP_CHECK_ENABLED=${HEALTH_DEEP_CHECK_ENABLED:-true}
+    networks:
+      - backend
+      - diagnostic
+    depends_on:
+      circuit-state:
+        condition: service_healthy
+
+  # Agent-web service with diagnostic mode
+  agent-web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: guilde_lite_tdd_sprint_agent_web
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend/app:/app/app:ro
+      - ./backend/cli:/app/cli:ro
+    env_file:
+      - ./.env
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=local
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+      - DIAGNOSTIC_MODE=true
+      - LOGFIRE_DIAGNOSTIC_SPANS=true
+    command: guilde_lite_tdd_sprint agent web --port 8001
+    networks:
+      - backend
+      - diagnostic
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    labels:
+      - "diagnostic.role=agent-web"
+      - "prometheus.scrape=true"
+      - "prometheus.port=8001"
+
+  # Circuit breaker state store (isolated from main Redis)
+  circuit-state:
+    image: redis:7-alpine
+    container_name: guilde_lite_tdd_sprint_circuit_state
+    ports:
+      - "6380:6379"
+    volumes:
+      - circuit_state_data:/data
+    networks:
+      - diagnostic
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 64mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    labels:
+      - "diagnostic.role=circuit-breaker-state"
+
+  # MCP-based development debugging server
+  # Note: Requires tools/dev3000/Dockerfile to be created
+  # Uncomment when dev3000 is implemented
+  # dev3000:
+  #   build:
+  #     context: ./tools/dev3000
+  #     dockerfile: Dockerfile
+  #   container_name: guilde_lite_tdd_sprint_dev3000
+  #   ports:
+  #     - "3001:3001"
+  #   volumes:
+  #     - ./backend:/workspace/backend:ro
+  #     - ./frontend:/workspace/frontend:ro
+  #     - ./logs:/workspace/logs
+  #     - dev3000_data:/data
+  #   environment:
+  #     - DEV3000_PORT=3001
+  #     - DEV3000_MODE=development
+  #     - DEV3000_LOG_LEVEL=debug
+  #     - DEV3000_BACKEND_URL=http://app:8000
+  #     - DEV3000_AGENT_URL=http://agent-web:8001
+  #     - DEV3000_LOGFIRE_TOKEN=${LOGFIRE_TOKEN:-}
+  #     - DEV3000_SENTRY_DSN=${SENTRY_DSN:-}
+  #     - MCP_SERVER_NAME=guilde-diag
+  #     - MCP_TRANSPORT=stdio
+  #     - MCP_TOOLS_ENABLED=true
+  #   networks:
+  #     - backend
+  #     - diagnostic
+  #   depends_on:
+  #     - app
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   restart: unless-stopped
+  #   labels:
+  #     - "diagnostic.role=debug-server"
+  #     - "diagnostic.mcp=true"
+
+networks:
+  diagnostic:
+    driver: bridge
+    name: guilde_diagnostic
+
+volumes:
+  circuit_state_data:
+  # dev3000_data:

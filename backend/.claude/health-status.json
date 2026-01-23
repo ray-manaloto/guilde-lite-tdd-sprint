@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-01-22T22:47:08Z",
+  "healthy": false,
+  "issues": [
+  "settings.json not found"
+],
+  "warnings": [
+  "CLAUDE.md not found in project root"
+],
+  "checks_run": 6
+}

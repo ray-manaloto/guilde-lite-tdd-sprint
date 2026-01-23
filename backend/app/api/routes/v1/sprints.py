@@ -9,7 +9,7 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 
 from app.api.deps import DBSession, SprintSvc
-from app.db.models.sprint import Sprint, SprintStatus
+from app.db.models.sprint import Sprint, SprintItem, SprintStatus
 from app.schemas.sprint import (
     SprintCreate,
     SprintItemCreate,
@@ -95,11 +95,15 @@ async def delete_sprint(
 @router.get("/{sprint_id}/items", response_model=Page[SprintItemRead])
 async def list_sprint_items(
     sprint_id: UUID,
+    db: DBSession,
     sprint_service: SprintSvc,
 ):
     """List sprint items for a sprint."""
-    items = await sprint_service.list_items(sprint_id)
-    return paginate(items)
+    # Validate sprint exists (raises NotFoundError if not)
+    await sprint_service.get_by_id(sprint_id)
+    # Query-based pagination per ADR-001
+    query = select(SprintItem).where(SprintItem.sprint_id == sprint_id).order_by(SprintItem.priority)
+    return await paginate(db, query)
 
 
 @router.post(

@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.types import ExceptionHandler
 
+from app.core.config import settings
 from app.core.exceptions import AppException
 
 logger = logging.getLogger(__name__)
@@ -57,9 +58,15 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle unexpected exceptions.
 
-    Logs the full exception but returns a generic error to the client
-    to avoid leaking sensitive information.
+    In production: Logs the full exception but returns a generic error to the client
+    to avoid leaking sensitive information (stack traces, internal details).
+
+    In development/local: Re-raises the exception to show full stack traces for debugging.
     """
+    # In non-production environments, re-raise to show full stack traces
+    if settings.ENVIRONMENT not in ("production", "staging"):
+        raise exc
+
     method = request.method
 
     logger.exception(
@@ -86,7 +93,10 @@ def register_exception_handlers(app: FastAPI) -> None:
     """Register all exception handlers on the FastAPI app.
 
     Call this after creating the FastAPI application instance.
+
+    The unhandled exception handler is always registered to prevent
+    leaking stack traces in production/staging environments.
+    In development/local, it re-raises exceptions for debugging.
     """
     app.add_exception_handler(AppException, cast(ExceptionHandler, app_exception_handler))
-    # Uncomment to catch all unhandled exceptions:
-    # app.add_exception_handler(Exception, unhandled_exception_handler)
+    app.add_exception_handler(Exception, cast(ExceptionHandler, unhandled_exception_handler))

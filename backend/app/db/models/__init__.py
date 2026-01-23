@@ -13,6 +13,12 @@ from app.db.models.agent_run import (
 )
 from app.db.models.sprint import Sprint, SprintItem
 from app.db.models.spec import Spec
+from app.db.models.diagnostic import (
+    ErrorEvent,
+    ErrorPattern,
+    DiagnosticReport,
+    UserFeedback,
+)
 
 __all__ = [
     "User",
@@ -27,4 +33,8 @@ __all__ = [
     "Sprint",
     "SprintItem",
     "Spec",
+    "ErrorEvent",
+    "ErrorPattern",
+    "DiagnosticReport",
+    "UserFeedback",
 ]

@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://guilde-lite.dev/schemas/autonomous-permissions.schema.json",
+  "title": "Claude Code Autonomous Permissions Schema",
+  "description": "JSON Schema for defining tool and command permission rules in Claude Code",
+  "version": "3.0.0",
+  "type": "object",
+  "required": ["permissions"],
+  "properties": {
+    "permissions": {
+      "type": "object",
+      "description": "Permission rules organized by trust level",
+      "required": ["auto_approve", "warn_and_proceed", "require_approval"],
+      "properties": {
+        "auto_approve": {
+          "type": "object",
+          "description": "Trust Level 1: Operations that execute without user prompts",
+          "properties": {
+            "description": {
+              "type": "string",
+              "const": "Tools and commands that execute without prompts"
+            },
+            "tools": {
+              "type": "array",
+              "description": "Tool names that are auto-approved",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Read",
+                  "Grep",
+                  "Glob",
+                  "Task",
+                  "WebSearch",
+                  "WebFetch",
+                  "NotebookEdit",
+                  "ListMcpResourcesTool",
+                  "ReadMcpResourceTool"
+                ]
+              }
+            },
+            "bash_patterns": {
+              "type": "array",
+              "description": "Glob patterns for bash commands that are auto-approved",
+              "items": {
+                "type": "string",
+                "examples": [
+                  "git status*",
+                  "git diff*",
+                  "git log*",
+                  "uv run pytest*",
+                  "bun run test*"
+                ]
+              }
+            }
+          }
+        },
+        "warn_and_proceed": {
+          "type": "object",
+          "description": "Trust Level 2: Operations that proceed with a warning",
+          "properties": {
+            "description": {
+              "type": "string",
+              "const": "Operations that proceed with a warning injected into prompt"
+            },
+            "bash_patterns": {
+              "type": "array",
+              "description": "Glob patterns for bash commands that warn but proceed",
+              "items": {
+                "type": "string",
+                "examples": [
+                  "git add *",
+                  "docker build*",
+                  "npm install*"
+                ]
+              }
+            },
+            "write_patterns": {
+              "type": "array",
+              "description": "File patterns for writes that warn but proceed",
+              "items": {
+                "type": "string",
+                "examples": [
+                  "*.py",
+                  "*.ts",
+                  "*.tsx",
+                  "*.md"
+                ]
+              }
+            }
+          }
+        },
+        "require_approval": {
+          "type": "object",
+          "description": "Trust Level 3: Operations that MUST have user confirmation",
+          "properties": {
+            "description": {
+              "type": "string",
+              "const": "Operations that MUST have user confirmation"
+            },
+            "bash_patterns": {
+              "type": "array",
+              "description": "Glob patterns for bash commands requiring approval",
+              "items": {
+                "type": "string",
+                "examples": [
+                  "git commit*",
+                  "git push*",
+                  "rm -rf*",
+                  "kubectl delete*"
+                ]
+              }
+            },
+            "write_patterns": {
+              "type": "array",
+              "description": "File patterns for writes requiring approval",
+              "items": {
+                "type": "string",
+                "examples": [
+                  ".env*",
+                  "*.pem",
+                  "*.key",
+                  "*secret*"
+                ]
+              }
+            },
+            "edit_patterns": {
+              "type": "array",
+              "description": "File patterns for edits requiring approval",
+              "items": {
+                "type": "string",
+                "examples": [
+                  "*/alembic/versions/*.py",
+                  "*.lock"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "trust_level": {
+      "type": "string",
+      "enum": ["auto_approve", "warn_and_proceed", "require_approval"],
+      "description": "The trust level determines how the operation is handled"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["allow", "ask", "block"],
+      "description": "The action taken for the operation"
+    }
+  },
+  "examples": [
+    {
+      "permissions": {
+        "auto_approve": {
+          "description": "Tools and commands that execute without prompts",
+          "tools": ["Read", "Grep", "Glob", "Task", "WebSearch", "WebFetch"],
+          "bash_patterns": [
+            "git status*",
+            "git diff*",
+            "uv run pytest*",
+            "bun run test*"
+          ]
+        },
+        "warn_and_proceed": {
+          "description": "Operations that proceed with a warning injected into prompt",
+          "bash_patterns": ["git add *", "npm install*"],
+          "write_patterns": ["*.py", "*.ts"]
+        },
+        "require_approval": {
+          "description": "Operations that MUST have user confirmation",
+          "bash_patterns": ["git commit*", "git push*"],
+          "write_patterns": [".env*", "*.key"],
+          "edit_patterns": ["*.lock"]
+        }
+      }
+    }
+  ]
+}

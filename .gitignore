@@ -105,6 +105,12 @@ Thumbs.db
 
 # Project specific
 
+# Kubernetes secrets (use secret.yaml.example as template)
+kubernetes/secret.yaml
+
+# Database backups
+backups/
+
 # Frontend
 node_modules/
 frontend/.next/

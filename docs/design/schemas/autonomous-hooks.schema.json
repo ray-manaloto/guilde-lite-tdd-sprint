@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://guilde-lite.dev/schemas/autonomous-hooks.schema.json",
+  "title": "Claude Code Autonomous Hooks Schema",
+  "description": "JSON Schema for Claude Code hooks configuration supporting autonomous SDLC operation",
+  "version": "3.0.0",
+  "type": "object",
+  "properties": {
+    "SessionStart": {
+      "$ref": "#/definitions/hook_array",
+      "description": "Hooks executed when a Claude Code session starts"
+    },
+    "SessionStop": {
+      "$ref": "#/definitions/hook_array",
+      "description": "Hooks executed when a Claude Code session ends"
+    },
+    "PreToolUse": {
+      "$ref": "#/definitions/hook_array",
+      "description": "Hooks executed before a tool is invoked"
+    },
+    "PostToolUse": {
+      "$ref": "#/definitions/hook_array",
+      "description": "Hooks executed after a tool completes"
+    },
+    "UserPromptSubmit": {
+      "$ref": "#/definitions/hook_array",
+      "description": "Hooks executed when user submits a prompt"
+    },
+    "Stop": {
+      "$ref": "#/definitions/hook_array",
+      "description": "Hooks executed when the model stops generating"
+    },
+    "SubagentStop": {
+      "$ref": "#/definitions/hook_array",
+      "description": "Hooks executed when a subagent (Task) completes"
+    },
+    "PhaseTransition": {
+      "$ref": "#/definitions/hook_array",
+      "description": "Hooks executed on SDLC phase transitions"
+    }
+  },
+  "definitions": {
+    "hook_array": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/hook_entry"
+      }
+    },
+    "hook_entry": {
+      "type": "object",
+      "required": ["matcher", "hooks"],
+      "properties": {
+        "matcher": {
+          "type": "string",
+          "description": "Regex pattern to match tool names or contexts. Empty string matches all.",
+          "examples": ["", "Edit|Write", "Bash", "WebSearch", "sdlc-orchestration:.*"]
+        },
+        "hooks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/hook_definition"
+          }
+        }
+      }
+    },
+    "hook_definition": {
+      "type": "object",
+      "required": ["type"],
+      "oneOf": [
+        {
+          "properties": {
+            "type": { "const": "command" },
+            "command": {
+              "type": "string",
+              "description": "Bash command to execute. Receives tool input via stdin as JSON."
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600,
+              "default": 5,
+              "description": "Timeout in seconds"
+            }
+          },
+          "required": ["type", "command"]
+        },
+        {
+          "properties": {
+            "type": { "const": "prompt" },
+            "prompt": {
+              "type": "string",
+              "description": "Text to inject into the conversation"
+            }
+          },
+          "required": ["type", "prompt"]
+        }
+      ]
+    },
+    "hook_output": {
+      "type": "object",
+      "description": "JSON output format for command hooks",
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": ["allow", "ask", "block"],
+          "description": "Decision for PreToolUse hooks"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Explanation for the decision"
+        },
+        "addToPrompt": {
+          "type": "string",
+          "description": "Text to inject into the model's context"
+        }
+      }
+    },
+    "backpressure_signal": {
+      "type": "object",
+      "description": "Backpressure signals injected by PostToolUse hooks",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "BACKPRESSURE:LINT",
+            "BACKPRESSURE:TYPE",
+            "BACKPRESSURE:TEST",
+            "BACKPRESSURE:SECURITY",
+            "BACKPRESSURE:COMMAND",
+            "SDLC GATE",
+            "STOP VALIDATION"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "warning", "error", "critical"]
+        },
+        "message": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "Tool or command that generated the signal"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "PreToolUse": [
+        {
+          "matcher": "Edit|Write",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "bash -c 'INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r \".tool_input.file_path\"); if echo \"$FILE\" | grep -q \".env\"; then echo \"{\\\"decision\\\": \\\"block\\\", \\\"reason\\\": \\\"Sensitive file\\\"}\"; fi'",
+              "timeout": 5
+            }
+          ]
+        }
+      ],
+      "PostToolUse": [
+        {
+          "matcher": "Edit|Write",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "bash -c 'INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r \".tool_input.file_path\"); if echo \"$FILE\" | grep -q \".py$\"; then ruff check \"$FILE\" --quiet || echo \"{\\\"addToPrompt\\\": \\\"[BACKPRESSURE:LINT] Issues found\\\"}\"; fi'",
+              "timeout": 15
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

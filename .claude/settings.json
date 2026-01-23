@@ -10,7 +10,29 @@
       "Bash(cd frontend && bun test:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push origin:*)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(curl -X POST http://localhost:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh workflow:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(jq:*)",
+      "Bash(./scripts/devctl.sh status:*)",
+      "Bash(./scripts/devctl.sh logs:*)",
+      "Bash(./scripts/devctl.sh preflight:*)",
+      "Bash(./.claude/scripts/health-check.sh:*)",
+      "Bash(./.claude/scripts/self-heal-cli.sh:*)",
+      "Bash(chmod +x:*)"
     ]
   },
   "hooks": {
@@ -115,6 +137,17 @@
     "tailwindcss-master@claude-plugin-marketplace": true,
     "terraform-master@claude-plugin-marketplace": true,
     "plugin-dev@claude-plugins-official": true,
-    "sdlc-orchestration@guilde-lite-local": true
+    "sdlc-orchestration@guilde-lite-local": true,
+    "devops-automation@claude-code-templates": true,
+    "fix-review@trailofbits": true,
+    "nextjs-vercel-pro@claude-code-templates": true,
+    "superpowers-developing-for-claude-code@superpowers-marketplace": true,
+    "spec-to-code-compliance@trailofbits": true,
+    "double-shot-latte@superpowers-marketplace": true,
+    "episodic-memory@superpowers-marketplace": true,
+    "lead-research-assistant@awesome-claude-skills": true,
+    "template-skill@awesome-claude-skills": true,
+    "testing-handbook-skills@trailofbits": true,
+    "everything-claude-code@everything-claude-code": true
   }
 }
