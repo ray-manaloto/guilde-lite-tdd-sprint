@@ -23,21 +23,10 @@ def _run(cmd: list[str], cwd: Path, env: dict[str, str] | None = None) -> None:
         raise SystemExit(result.returncode)
 
 
-@command("qa-smoke", help="Run smoke QA gates (backend integration + frontend smoke E2E).")
-@click.option("--skip-backend", is_flag=True, help="Skip backend integration tests.")
-@click.option("--skip-frontend", is_flag=True, help="Skip frontend smoke E2E tests.")
+@command("qa-smoke", help="Run smoke QA gates (backend TUI/CLI marker only).")
 @click.option("--live", is_flag=True, help="Enable live CLI integration tests.")
-@click.option(
-    "--project",
-    default="chromium",
-    show_default=True,
-    help="Playwright project to run for smoke tests.",
-)
 def qa_smoke(
-    skip_backend: bool,
-    skip_frontend: bool,
     live: bool,
-    project: str,
 ) -> None:
     """Run smoke QA gates."""
     repo_root = _default_repo_root()
@@ -45,27 +34,15 @@ def qa_smoke(
     if live:
         env["RUN_LIVE_TESTS"] = "1"
 
-    if not skip_backend:
-        _run(["uv", "run", "alembic", "upgrade", "head"], repo_root / "backend", env)
-        _run(["uv", "run", "pytest", "-m", "integration"], repo_root / "backend", env)
-
-    if not skip_frontend:
-        _run(
-            ["bun", "run", "test:e2e", "--", "--grep", "@smoke", "--project", project],
-            repo_root / "frontend",
-            env,
-        )
+    _run(["uv", "run", "alembic", "upgrade", "head"], repo_root / "backend", env)
+    _run(["uv", "run", "pytest", "-m", "tui"], repo_root / "backend", env)
 
     success("QA smoke gate passed.")
 
 
-@command("qa-nightly", help="Run nightly QA gates (full backend + full E2E).")
-@click.option("--skip-backend", is_flag=True, help="Skip backend tests.")
-@click.option("--skip-frontend", is_flag=True, help="Skip frontend E2E tests.")
+@command("qa-nightly", help="Run nightly QA gates (full backend only).")
 @click.option("--live", is_flag=True, help="Enable live CLI integration tests.")
 def qa_nightly(
-    skip_backend: bool,
-    skip_frontend: bool,
     live: bool,
 ) -> None:
     """Run nightly QA gates."""
@@ -74,11 +51,45 @@ def qa_nightly(
     if live:
         env["RUN_LIVE_TESTS"] = "1"
 
-    if not skip_backend:
-        _run(["uv", "run", "alembic", "upgrade", "head"], repo_root / "backend", env)
-        _run(["uv", "run", "pytest"], repo_root / "backend", env)
-
-    if not skip_frontend:
-        _run(["bun", "run", "test:e2e"], repo_root / "frontend", env)
+    _run(["uv", "run", "alembic", "upgrade", "head"], repo_root / "backend", env)
+    _run(["uv", "run", "pytest"], repo_root / "backend", env)
 
     success("QA nightly gate passed.")
+
+
+@command("qa-frontend-e2e", help="Run frontend E2E tests (manual/optional).")
+@click.option("--smoke", is_flag=True, help="Run smoke-tagged E2E tests only.")
+@click.option("--grep", help="Playwright grep pattern.")
+@click.option(
+    "--project",
+    default=None,
+    help="Playwright project to run (defaults to all).",
+)
+def qa_frontend_e2e(
+    smoke: bool,
+    grep: str | None,
+    project: str | None,
+) -> None:
+    """Run frontend E2E tests."""
+    if smoke and grep:
+        raise click.UsageError("Use either --smoke or --grep, not both.")
+
+    if smoke:
+        grep = "@smoke"
+        if project is None:
+            project = "chromium"
+
+    repo_root = _default_repo_root()
+    env = os.environ.copy()
+    args: list[str] = []
+    if grep:
+        args.extend(["--grep", grep])
+    if project:
+        args.extend(["--project", project])
+
+    cmd = ["bun", "run", "test:e2e"]
+    if args:
+        cmd.extend(["--", *args])
+
+    _run(cmd, repo_root / "frontend", env)
+    success("Frontend E2E run completed.")

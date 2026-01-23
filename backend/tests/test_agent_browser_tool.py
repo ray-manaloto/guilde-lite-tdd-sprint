@@ -8,6 +8,8 @@ import pytest
 
 from app.agents.tools.agent_browser import run_agent_browser
 
+pytestmark = pytest.mark.tui
+
 
 def test_run_agent_browser_requires_command():
     """Empty commands are rejected."""

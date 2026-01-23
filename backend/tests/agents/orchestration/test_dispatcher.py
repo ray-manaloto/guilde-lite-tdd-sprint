@@ -421,6 +421,7 @@ class TestSDKExecution:
 # ============================================================================
 
 
+@pytest.mark.tui
 class TestCLIExecution:
     """Tests for CLI agent execution."""
 

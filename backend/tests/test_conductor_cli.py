@@ -1,9 +1,12 @@
 """Tests for Conductor CLI planning command."""
 
+import pytest
 from click.testing import CliRunner
 
 from app.agents.sdk_runner import AgentsSdkRunResult
 from app.commands.conductor_plan import conductor_plan
+
+pytestmark = pytest.mark.tui
 
 
 class FakeRunner:

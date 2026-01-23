@@ -59,6 +59,9 @@ uv run pytest tests/integration/
 # Run only integration tests by marker (preferred)
 uv run pytest -m integration
 
+# Run only TUI/CLI tests by marker
+uv run pytest -m tui
+
 # Run with verbose output
 uv run pytest -v
 
@@ -68,16 +71,24 @@ uv run pytest -x
 
 ## QA Gate Commands (CLI)
 
-Smoke gate (backend integration + frontend smoke E2E):
+Smoke gate (backend TUI/CLI marker only):
 
 ```bash
 project cmd qa-smoke
 ```
 
-Nightly gate (full backend + full frontend E2E):
+Nightly gate (full backend only):
 
 ```bash
 project cmd qa-nightly
+```
+
+Frontend E2E (manual/optional):
+
+```bash
+project cmd qa-frontend-e2e
+project cmd qa-frontend-e2e --smoke
+project cmd qa-frontend-e2e --grep "@smoke" --project chromium
 ```
 
 QA gate commands run `alembic upgrade head` for the backend before tests.
@@ -86,7 +97,7 @@ Optional flags:
 
 ```bash
 project cmd qa-smoke --live
-project cmd qa-nightly --skip-frontend
+project cmd qa-nightly --live
 ```
 
 ## Pytest Standards (PEP + modern pytest)
@@ -95,6 +106,7 @@ project cmd qa-nightly --skip-frontend
   docstrings when they add clarity.
 - Use pytest markers for test intent. Integration tests must be explicitly
   marked with `@pytest.mark.integration` and avoid mocks.
+- Use `@pytest.mark.tui` for CLI/TUI flows (commands, CLI agents, terminal tools).
 - Keep integration coverage non-empty so `pytest -m integration` remains a
   reliable gate (pytest exits with code 5 if zero tests are collected).
 

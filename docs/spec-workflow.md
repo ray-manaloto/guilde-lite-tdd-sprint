@@ -102,8 +102,9 @@ see `backend/docs/observability.md` for setup details.
 - `project cmd codex-guard --track-id <id>` validate workflow prerequisites
 - `project cmd snapshot-state --track-id <id>` write recovery snapshot
 - `project cmd sync-docs --track-id <id>` write doc sync report
-- `project cmd qa-smoke` run smoke QA gate
-- `project cmd qa-nightly` run nightly QA gate
+- `project cmd qa-smoke` run TUI smoke QA gate (pytest `-m tui`)
+- `project cmd qa-nightly` run TUI nightly QA gate (full backend)
+- `project cmd qa-frontend-e2e` run frontend E2E manually (optional)
 
 ## Tests
 

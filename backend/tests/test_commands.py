@@ -1,6 +1,7 @@
 """Tests for CLI commands module."""
 
 import click
+import pytest
 from click.testing import CliRunner
 
 from app.commands import (
@@ -12,6 +13,8 @@ from app.commands import (
     success,
     warning,
 )
+
+pytestmark = pytest.mark.tui
 
 
 class TestCommandDecorator:

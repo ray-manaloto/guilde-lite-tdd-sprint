@@ -10,6 +10,7 @@ from app.agents.tools.agent_integration import run_claude_agent, run_codex_agent
 # Skip all tests in this module unless RUN_LIVE_TESTS is set
 pytestmark = [
     pytest.mark.integration,
+    pytest.mark.tui,
     pytest.mark.skipif(
         os.getenv("RUN_LIVE_TESTS") != "1",
         reason="Skipping live integration tests. Set RUN_LIVE_TESTS=1 to run.",

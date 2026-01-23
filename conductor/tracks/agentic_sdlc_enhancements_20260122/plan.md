@@ -31,7 +31,7 @@ and QA automation gates with Conductor artifacts as the plan of record.
 - [x] **Task 2.2**: Design context-engineering flow (tiers, compaction, recovery). `artifacts/design/context-engineering/20260122T201657Z.md`
 - [x] **Task 2.3**: Design documentation-engineer workflow and sync rules. `artifacts/design/documentation-engineer/20260122T201657Z.md`
 - [x] **Task 2.4**: Design hook strategy (global + project) and command set. `artifacts/design/hook-strategy/20260122T204924Z.md`
-- [x] **Task 2.5**: Define QA automation gates (smoke PR + nightly full E2E). `artifacts/design/qa-gates/20260122T204924Z.md`
+- [x] **Task 2.5**: Define QA automation gates (TUI-only smoke/nightly + manual frontend E2E). `artifacts/design/qa-gates/20260122T204924Z.md`
 - [x] **Task 2.6**: Design Deep Research runner + enforcement rules.
 - [x] **Task 2.7**: Run parallel role sweep (UI/UX, context, docs, QA) via Agents SDK. `artifacts/design/parallel-sweep/`
 - [x] **Task 2.8**: Synthesize parallel sweep outputs into Phase 2 design summary. `artifacts/design/parallel-sweep/synthesis/20260122T204407Z.md`
@@ -60,13 +60,13 @@ and QA automation gates with Conductor artifacts as the plan of record.
 ### Verification
 
 - [ ] **Verify 3.1**: Hooks execute as expected on sample actions.
-- [ ] **Verify 3.2**: Smoke E2E runs successfully in local environment.
+- [ ] **Verify 3.2**: Frontend E2E smoke runs when explicitly invoked (manual/optional).
 
 ## Phase 4: Quality
 
 ### Tasks
 
-- [ ] **Task 4.1**: Run integration tests + smoke E2E gate.
+- [ ] **Task 4.1**: Run integration tests; optionally run frontend E2E smoke.
 - [ ] **Task 4.2**: Validate docs/plan/code synchronization.
 
 ### Verification

@@ -110,7 +110,10 @@ testpaths = ["tests"]
 filterwarnings = ["error"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-markers = ["integration: integration tests (no mocks)"]
+markers = [
+    "integration: integration tests (no mocks)",
+    "tui: TUI/CLI-related tests",
+]
 
 [tool.fastapi-fullstack]
 generator_version = "0.1.14"

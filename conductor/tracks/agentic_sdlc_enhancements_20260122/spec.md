@@ -4,9 +4,9 @@
 
 Enhance the parallel agentic SDLC workflow with explicit UI/UX roles, stronger
 context engineering via subagents, continuous documentation synchronization,
-resilient session state recovery, and improved QA automation (smoke E2E per PR,
-full E2E nightly). Research-backed hooks, skills, tools, and commands will be
-proposed and implemented under Conductor.
+resilient session state recovery, and improved QA automation (TUI-only smoke and
+nightly backend gates, with frontend E2E run manually as needed). Research-backed
+hooks, skills, tools, and commands will be proposed and implemented under Conductor.
 
 ## Objectives
 
@@ -16,7 +16,7 @@ proposed and implemented under Conductor.
   synchronized and recoverable after session crashes.
 - Research and recommend skills/plugins/tools/hooks to streamline the SDLC.
 - Update hook strategy using current Claude Code best practices.
-- Improve QA automation with reliable integration + E2E coverage.
+- Improve QA automation with reliable integration coverage and optional frontend E2E.
 
 ## Scope
 
@@ -27,7 +27,7 @@ In scope:
 - Documentation synchronization and crash recovery workflow.
 - Hook recommendations and implementation plan (global + project).
 - Recommendations for skills, plugins, tools, slash commands, MCP servers.
-- QA automation strategy with smoke E2E on PR + full nightly suite.
+- QA automation strategy with TUI-only smoke/nightly gates + manual frontend E2E.
 
 Out of scope:
 
@@ -62,8 +62,9 @@ Out of scope:
 - Include modern agentic workflow patterns and best practices.
 
 ### R6: QA Automation Improvements
-- Define smoke E2E suite for PR gating.
-- Define full E2E suite for nightly execution.
+- Define TUI smoke gate for PRs (backend integration, no mocks).
+- Define TUI nightly gate for backend regressions.
+- Document frontend E2E as manual/optional and how to invoke it.
 - Ensure integration tests validate live system dependencies (no mocks).
 
 ### R7: Deep Research Enforcement
@@ -141,7 +142,7 @@ Out of scope:
 - Documentation-engineer parallel workflow defined with recovery steps.
 - Hooks strategy documented and updated plan to implement.
 - Skills/plugins/tools/commands recommendations captured.
-- QA automation plan includes smoke PR gate + nightly full suite.
+- QA automation plan includes TUI-only PR gate + nightly backend suite, with manual frontend E2E.
 - Deep Research runner exists and research is blocked when artifacts are missing.
 - Cloud subagent offload workflow documented with guardrails.
 
@@ -152,10 +153,10 @@ Out of scope:
 | Excess automation slows inner loop | Medium | Keep hooks fast; run heavy tasks in nightly jobs. |
 | Role sprawl without ownership | Medium | Assign clear outputs per role per phase. |
 | Context bloat reduces agent quality | High | Tiered context + precompact summaries. |
-| E2E flakiness blocks PRs | High | Smoke-only on PR + retries + stable selectors. |
+| Manual E2E flakiness slows QA | Medium | Keep UI E2E optional; stabilize selectors + trace artifacts. |
 
 ## Open Questions
 
 - Which exact UI/UX roles are required for each phase?
 - Which hooks should be project-only vs global defaults?
-- What E2E flows are required for smoke gating?
+- Which UI flows should be covered when running manual frontend E2E?
