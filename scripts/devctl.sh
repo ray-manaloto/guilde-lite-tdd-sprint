@@ -329,6 +329,74 @@ preflight() {
   uv run python "${ROOT_DIR}/scripts/preflight.py" "$@"
 }
 
+# Auto-restart service if it fails
+watch_service() {
+  local name="$1"
+  local check_interval="${2:-10}"
+  local port
+  local match
+
+  port="$(get_service_port "${name}")"
+  match="$(get_service_match "${name}")"
+
+  echo "Watching ${name} (check every ${check_interval}s)..."
+  echo "Press Ctrl+C to stop"
+
+  while true; do
+    local port_pid
+    port_pid="$(find_pid_on_port "${port}" "${match}" || true)"
+
+    if [[ -z "${port_pid}" ]]; then
+      echo "[$(date '+%H:%M:%S')] ${name}: not running, restarting..."
+      log_telemetry "service_restart" "${name}" "auto_restart"
+      start_service "${name}"
+    fi
+
+    sleep "${check_interval}"
+  done
+}
+
+# Log telemetry event to file
+log_telemetry() {
+  local event_type="$1"
+  local service="$2"
+  local reason="$3"
+  local telemetry_file="${LOG_DIR}/telemetry.jsonl"
+
+  local timestamp
+  timestamp="$(date -Iseconds)"
+
+  echo "{\"timestamp\":\"${timestamp}\",\"event\":\"${event_type}\",\"service\":\"${service}\",\"reason\":\"${reason}\"}" >> "${telemetry_file}"
+}
+
+# Watch all services
+watch_all() {
+  local check_interval="${1:-10}"
+
+  echo "Watching all services (check every ${check_interval}s)..."
+  echo "Press Ctrl+C to stop"
+
+  while true; do
+    for name in "${SERVICES[@]}"; do
+      local port
+      local match
+      port="$(get_service_port "${name}")"
+      match="$(get_service_match "${name}")"
+
+      local port_pid
+      port_pid="$(find_pid_on_port "${port}" "${match}" || true)"
+
+      if [[ -z "${port_pid}" ]]; then
+        echo "[$(date '+%H:%M:%S')] ${name}: not running, restarting..."
+        log_telemetry "service_restart" "${name}" "auto_restart"
+        start_service "${name}"
+      fi
+    done
+
+    sleep "${check_interval}"
+  done
+}
+
 usage() {
   cat <<EOF
 Usage: $(basename "$0") <command> [args]
@@ -339,8 +407,10 @@ Commands:
   restart [service]   Restart all services or a specific service
   status [service]    Show status of all services or a specific service
   logs <service>      Tail logs for a specific service
+  watch [service] [N] Auto-restart on failure (check every N seconds, default 10)
   infra [up|down]     Manage infrastructure (db, redis)
   preflight [opts]    Run pre-flight service health checks
+  telemetry           Show recent telemetry events
 
 Preflight options:
   --backend-only      Skip frontend check
@@ -453,6 +523,23 @@ case "${cmd}" in
     ;;
   preflight)
     preflight "${@:2}"
+    ;;
+  watch)
+    interval="${3:-10}"
+    if [[ -n "${service}" ]]; then
+      watch_service "${service}" "${interval}"
+    else
+      watch_all "${interval}"
+    fi
+    ;;
+  telemetry)
+    telemetry_file="${LOG_DIR}/telemetry.jsonl"
+    if [[ -f "${telemetry_file}" ]]; then
+      echo "Recent telemetry events:"
+      tail -n 50 "${telemetry_file}"
+    else
+      echo "No telemetry events recorded yet"
+    fi
     ;;
   *)
     usage

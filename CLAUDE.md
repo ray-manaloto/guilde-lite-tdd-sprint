@@ -123,6 +123,15 @@ Use `devctl.sh` for **local development** - it orchestrates all services:
 
 # Preflight health checks
 ./scripts/devctl.sh preflight --verbose
+
+# Auto-restart on failure (watches every 10 seconds)
+./scripts/devctl.sh watch
+
+# Watch specific service
+./scripts/devctl.sh watch backend 5
+
+# View telemetry events (restarts, failures)
+./scripts/devctl.sh telemetry
 ```
 
 ### Makefile (CI/CD & One-off Operations)
@@ -163,6 +172,8 @@ make celery-beat      # Start beat scheduler
 | Production Docker | `make docker-prod` |
 | Check service status | `./scripts/devctl.sh status` |
 | tmux session workflow | `./scripts/devctl.sh start` (auto-detects) |
+| Auto-restart on failure | `./scripts/devctl.sh watch` |
+| View service telemetry | `./scripts/devctl.sh telemetry` |
 
 ## Project Structure
 
