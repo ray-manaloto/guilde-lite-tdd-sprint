@@ -478,7 +478,7 @@ jobs:
           fi
 
       - name: Create release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           VERSION: ${{ needs.validate.outputs.version }}
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
@@ -543,7 +543,7 @@ jobs:
 
       - name: Notify on failure
         if: ${{ needs.smoke-test.result == 'failure' || needs.health-check.result == 'failure' || needs.deploy.result == 'failure' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           VERSION: ${{ needs.validate.outputs.version }}
           IS_ROLLBACK: ${{ needs.validate.outputs.is_rollback }}
@@ -602,7 +602,7 @@ jobs:
 
       - name: Close previous failure issues on success
         if: ${{ needs.smoke-test.result == 'success' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const issues = await github.rest.issues.listForRepo({
